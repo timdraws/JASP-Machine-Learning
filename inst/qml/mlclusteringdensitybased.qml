@@ -22,4 +22,70 @@ import JASP.Widgets 1.0
 
 Form {
 
+VariablesForm {
+    AvailableVariablesList {name: "variables"}
+    AssignedVariablesList {
+        name: "predictors"
+        title: qsTr("Variables")
+        singleVariable: false
+        allowedColumns: ["ordinal", "scale"]
+    }
+}
+
+GroupBox {
+    title: qsTr("Tables")
+
+    CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
+}
+}
+
+Section {
+    title: qsTr("Training parameters")
+
+    GridLayout {
+    RadioButtonGroup {
+        title: qsTr("Model optimization")
+        name: "modelOpt"
+        RadioButton { text: qsTr("k-distance")                             ; name: "k-distance" }
+        RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
+    }
+
+GroupBox {
+    IntegerField { name: "eps"; text: qsTr("eps:") ; defaultValue: 1 ; min: -1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
+    IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
+    IntegerField { name: "minPts"; text: qsTr("minPts:") ; defaultValue: 5 ; min: 1; max: 999999; fieldWidth: 60 }
+
+    CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
+    CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+        DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+    }
+}
+}
+}
+
+Section {
+  text: qsTr("Predictions")
+  debug: true
+
+      RadioButtonGroup
+      {
+          name: "applyModel"
+          RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+          RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+          RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+      }
+
+      VariablesForm {
+      visible: applyIndicator.checked
+          height: 150
+          AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+          AssignedVariablesList {
+                      name: "indicator"
+                      title: qsTr("Apply indicator")
+                      singleVariable: true
+                      allowedColumns: ["nominal"]
+                  }
+      }
+}
+
 }

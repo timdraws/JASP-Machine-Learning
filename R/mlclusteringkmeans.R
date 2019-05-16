@@ -195,7 +195,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:1')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:1')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'number', format = 'dp:1')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'number', format = 'dp:0')
   if(options[["aicweights"]]){
       evaluationTable$addColumnInfo(name = "aicweights", title = "w(AIC)", type = "number", format = "dp:2")
       evaluationTable$addColumnInfo(name = "bicweights", title = "w(BIC)", type = "number", format = "dp:2")

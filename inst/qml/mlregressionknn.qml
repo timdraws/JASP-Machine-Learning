@@ -41,37 +41,14 @@ Form {
     GroupBox {
         title: qsTr("Tables")
         
-        CheckBox { text: qsTr("Training error") ; name: "trainingAccuracy"}
-        
-        //RowLayout {
-        //    Label {  text: qsTr("From"); Layout.leftMargin: 20 }
-        //    TextField {
-        //        name: "predictionsFrom"
-        //        inputType: "integer"
-        //        validator: IntValidator {bottom: 1; top: 9999}
-        //        value: "1"
-        //        fieldWidth: 60
-        //    }
-        //    Label {  text: qsTr("to") }
-        //    TextField {
-        //        name: "predictionsTo"
-        //        inputType: "integer"
-        //        validator: IntValidator {bottom: 1; top: 9999}
-        //        value: "10"
-        //        fieldWidth: 60
-        //    }
-        //}
-        //CheckBox { text: qsTr("Predictions") ; name: "tablePredictions" ; checked: false}
-        //CheckBox { text: qsTr("Distances") ; name: "tableDistances"}
-        //CheckBox { text: qsTr("Weights") ; name: "tableWeights"}      
+        CheckBox { text: qsTr("Training error") ; name: "trainingAccuracy"}  
      }
     
     GroupBox {
         title: qsTr("Plots")
         
         CheckBox { text: qsTr("Mean squared error") ; name: "plotErrorVsK"; enabled: validationManual.checked ? false : true }
-        CheckBox { text: qsTr("Predicted performance (training)") ; name: "predictedPerformanceTraining" }
-        CheckBox { text: qsTr("Predicted performance (test)") ; name: "predictedPerformanceTest" }
+        CheckBox { text: qsTr("Predicted performance") ; name: "predictedPerformancePlot" }
     }
     
     Section {
@@ -133,6 +110,7 @@ Form {
     
     Section {
       text: qsTr("Predictions")
+      debug: true
       
           RadioButtonGroup
           {
