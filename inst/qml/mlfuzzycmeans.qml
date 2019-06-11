@@ -60,6 +60,7 @@ Section {
         name: "modelOpt"
         RadioButton { text: qsTr("AIC")                             ; name: "validationAIC" }
         RadioButton { text: qsTr("BIC")                             ; name: "validationBIC" ; checked: true }
+        RadioButton { text: qsTr("Silhouette")                      ; name: "validationSilh" }
         RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
     }
 
@@ -67,6 +68,7 @@ GroupBox {
     IntegerField { name: "noOfClusters"; text: qsTr("Clusters:") ; defaultValue: 3 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
     IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
     IntegerField { name: "noOfIterations"; text: qsTr("Iterations:") ; defaultValue: 25 ; min: 1; max: 999999; fieldWidth: 60 }
+    IntegerField { name: "m"; text: qsTr("m (fuzziness):") ; defaultValue: 2; min: 1; max: 999999; fieldWidth: 60 }
 
     CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
     CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true

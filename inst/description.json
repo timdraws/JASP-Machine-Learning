@@ -11,13 +11,6 @@
 		"icon": 								"analysis-ml-clustering.svg"
 	},
 
-	// "requiredPackages":	[
-	// 	{ "package" : "kknn" },
-	// 	{ "package" : "Rtsne" },
-	// 	{ "package" : "colorspace" },
-	// 	{ "package" : "ppclust" },
-	//	{ "package" : "gbm" }
-	// ],
 	"requiredPackages":	[ ],
 
 	"menu":
@@ -83,6 +76,11 @@
 				"title":							"Fuzzy c-means",
 				"qml":								"mlfuzzycmeans.qml",
 				"function":							"MLFuzzyCMeans"
+			},
+			{
+				"title":							"Hierarchical",
+				"qml":								"mlclusteringhier.qml",
+				"function":							"MLClusteringHier"
 			},
 			{
 				"title":							"K-Means",

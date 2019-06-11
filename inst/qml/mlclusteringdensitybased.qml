@@ -36,7 +36,15 @@ GroupBox {
     title: qsTr("Tables")
 
     CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
+    CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false }
+    CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false }
+    }
 }
+
+GroupBox {
+    title: qsTr("Plots")
+    CheckBox { text: qsTr("Cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
+    CheckBox { text: qsTr("K-dist plot")         ; name: "k-distplot"    ; checked: false; enabled: true}
 }
 
 Section {
@@ -50,42 +58,46 @@ Section {
         RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
     }
 
-GroupBox {
-    IntegerField { name: "eps"; text: qsTr("eps:") ; defaultValue: 1 ; min: -1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
-    IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
-    IntegerField { name: "minPts"; text: qsTr("minPts:") ; defaultValue: 5 ; min: 1; max: 999999; fieldWidth: 60 }
-
-    CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
-    CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-        DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+    GroupBox {
+        DoubleField { name: "eps"; text: qsTr("eps:") ; decimals: 2; defaultValue: 2 ; min: -1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
+        IntegerField { name: "minPts"; text: qsTr("minPts:") ; defaultValue: 5 ; min: 1; max: 999999; fieldWidth: 60 }
+        ComboBox { name: "distance"; label: qsTr("Distance metric:");
+            model: ListModel {
+                ListElement { key: "Normal densities"            ; value: "Normal densities" }
+                ListElement { key: "Correlated densities"                    ; value: "Correlated densities" }
+            }
+        }
+        CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
+        CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+            DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+        }
     }
 }
 }
-}
 
-Section {
-  text: qsTr("Predictions")
-  debug: true
+    Section {
+    text: qsTr("Predictions")
+    debug: true
 
-      RadioButtonGroup
-      {
-          name: "applyModel"
-          RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-          RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-          RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-      }
+        RadioButtonGroup
+        {
+            name: "applyModel"
+            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+        }
 
-      VariablesForm {
-      visible: applyIndicator.checked
-          height: 150
-          AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-          AssignedVariablesList {
-                      name: "indicator"
-                      title: qsTr("Apply indicator")
-                      singleVariable: true
-                      allowedColumns: ["nominal"]
-                  }
-      }
-}
+        VariablesForm {
+        visible: applyIndicator.checked
+            height: 150
+            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+            AssignedVariablesList {
+                        name: "indicator"
+                        title: qsTr("Apply indicator")
+                        singleVariable: true
+                        allowedColumns: ["nominal"]
+                    }
+        }
+    }
 
 }

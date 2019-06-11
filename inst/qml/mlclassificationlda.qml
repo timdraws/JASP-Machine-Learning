@@ -29,9 +29,9 @@ Form
     VariablesForm
     {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "ordinal"] }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")                                                                    }
-        AssignedVariablesList  { name: "indicator" ; title: qsTr("Apply indicator"); singleVariable: true; allowedColumns: ["nominal"]            }
+        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "nominalText"] }
+        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "ordinal"]                                         }
+        AssignedVariablesList  { name: "indicator" ; title: qsTr("Apply indicator"); singleVariable: true; allowedColumns: ["nominal"]; debug: true           }
     }
 
     GridLayout {
@@ -39,13 +39,13 @@ Form
 
         ColumnLayout {
 
-    GroupBox {
+    Group {
         title: qsTr("Tables")
 
         CheckBox { name: "classLdaConfTable";	    text: qsTr("Confusion matrix"); checked: true      }
-        CheckBox { name: "classLdaPriorTable";	    text: qsTr("Prior probabilities of groups")            }
+        CheckBox { name: "classLdaPriorTable";	    text: qsTr("Prior and posterior probabilities")            }
         CheckBox { name: "classLdaCoefloadTable";   text: qsTr("Coefficients linear discriminants")       }
-        CheckBox { name: "classLdaMeanTable";       text: qsTr("Means training data")             }
+        CheckBox { name: "classLdaMeanTable";       text: qsTr("Group means training data")             }
               }
 
 
@@ -53,15 +53,19 @@ Form
 
     ColumnLayout {
 
-    GroupBox {
+    Group {
         title: qsTr("Plots")
 
-        CheckBox { name: "categories"; text: qsTr("Observations on linear discriminants"); checked: true }
-        CheckBox { name: "roc"; text: qsTr("ROC") }
-        CheckBox { name: "linearDiscr"; text: qsTr("Data on linear discriminants") }
-        CheckBox { name: "errorRate"; text: qsTr("Error trade-off") }
-        CheckBox { name: "territorial"; text: qsTr("Territorial map") }
-        CheckBox { name: "partialPlot"; text: qsTr("Partial plots") }
+        CheckBox { name: "matrixplot"
+            text: qsTr("Discriminant matrix")
+
+            CheckBox { name: "plotDensities"; text:qsTr("Densities"); checked: true}
+            CheckBox { name: "plotStatistics"; text: qsTr("Scatter plots"); checked: true}}
+            //CheckBox { name: "roc"; text: qsTr("ROC") }
+            //CheckBox { name: "linearDiscr"; text: qsTr("Data on linear discriminants") }
+            //CheckBox { name: "errorRate"; text: qsTr("Error trade-off") }
+            //CheckBox { name: "territorial"; text: qsTr("Territorial map") }
+            //CheckBox { name: "partialPlot"; text: qsTr("Partial plots") }
              }
         }
 
@@ -78,11 +82,12 @@ Form
             RadioButtonGroup {
                 title: qsTr("Model optimization")
                 name: "modelOpt"
+                debug: true
                 RadioButton { text: qsTr("Leave-one-out cross validation") ; name: "validationLeaveOneOut"}
                 RadioButton { text: qsTr("None") ; name: "noOpt"; checked: true }
             }
 
-            GroupBox {
+            Group {
 
                 PercentField { name: "dataTrain"; text: qsTr("Data used for training:")       ; defaultValue: 80    }
                 DropDown {
@@ -98,8 +103,8 @@ Form
                     ]
                 }
 
-                CheckBox { name: "priorSetting"; text: qsTr("Set prior: "); childrenOnSameRow: true
-                    DoubleField { name: "manualprior"; defaultValue: 0.5; min: 0; max: 1; fieldWidth: 60 }}
+              //  CheckBox { name: "priorSetting"; text: qsTr("Set prior: "); childrenOnSameRow: true
+              //      DoubleField { name: "manualprior"; defaultValue: 0.5; min: 0; max: 1; fieldWidth: 60 }}
                 CheckBox { name: "seedBox"; text: qsTr("Set seed: "); childrenOnSameRow: true
                         DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
             }
@@ -140,22 +145,19 @@ Form
     ExpanderButton
     {
         title: qsTr("Predictions")
-
-        GroupBox {
+        debug: true
+        Group {
 
 
             RadioButtonGroup
             {
                 name: "applyModel"
-                RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-                RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-                RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator")       }
+                RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true; debug: true        }
+                RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target"); debug: true  }
+                RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); debug: true       }
 
                    }
                 }
-
-
     }
-
 }
 

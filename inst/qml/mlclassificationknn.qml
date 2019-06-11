@@ -28,7 +28,7 @@ Form {
             name: "target"
             title: qsTr("Target")
             singleVariable: true
-            allowedColumns: ["nominal"]
+            allowedColumns: ["nominal", "nominalText"]
         }
         AssignedVariablesList {
                     name: "predictors"
@@ -41,27 +41,6 @@ Form {
     GroupBox {
         title: qsTr("Tables")
         
-        //  RowLayout {
-        //    Label {  text: qsTr("From"); Layout.leftMargin: 20 }
-        //    TextField {
-        //        name: "predictionsFrom"
-        //        inputType: "integer"
-        //        validator: IntValidator {bottom: 1; top: 9999}
-        //        value: "1"
-        //        fieldWidth: 60
-        //    }
-        //    Label {  text: qsTr("to") }
-        //    TextField {
-        //        name: "predictionsTo"
-        //        inputType: "integer"
-        //        validator: IntValidator {bottom: 1; top: 9999}
-        //        value: "10"
-        //        fieldWidth: 60
-        //    }
-        // }
-        // CheckBox { text: qsTr("Predictions") ; name: "tablePredictions" ; checked: false}
-        // CheckBox { text: qsTr("Distances") ; name: "tableDistances"}
-        // CheckBox { text: qsTr("Weights") ; name: "tableWeights"}
         CheckBox { text: qsTr("Training error") ; name: "trainingAccuracy"}
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
           CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} }
@@ -137,6 +116,7 @@ Form {
     
     Section {
       text: qsTr("Predictions")
+      debug: true
       
           RadioButtonGroup
           {
