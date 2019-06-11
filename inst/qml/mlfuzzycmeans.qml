@@ -47,7 +47,7 @@ GroupBox {
 GroupBox {
     title: qsTr("Plots")
 
-    CheckBox { text: qsTr("Cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
+    CheckBox { text: qsTr("T-sne cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
     CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
 }
 

@@ -38,7 +38,7 @@ Form {
 
         CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
           CheckBox { text: qsTr("Within sum of squares") ; name: "tableClusterInfoWSS" ; checked: true}
-          CheckBox { text: qsTr("Silhouette scores") ; name: "tableClusterInfoSilhouette" ; checked: false}
+          CheckBox { text: qsTr("Silhouette score") ; name: "tableClusterInfoSilhouette" ; checked: false}
           CheckBox { text: qsTr("Centroids") ; name: "tableClusterInfoCentroids" ; checked: false}
           CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false}
           CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false}
@@ -48,7 +48,7 @@ Form {
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { text: qsTr("Cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
+        CheckBox { text: qsTr("T-sne cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
         CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
     }
 

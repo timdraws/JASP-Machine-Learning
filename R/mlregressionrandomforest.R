@@ -33,7 +33,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   .regRanForTable(      jaspResults, options, regRanForResults, ready)
   .regRanForVarImpTable(jaspResults, options, regRanForResults, ready)
   .regRanForApplyTable( jaspResults, options, regRanForResults, ready)
-  
+
   # Output plots
   if (ready) .regRanForPlotVarImpAcc(        jaspResults, options, regRanForResults)
   if (ready) .regRanForPlotVarImpPur(        jaspResults, options, regRanForResults)
@@ -58,23 +58,15 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 # Check for errors
 .regRanForErrorHandling <- function(dataset, options) {
   
-  # Error Check 1: 0 observations for the target variable
-  .hasErrors(
-    dataset = dataset, 
-    perform = "run", 
-    type = c('observations', 'variance', 'infinity'),
-    all.target = options$target,
-    observations.amount = '< 1',
-    exitAnalysisIfErrors = TRUE)
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
+  }
   
-  # Error Check 2: Apply indicator should not have any missing values (consist of 0s and 1s)
-  .hasErrors(
-    dataset = dataset, 
-    perform = "run", 
-    type = c('observations', 'variance', 'infinity'),
-    all.target = options$indicator,
-    observations.amount = nrow(dataset),
-    exitAnalysisIfErrors = TRUE)
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
   
   # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
   if (length(.v(options$predictors)) < 2L) {
@@ -99,32 +91,31 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   target <- which(colnames(dataset) == .v(options$target)) # target
   if(options$indicator != "") indicator <- which(colnames(dataset) == .v(options$indicator))
   
-  # Deal with NAs
-  if (sum(is.na(dataset)) > 0) {
+  # Deal with NAs: omit all rows that contain at least one missing value
+  if (options$applyModel == "applyImpute") { # save target NA observations to make predictions later
     
-    # If a predictor column consists of only NAs, exclude that column entirely
-    for (predictor in preds) {
-      if(sum(is.na(dataset[, predictor])) == nrow(dataset)) {
-        preds <- preds[-predictor]
-      } 
-    }
+    idxApply <- which(is.na(dataset[, target]))
+    predImpute <- cbind(dataset[idxApply, target, drop = FALSE], na.omit(dataset[idxApply, preds, drop = FALSE]))
     
-    # Option: apply na.roughfix or otherwise apply the default: na.omit (removes all rows that contain NA values)
-    if (options$missingValues == "roughfix") {
-      dataset <- randomForest::na.roughfix(dataset)
-    } else {
-      dataset <- na.omit(dataset)
-    }
+  } else {
+    
+    dataset <- na.omit(dataset) 
     
   }
   
-  # Splitting the data into training set, test set, and application set
-  if (options$indicator != "") {
+  # Splitting the data into training set, test set, and application set in case indicator is provided
+  if (options$applyModel == "applyIndicator" && options$indicator != "") {
     
-    indicatorDotV <- .v(indicator)
+    idxApply <- which(dataset[, indicator] == 1)
+    idxModel <- which(dataset[, indicator] == 0)
     
-    applyData <- dataset[as.logical(dataset[, indicatorDotV]), preds, drop = FALSE]
-    modelData <- dataset[-as.logical(dataset[, indicatorDotV]), -indicator, drop = FALSE]
+    applyData <- dataset[idxApply, , drop = FALSE]
+    modelData <- dataset[idxModel, , drop = FALSE]
+    
+  } else if (options$applyModel == "applyImpute") {
+    
+    applyData <- predImpute
+    modelData <- dataset[-idxApply, , drop = FALSE]
     
   } else {
     
@@ -137,14 +128,14 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   xTrain <- modelData[idxTrain, preds, drop = FALSE]
   yTrain <- modelData[idxTrain, target]
-  xTest <- modelData[idxTest, preds, drop = FALSE]
-  yTest <- modelData[idxTest, target]
+  xTest  <- modelData[idxTest, preds, drop = FALSE]
+  yTest  <- modelData[idxTest, target]
   
   # Run Random Forest
   results[["res"]] <- randomForest::randomForest(x = xTrain, y = yTrain, xtest = xTest, ytest = yTest,
                                                  ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
-                                                 sampsize = ceiling(options$bagFrac * nrow(dataset)), importance = TRUE,
-                                                 keep.forest = TRUE)
+                                                 sampsize = ceiling(options$bagFrac * nrow(dataset)),
+                                                 importance = TRUE, keep.forest = TRUE)
   
   results[["data"]] <- list(xTrain = xTrain, yTrain = yTrain, xTest = xTest, yTest = yTest)
   
@@ -166,9 +157,9 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   # Save results to state
   jaspResults[["stateregRanForResults"]] <- createJaspState(results)
-  jaspResults[["stateregRanForResults"]]$dependOn(options =c("target", "predictors", "indicator", "applyModel",
-                                                           "noOfTrees", "noOfPredictors", "numberOfPredictors",
-                                                           "dataTrain", "bagFrac", "seedBox", "seed"))
+  jaspResults[["stateregRanForResults"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                              "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                              "dataTrain", "bagFrac", "seedBox", "seed"))
   
   return(results)
 }
@@ -194,9 +185,9 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   regRanForTable <- createJaspTable(title = "Random Forest Regression Model Summary")
   jaspResults[["regRanForTable"]] <- regRanForTable
   jaspResults[["regRanForTable"]]$position <- 1
-  jaspResults[["regRanForTable"]]$dependOn(options =c("target", "predictors", "indicator", "applyModel",
-                                                    "noOfTrees", "noOfPredictors", "numberOfPredictors",
-                                                    "dataTrain", "bagFrac", "seedBox", "seed"))
+  jaspResults[["regRanForTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                       "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                       "dataTrain", "bagFrac", "seedBox", "seed"))
   
   # Add column info
   if(options$dataTrain < 1){
@@ -205,8 +196,8 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   regRanForTable$addColumnInfo(name = "oobMSE",  title = "OOB MSE"  , type = "number", format = "sf:4")
   regRanForTable$addColumnInfo(name = "ntrees",  title = "Trees"    , type = "integer")
   regRanForTable$addColumnInfo(name = "mtry"  ,  title = "m"        , type = "integer")
-  regRanForTable$addColumnInfo(name = "nTrain",  title = "n (Train)", type = "integer")
-  regRanForTable$addColumnInfo(name = "nTest" ,  title = "n (Test)" , type = "integer")
+  regRanForTable$addColumnInfo(name = "nTrain",  title = "n(Train)", type = "integer")
+  regRanForTable$addColumnInfo(name = "nTest" ,  title = "n(Test)" , type = "integer")
   
   # Add data per column
   regRanForTable[["testMSE"]] <- if (ready) 
@@ -226,8 +217,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   regRanForVarImpTable <- createJaspTable(title = "Variable Importance")
   jaspResults[["regRanForVarImpTable"]] <- regRanForVarImpTable
   jaspResults[["regRanForVarImpTable"]]$position <- 2
-  jaspResults[["regRanForVarImpTable"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["regRanForVarImpTable"]]$dependOn(options ="regRanForVarImpTable")
+  jaspResults[["regRanForVarImpTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                             "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                             "dataTrain", "bagFrac", "seedBox", "seed",
+                                                             "regRanForVarImpTable"))
   
   # Add column info
   regRanForVarImpTable$addColumnInfo(name = "predictor",  title = " ", type = "string")
@@ -250,8 +243,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   regRanForApplyTable <- createJaspTable(title = "Random Forest Model Predictions")
   jaspResults[["regRanForApplyTable"]] <- regRanForApplyTable
   jaspResults[["regRanForApplyTable"]]$position <- 3
-  jaspResults[["regRanForApplyTable"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["regRanForApplyTable"]]$dependOn(options ="applyModel")
+  jaspResults[["regRanForApplyTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                            "dataTrain", "bagFrac", "seedBox", "seed",
+                                                            "applyModel"))
   
   # Add column info
   regRanForApplyTable$addColumnInfo(name = "row",  title = "Row", type = "integer")
@@ -279,8 +274,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   jaspResults[["regRanForPlotVarImpAcc"]] <- regRanForPlotVarImpAcc
   jaspResults[["regRanForPlotVarImpAcc"]]$position <- 4
-  jaspResults[["regRanForPlotVarImpAcc"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["regRanForPlotVarImpAcc"]]$dependOn(options ="plotVarImpAcc")
+  jaspResults[["regRanForPlotVarImpAcc"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                               "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                               "dataTrain", "bagFrac", "seedBox", "seed",
+                                                               "plotVarImpAcc"))
 }
 
 .regRanForPlotVarImpPur <- function(jaspResults, options, regRanForResults, ready) {
@@ -300,8 +297,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   jaspResults[["regRanForPlotVarImpPur"]] <- regRanForPlotVarImpPur
   jaspResults[["regRanForPlotVarImpPur"]]$position <- 5
-  jaspResults[["regRanForPlotVarImpPur"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["regRanForPlotVarImpPur"]]$dependOn(options ="plotVarImpPur")
+  jaspResults[["regRanForPlotVarImpPur"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                               "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                               "dataTrain", "bagFrac", "seedBox", "seed",
+                                                               "plotVarImpPur"))
 }
 
 .regRanForPlotTreesVsModelError <- function(jaspResults, options, regRanForResults, ready) {
@@ -324,8 +323,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
   jaspResults[["plotTreesVsModelError"]]$position <- 6
-  jaspResults[["plotTreesVsModelError"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["plotTreesVsModelError"]]$dependOn(options ="plotTreesVsModelError")
+  jaspResults[["plotTreesVsModelError"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                              "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                              "dataTrain", "bagFrac", "seedBox", "seed",
+                                                              "plotTreesVsModelError"))
   
 }
 
@@ -358,6 +359,8 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
   jaspResults[["plotPredPerformance"]] <- plotPredPerformance
   jaspResults[["plotPredPerformance"]]$position <- 7
-  jaspResults[["plotPredPerformance"]]$dependOn(optionsFromObject =jaspResults[["regRanForTable"]])
-  jaspResults[["plotPredPerformance"]]$dependOn(options ="plotPredPerformance")
+  jaspResults[["plotPredPerformance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                            "dataTrain", "bagFrac", "seedBox", "seed",
+                                                            "plotPredPerformance"))
 }

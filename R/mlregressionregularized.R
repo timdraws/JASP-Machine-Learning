@@ -35,8 +35,9 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   .regRegApplyTable(jaspResults, options, regRegResults, ready)
   
   # Output plots
-  if (ready) .regRegPredPerfPlot(jaspResults, options, regRegResults)
+  if (ready) .regRegLarsPlot(    jaspResults, options, regRegResults)
   if (ready) .regRegCVLambdaPlot(jaspResults, options, regRegResults)
+  if (ready) .regRegPredPerfPlot(jaspResults, options, regRegResults)
   
   return()
 }
@@ -57,14 +58,19 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
 # Error checking
 .regRegErrorHandling <- function(dataset, options) {
   
-  # Error Check 1: There should be at least 5 observations in the target variable
-  .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-             all.target = options$target, observations.amount = '< 5', exitAnalysisIfErrors = TRUE)
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
+  }
   
-  # Error Check 2: Apply indicator should not have any missing values (consist of 0s and 1s)
-  if (options$indicator != "") {
-    .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-               all.target = options$indicator, observations.amount = nrow(dataset), exitAnalysisIfErrors = TRUE)
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
+  
+  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
+  if (length(.v(options$predictors)) < 2L) {
+    JASP:::.quitAnalysis("Please provide at least 2 predictors.")
   }
   
 }
@@ -170,7 +176,8 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   # Predictive performance
   results[["predPerf"]] <- data.frame(pred = as.numeric(modPred), obs = as.numeric(testTarget))
-  results[["testMSE"]] <- mean((modPred - testTarget)^2)
+  results[["testMSE"]]  <- mean((modPred - testTarget)^2)
+  results[["testR2"]]   <- round(cor(modPred, testTarget)^2, 2)
   
   # Coefficients table
   results[["coefs"]] <- coef(results$res, s = results$lambda)
@@ -189,9 +196,9 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   # Save results to state
   jaspResults[["stateRegRegResults"]] <- createJaspState(results)
-  jaspResults[["stateRegRegResults"]]$dependOn(options =c("target", "predictors", "indicator", "weights", "penalty",
-                                                        "applyModel", "alpha", "thresh", "dataTrain", "standardize",
-                                                        "intercept", "shrinkage", "lambda", "seedBox", "seed"))
+  jaspResults[["stateRegRegResults"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                           "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                           "intercept", "shrinkage", "lambda", "seedBox", "seed"))
   
   return(results)
 }
@@ -223,16 +230,20 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   if (!is.null(jaspResults[["regRegTable"]])) return()
   
   # Create table and bind to jaspResults
-  regRegTable                  <- createJaspTable(title = "Model Summary")
+  regRegTable                  <- createJaspTable(title = "Regularized Linear Regression Model Summary")
   regRegTable$position         <- 1
   jaspResults[["regRegTable"]] <- regRegTable
-  jaspResults[["regRegTable"]]$dependOn(options =c("target", "predictors", "indicator", "weights", "penalty",
-                                                 "applyModel", "alpha", "thresh", "dataTrain", "standardize",
-                                                 "intercept", "shrinkage", "lambda", "seedBox", "seed"))
+  jaspResults[["regRegTable"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                    "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                    "intercept", "shrinkage", "lambda", "seedBox", "seed"))
   
   # Add column info
   if (options$dataTrain < 1) {
     regRegTable$addColumnInfo(name = "testMSE",  title = "Test Set MSE", type = "number", format = "sf:4")
+  }
+  
+  if (options$dataTrain < 1) {
+    regRegTable$addColumnInfo(name = "testR2",  title = "Test Set R\u00B2", type = "number", format = "sf:4")
   }
   
   if (options$shrinkage == "auto") {
@@ -245,17 +256,21 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
     regRegTable$addColumnInfo(name = "alpha",  title = "α", type = "number", format = "sf:4") 
   }
   
-  regRegTable$addColumnInfo(name = "lambda",  title = "λ", type = "number", format = "sf:4")
-  regRegTable$addColumnInfo(name = "nTrain",  title = "n (Train)", type = "integer")
-  regRegTable$addColumnInfo(name = "nTest",  title = "n (Test)", type = "integer")
+  regRegTable$addColumnInfo(name = "lambda",  title = "\u03BB", type = "number", format = "sf:4")
+  regRegTable$addColumnInfo(name = "nTrain",  title = "n(Train)", type = "integer")
+  regRegTable$addColumnInfo(name = "nTest",  title = "n(Test)", type = "integer")
   
   if (options$lambda == 0) {
-    regRegTable$addFootnote("With λ equal to 0, linear regression is performed.", symbol="<i>Note.</i>") 
+    regRegTable$addFootnote("With \u03BB equal to 0, linear regression is performed.", symbol="<i>Note.</i>") 
   }
   
   # Add data per column
   if (options$dataTrain < 1){
     regRegTable[["testMSE"]]  <- if (ready) regRegResults$testMSE else "."
+  }
+  
+  if (options$dataTrain < 1){
+    regRegTable[["testR2"]]  <- if (ready) regRegResults$testR2 else "."
   }
   
   if (options$shrinkage == "auto") {
@@ -264,7 +279,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   regRegTable[["penalty"]] <- if (ready) regRegResults$spec$penalty else "."
   
-  if (options$penalty == "elasticNet") regRegTable[["alpha"]] <- if (ready) regRegResults$spec$alphaElastic else "."
+  if (options$penalty == "elasticNet") regRegTable[["alpha"]] <- if (ready) options$alpha else "."
   
   if (options$shrinkage == "manual") {
     regRegTable[["lambda"]]  <- if (ready) regRegResults$spec$lambda    else "." 
@@ -286,8 +301,10 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   regRegCoefTable                  <- createJaspTable(title = "Regression Coefficients")
   regRegCoefTable$position         <- 2
   jaspResults[["regRegCoefTable"]] <- regRegCoefTable
-  jaspResults[["regRegCoefTable"]]$dependOn(optionsFromObject =jaspResults[["regRegTable"]])
-  jaspResults[["regRegCoefTable"]]$dependOn(options ="regRegCoefTable")
+  jaspResults[["regRegCoefTable"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                        "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                        "intercept", "shrinkage", "lambda", "seedBox", "seed",
+                                                        "regRegCoefTable"))
   
   # Add column info
   regRegCoefTable$addColumnInfo(name = "var",  title = " ", type = "string")
@@ -319,8 +336,10 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   regRegApplyTable                  <- createJaspTable(title = "Regularized Regression Model Predictions")
   regRegApplyTable$position         <- 3
   jaspResults[["regRegApplyTable"]] <- regRegApplyTable
-  jaspResults[["regRegApplyTable"]]$dependOn(optionsFromObject =jaspResults[["regRegTable"]])
-  jaspResults[["regRegApplyTable"]]$dependOn(options ="applyModel")
+  jaspResults[["regRegApplyTable"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                         "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                         "intercept", "shrinkage", "lambda", "seedBox", "seed",
+                                                         "applyModel"))
   
   # Add column info
   regRegApplyTable$addColumnInfo(name = "case",  title = "Case", type = "integer")
@@ -332,6 +351,78 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
 }
 
+.regRegLarsPlot <- function(jaspResults, options, regRegResults, ready) {
+  if (!options$plotLars) return()
+  
+  if (options$legendLars) legPos <- "right" else legPos <- "none"
+  
+  # regRegLarsPlot <- plot(regRegResults$res$glmnet.fit, "norm", label = TRUE)
+  
+  object       <- regRegResults$res$glmnet.fit
+  coefs        <- as.matrix(regRegResults$res$glmnet.fit$beta)
+  d            <- stack(as.data.frame(coefs))
+  d$ind        <- rep(.unv(rownames(coefs)), (nrow(d) / nrow(coefs)))
+  d$lambda     <- rep(object$lambda, each = nrow(coefs))
+  limitsLambda <- c(min(pretty(d$lambda)), max(pretty(d$lambda)))
+  limitsCoefs  <- c(min(pretty(d$values)), max(pretty(d$values)))
+
+  regRegLarsPlot <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = d, mapping = ggplot2::aes(x = lambda, y = values, colour = ind), show.legend = TRUE) +
+      ggplot2::geom_line() +
+      ggplot2::scale_x_continuous("\u03BB", limits = limitsLambda, breaks = pretty(limitsLambda)) +
+      ggplot2::scale_y_continuous("Coefficients", limits = limitsCoefs, breaks = pretty(limitsCoefs))
+    , legend.position = legPos, legend.title = ""
+  )
+  
+  # Create plot and bind to jaspResults
+  regRegLarsPlot <- createJaspPlot(plot = regRegLarsPlot, title = "Variable Trace Plot", width = 400, height = 400)
+  
+  jaspResults[["regRegLarsPlot"]] <- regRegLarsPlot
+  regRegLarsPlot$position         <- 4
+  jaspResults[["regRegLarsPlot"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                       "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                       "intercept", "shrinkage", "lambda", "seedBox", "seed",
+                                                       "plotLars"))
+}
+
+.regRegCVLambdaPlot <- function(jaspResults, options, regRegResults, ready) {
+  if (!options$plotCVLambda) return()
+  
+  if (options$legendCVLambda) legPos <- "top" else legPos <- "none"
+  
+  limitsLambda <- c(min(pretty(regRegResults$cvMSELambda$lambda)), max(pretty(regRegResults$cvMSELambda$lambda)))
+  limitsMSE    <- c(min(pretty(regRegResults$cvMSELambda$MSE - regRegResults$cvMSELambda$sd)),
+                    max(pretty(regRegResults$cvMSELambda$MSE + regRegResults$cvMSELambda$sd)))
+  
+  regRegCVLambdaPlot <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = regRegResults$cvMSELambda, mapping = ggplot2::aes(x = lambda, y = MSE)) +
+      ggplot2::geom_ribbon(data = regRegResults$cvMSELambda, mapping = ggplot2::aes(ymin = MSE - sd, ymax = MSE + sd),
+                           fill = "grey90") +
+      ggplot2::geom_line(size = 1, colour = "black") +
+      ggplot2::scale_x_continuous("\u03BB", limits = limitsLambda, breaks = pretty(limitsLambda)) +
+      ggplot2::scale_y_continuous("CV Mean Squared Error", limits = limitsMSE, breaks = pretty(limitsMSE)) +
+      ggplot2::geom_vline(
+        ggplot2::aes(xintercept = regRegResults$res$lambda.min, color = "lambdaMin"), linetype = "dashed") +
+      ggplot2::geom_vline(
+        ggplot2::aes(xintercept = regRegResults$res$lambda.1se, color = "lambda1se"), linetype = "dashed") +
+      ggplot2::scale_color_manual(name = "", values = c(lambdaMin = "#14a1e3", lambda1se = "#99c454"),
+                                  labels = c(lambdaMin = "Min. CV MSE", lambda1se = "\u03BB 1 SE"))
+    ,
+    legend.position = legPos
+    )
+  
+  # Create plot and bind to jaspResults
+  regRegCVLambdaPlot <- createJaspPlot(plot = regRegCVLambdaPlot, title = "Lambda Evaluation",
+                                       width = 400, height = 400)
+  
+  jaspResults[["regRegCVLambdaPlot"]] <- regRegCVLambdaPlot
+  regRegCVLambdaPlot$position         <- 5
+  jaspResults[["regRegCVLambdaPlot"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                           "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                           "intercept", "shrinkage", "lambda", "seedBox", "seed",
+                                                           "plotCVLambda"))
+}
+
 .regRegPredPerfPlot <- function(jaspResults, options, regRegResults, ready) {
   if (!options$plotPredPerf) return()
   
@@ -340,54 +431,25 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   regRegPredPerfPlot <- JASPgraphs::themeJasp(
     ggplot2::ggplot(data = regRegResults$predPerf, mapping = ggplot2::aes(x = obs, y = pred)) +
-      ggplot2::geom_point(size = 3) +
+      JASPgraphs::geom_point() +
       ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y),
                          col = "darkred", size = 1) +
-      ggplot2::scale_x_continuous("Observed" , limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6)) +
-      ggplot2::scale_y_continuous("Predicted", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6))
+      ggplot2::scale_x_continuous("Observed" , limits = limits, breaks = pretty(limits)) +
+      ggplot2::scale_y_continuous("Predicted", limits = limits, breaks = pretty(limits))
   )
   
-  regRegPredPerfPlot <- createJaspPlot(plot = regRegPredPerfPlot, title = "Predictive Performance on Test Set",
-                                       width = 400, height = 400)
+  if (options$dataTrain < 1) {
+    title <- "Predictive Performance on Test Set"
+  } else {
+    title <- "Predictive Performance on Training Set"
+  }
+
+  regRegPredPerfPlot <- createJaspPlot(plot = regRegPredPerfPlot, title = title, width = 400, height = 400)
   
   jaspResults[["regRegPredPerfPlot"]] <- regRegPredPerfPlot
-  regRegPredPerfPlot$position         <- 4
-  jaspResults[["regRegPredPerfPlot"]]$dependOn(optionsFromObject =jaspResults[["regRegTable"]])
-  jaspResults[["regRegPredPerfPlot"]]$dependOn(options ="plotPredPerf")
-}
-
-.regRegCVLambdaPlot <- function(jaspResults, options, regRegResults, ready) {
-  if (!options$plotCVLambda) return()
-  
-  limitsLambda <- c(min(floor(regRegResults$cvMSELambda$lambda)), max(ceiling(regRegResults$cvMSELambda$lambda)))
-  limitsMSE <- c(min(pretty(regRegResults$cvMSELambda$MSE - regRegResults$cvMSELambda$sd)), 
-                 max(pretty(regRegResults$cvMSELambda$MSE + regRegResults$cvMSELambda$sd)))
-  
-  regRegCVLambdaPlot <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(data = regRegResults$cvMSELambda, mapping = ggplot2::aes(x = lambda, y = MSE)) +
-      ggplot2::geom_ribbon(data = regRegResults$cvMSELambda, mapping = ggplot2::aes(ymin = MSE - sd, ymax = MSE + sd),
-                           fill = "grey90") +
-      ggplot2::geom_line(size = 1, colour = "black") +
-      ggplot2::scale_x_continuous("λ", limits = limitsLambda, breaks = pretty(limitsLambda)) +
-      ggplot2::scale_y_continuous("Mean Squared Error", limits = limitsMSE, labels = scales::comma,
-                                  breaks = pretty(limitsMSE)) +
-      ggplot2::geom_vline(
-        ggplot2::aes(xintercept = regRegResults$res$lambda.min, color = "lambdaMin"), linetype = "dashed") +
-      ggplot2::geom_vline(
-        ggplot2::aes(xintercept = regRegResults$res$lambda.1se, color = "lambda1se"), linetype = "dashed") +
-      ggplot2::scale_color_manual(name = "Optimal λ", values = c(lambdaMin = "#14a1e3", lambda1se = "#99c454"),
-                                  labels = c(lambdaMin = "Min. CV MSE", lambda1se = "Largest λ within 1 SE")),
-    legend.position = "right"
-    )
-  
-  # Create plot and bind to jaspResults
-  regRegCVLambdaPlot <- createJaspPlot(plot = regRegCVLambdaPlot, title = "Lambda Evaluation",
-                                       width = 600, height = 400)
-  
-  jaspResults[["regRegCVLambdaPlot"]] <- regRegCVLambdaPlot
-  regRegCVLambdaPlot$position         <- 5
-  jaspResults[["regRegCVLambdaPlot"]]$dependOn(optionsFromObject =jaspResults[["regRegTable"]])
-  jaspResults[["regRegCVLambdaPlot"]]$dependOn(options ="plotCVLambda")
+  regRegPredPerfPlot$position         <- 6
+  jaspResults[["regRegPredPerfPlot"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
+                                                           "applyModel", "alpha", "thresh", "dataTrain", "standardize",
+                                                           "intercept", "shrinkage", "lambda", "seedBox", "seed",
+                                                           "plotPredPerf"))
 }

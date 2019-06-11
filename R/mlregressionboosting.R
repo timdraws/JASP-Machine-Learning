@@ -58,26 +58,20 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
 # Error checking
 .regBoostErrorHandling <- function(dataset, options) {
   
-  # Error Check 1: There should be at least 5 observations in the target variable
-  .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-             all.target = options$target, observations.amount = '< 5', exitAnalysisIfErrors = TRUE)
-  
-  # Error Check 2: Apply indicator should not have any missing values (consist of 0s and 1s)
-  if (options$indicator != "") {
-    .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-               all.target = options$indicator, observations.amount = nrow(dataset), exitAnalysisIfErrors = TRUE)
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
   }
   
-  # Error Check 3: There should be at least 2 predictors; otherwise gbm() complains
-  if (options$target != "" && ncol(dataset) < 3L){
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
+  
+  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
+  if (length(.v(options$predictors)) < 2L) {
     JASP:::.quitAnalysis("Please provide at least 2 predictors.")
   }
-  
-  # Error Check 5: If target values should be imputed, there have to be missing values in the target
-  # if (options$applyModel == "applyImpute" && sum(is.na(dataset[, .v(options$target)])) < 1) {
-  #   JASP:::.quitAnalysis("To apply model to missing values in target, please provide observations that have missing 
-  #   values in the target variable.")
-  # }
   
 }
 
@@ -91,7 +85,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   results[["spec"]] <- .regBoostCalcSpecs(dataset, options)
   
   # Prepare data
-  preds <- which(colnames(dataset) %in% .v(options$predictors)) # predictors
+  preds  <- which(colnames(dataset) %in% .v(options$predictors)) # predictors
   target <- which(colnames(dataset) == .v(options$target)) # target
   if(options$indicator != "") indicator <- which(colnames(dataset) == .v(options$indicator))
   
@@ -130,24 +124,24 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   }
   
   # Set seed	
-  if (options$seedBox == "manual") set.seed(options$seed) else set.seed(Sys.time())
+  if (options$seedBox) set.seed(options$seed)
   
   # Compile training and test data
-  idxTrain <- sample(1:nrow(modelData), floor(results$spec$dataTrain * nrow(modelData)))
-  idxTest <- (1:nrow(modelData))[-idxTrain]
+  idxTrain <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
+  idxTest  <- (1:nrow(modelData))[-idxTrain]
   
-  trainData <- modelData[idxTrain, c(preds, target), drop = FALSE]
-  testData <- modelData[idxTest, preds, drop = FALSE]
+  trainData  <- modelData[idxTrain, c(preds, target), drop = FALSE]
+  testData   <- modelData[idxTest, preds, drop = FALSE]
   testTarget <- as.numeric(modelData[idxTest, target])
   
   # Prepare Boosting
   formula <- as.formula(paste(.v(options$target), "~", paste(.v(options$predictors), collapse = " + ")))
   
   # Run Boosting
-  results[["res"]] <- gbm::gbm(formula = formula, data = trainData, n.trees = results$spec$noOfTrees,
-                               shrinkage = results$spec$shrinkage, interaction.depth = results$spec$int.depth,
-                               cv.folds = results$spec$modelOptimization, bag.fraction = results$spec$bag.fraction,
-                               n.minobsinnode = results$spec$nNode, distribution = results$spec$dist)
+  results[["res"]] <- gbm::gbm(formula = formula, data = trainData, n.trees = options$noOfTrees,
+                               shrinkage = options$shrinkage, interaction.depth = options$int.depth,
+                               cv.folds = results$spec$modelOptimization, bag.fraction = options$bag.fraction,
+                               n.minobsinnode = options$nNode, distribution = results$spec$dist)
   
   results[["data"]] <- list(trainData = trainData, testData = testData, testTarget = testTarget)
   results[["relInf"]] <- summary(results$res, plot = FALSE)
@@ -157,7 +151,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   if (options$modelOptimization != "noOpt") {
     results[["optTrees"]] <- gbm::gbm.perf(results$res, plot.it = FALSE, method = results$method)[1]
   } else {
-    results[["optTrees"]] <- results$spec$noOfTrees
+    results[["optTrees"]] <- options$noOfTrees
   }
   
   # Derive test set predictions and calculate test error rate
@@ -179,36 +173,16 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   
   # Save results to state
   jaspResults[["stateClassBoostResults"]] <- createJaspState(results)
-  jaspResults[["stateClassBoostResults"]]$dependOn(options =c("target", "predictors", "indicator", "applyModel",
-                                                            "noOfTrees", "numberOfTrees", "shrinkage", "shrinkPar",
-                                                            "int.depth", "int.depth.parameter", "modelOptimization",
-                                                            "cvFolds", "nNode", "nNodeSpec", "dataTrain",
-                                                            "percentageDataTraining", "bag.fraction",
-                                                            "bag.fraction.spec", "dist", "seedBox", "seed", "NAs"))
+  jaspResults[["stateClassBoostResults"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                               "noOfTrees", "shrinkage", "int.depth",
+                                                               "modelOptimization", "cvFolds", "nNode", "dataTrain",
+                                                               "dataTrain", "bag.fraction", "dist", "seedBox", "seed"))
   
   return(results)
 }
 
 .regBoostCalcSpecs <- function(modelData, options) {
   specs <- list()
-  
-  # Setting the number of trees
-  if (options$noOfTrees == "manual") specs$noOfTrees <- as.integer(options$numberOfTrees) else specs$noOfTrees <- 100
-  
-  # Setting the number of variables considered at each split
-  if (options$shrinkage == "manual") specs$shrinkage <- options$shrinkPar else specs$shrinkage <- .1
-  
-  # What percentage of the data should be used for training?
-  if (options$int.depth == "manual") specs$int.depth <- options$int.depth.parameter else specs$int.depth <- 1
-  
-  # What percentage of the data should be used for training?
-  if (options$dataTrain == "manual") specs$dataTrain <- options$percentageDataTraining else specs$dataTrain <- .8
-  
-  # What percentage of the training data should be used per tree?
-  if (options$bag.fraction == "manual") specs$bag.fraction <- options$bag.fraction.spec else specs$bag.fraction <- .5
-  
-  # Minimum number of observations in the terminal nodes of every tree
-  if (options$nNode == "manual") specs$nNode <- options$nNodeSpec else specs$nNode <- 10
   
   # Should cross-validation be performed?
   if (options$modelOptimization == "cv") specs$modelOptimization <- options$cvFolds else specs$modelOptimization <- 0
@@ -241,14 +215,13 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table and bind to jaspResults
   regBoostTable <- createJaspTable(title = "Boosting Regression Model Summary")
   jaspResults[["regBoostTable"]] <- regBoostTable
-  jaspResults[["regBoostTable"]]$dependOn(options =c("target", "predictors", "indicator", "applyModel", "noOfTrees",
-                                                   "numberOfTrees", "shrinkage", "shrinkPar", "int.depth",
-                                                   "int.depth.parameter", "modelOptimization", "cvFolds", "nNode",
-                                                   "nNodeSpec", "dataTrain", "percentageDataTraining", "bag.fraction",
-                                                   "bag.fraction.spec", "dist", "seedBox", "seed", "NAs"))
+  jaspResults[["regBoostTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                      "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
+                                                      "cvFolds", "nNode", "dataTrain", "dataTrain", "bag.fraction",
+                                                      "dist", "seedBox", "seed"))
   
   # Add column info
-  if(options$dataTrain == "auto" || options$percentageDataTraining < 1){
+  if(options$dataTrain < 1){
     regBoostTable$addColumnInfo(name = "testError" ,  title = "Test Set MSE"  , type = "number", format = "sf:4")
   }
   regBoostTable$addColumnInfo(name = "ntrees"      ,  title = "Trees"         , type = "integer"                )
@@ -259,13 +232,13 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regBoostTable$addColumnInfo(name = "ntest"       ,  title = "n (Test)"      , type = "integer"                )
   
   # Add data per column
-  if(options$dataTrain == "auto" || options$percentageDataTraining < 1){
+  if(options$dataTrain < 1){
     regBoostTable[["testError"]]  <- if (ready) regBoostResults$testError else "."
   }
   regBoostTable[["ntrees"]]       <- if (ready) regBoostResults$optTrees                else "."
   regBoostTable[["shrinkage"]]    <- if (ready) regBoostResults$res$shrinkage           else "."
   regBoostTable[["intDepth"]]     <- if (ready) regBoostResults$res$interaction.depth   else "."
-  regBoostTable[["minObsInNode"]] <- if (ready) regBoostResults$spec$nNode              else "."
+  regBoostTable[["minObsInNode"]] <- if (ready) options$nNode              else "."
   regBoostTable[["ntrain"]]       <- if (ready) regBoostResults$res$nTrain              else "."
   regBoostTable[["ntest"]]        <- if (ready) length(regBoostResults$data$testTarget) else "."
   
@@ -277,8 +250,11 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table
   regBoostRelInfTable <- createJaspTable(title = "Relative Influence")
   jaspResults[["regBoostRelInfTable"]] <- regBoostRelInfTable
-  jaspResults[["regBoostRelInfTable"]]$dependOn(optionsFromObject =jaspResults[["regBoostTable"]])
-  jaspResults[["regBoostRelInfTable"]]$dependOn(options ="regBoostRelInfTable")
+  jaspResults[["regBoostRelInfTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "shrinkage", "int.depth",
+                                                            "modelOptimization", "cvFolds", "nNode", "dataTrain",
+                                                            "dataTrain", "bag.fraction", "dist", "seedBox", "seed",
+                                                            "regBoostRelInfTable"))
   
   # Add column info
   regBoostRelInfTable$addColumnInfo(name = "predictor",  title = " ", type = "string")
@@ -296,8 +272,11 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table and bind to jaspResults
   regBoostApplyTable <- createJaspTable(title = "Boosting Model Predictions")
   jaspResults[["regBoostApplyTable"]] <- regBoostApplyTable
-  jaspResults[["regBoostApplyTable"]]$dependOn(optionsFromObject =jaspResults[["regBoostTable"]])
-  jaspResults[["regBoostApplyTable"]]$dependOn(options ="applyModel")
+  jaspResults[["regBoostApplyTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                           "noOfTrees", "shrinkage", "int.depth",
+                                                           "modelOptimization", "cvFolds", "nNode", "dataTrain",
+                                                           "dataTrain", "bag.fraction", "dist", "seedBox", "seed",
+                                                           "applyModel"))
   
   # Add column info
   regBoostApplyTable$addColumnInfo(name = "case",  title = "Case"      , type = "integer")
@@ -323,7 +302,10 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regBoostRelInfPlot <- createJaspPlot(plot = relInfPlot, title = "Relative Influence Plot",
                                          width = 500, height = 20 * nrow(regBoostResults$relInf) + 60)
   jaspResults[["regBoostRelInfPlot"]] <- regBoostRelInfPlot
-  jaspResults[["regBoostRelInfPlot"]]$dependOn(options ="plotRelInf")
+  jaspResults[["regBoostRelInfPlot"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                           "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
+                                                           "cvFolds", "nNode", "dataTrain", "dataTrain", 
+                                                           "bag.fraction", "dist", "seedBox", "seed", "plotRelInf"))
 }
 
 .regBoostPlotDeviance <- function(jaspResults, options, regBoostResults, ready, analysisOptions) {
@@ -348,8 +330,11 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create plot and bind to jaspResults
   plotDeviance <- createJaspPlot(plot = plotDeviance, title = "Deviance Plot", width = 500, height = 400)
   jaspResults[["plotDeviance"]] <- plotDeviance
-  jaspResults[["plotDeviance"]]$dependOn(optionsFromObject =jaspResults[["regBoostTable"]])
-  jaspResults[["plotDeviance"]]$dependOn(options ="plotDeviance")
+  jaspResults[["plotDeviance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                     "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
+                                                     "cvFolds", "nNode", "dataTrain", "dataTrain", 
+                                                     "bag.fraction", "dist", "seedBox", "seed", "plotDeviance"))
+  
 }
 
 .regBoostPlotOOBChangeDev <- function(jaspResults, options, regBoostResults, ready, analysisOptions) {
@@ -370,8 +355,11 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regBoostPlotOOBChangeDev <- createJaspPlot(plot = plotOOBChangeDev,title = "OOB Improvement Plot",
                                                width = 400, height = 400)
   jaspResults[["regBoostPlotOOBChangeDev"]] <- regBoostPlotOOBChangeDev
-  jaspResults[["regBoostPlotOOBChangeDev"]]$dependOn(optionsFromObject =jaspResults[["regBoostTable"]])
-  jaspResults[["regBoostPlotOOBChangeDev"]]$dependOn(options ="plotOOBChangeDev")
+  jaspResults[["regBoostPlotOOBChangeDev"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                                 "noOfTrees", "shrinkage", "int.depth",
+                                                                 "modelOptimization", "cvFolds", "nNode", "dataTrain",
+                                                                 "dataTrain", "bag.fraction", "dist", "seedBox", 
+                                                                 "seed", "plotOOBChangeDev"))
 }
 
 .regBoostPlotPredPerformance <- function(jaspResults, options, regBoostResults, ready) {
@@ -397,6 +385,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   
   jaspResults[["plotPredPerformance"]] <- plotPredPerformance
   jaspResults[["plotPredPerformance"]]$position <- 7
-  jaspResults[["plotPredPerformance"]]$dependOn(optionsFromObject =jaspResults[["regBoostTable"]])
-  jaspResults[["plotPredPerformance"]]$dependOn(options ="plotPredPerformance")
+  jaspResults[["plotPredPerformance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "shrinkage", "int.depth",
+                                                            "modelOptimization", "cvFolds", "nNode", "dataTrain",
+                                                            "dataTrain", "bag.fraction", "dist", "seedBox", 
+                                                            "seed", "plotPredPerformance"))
 }

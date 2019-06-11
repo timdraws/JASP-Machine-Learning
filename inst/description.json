@@ -20,17 +20,17 @@
 				"icon": 							"analysis-ml-regression.svg"
 			},
 			{
-				"title":							"Boosting",
+				"title":							"Boosting Regression",
 				"qml":								"mlregressionboosting.qml",
 				"function":							"MLRegressionBoosting"
 			},
 			{
-				"title":							"K-Nearest Neighbors",
+				"title":							"K-Nearest Neighbors Regression",
 				"qml":								"mlregressionknn.qml",
 				"function":							"MLRegressionKNN"
 			},
 			{
-				"title":							"Random Forest",
+				"title":							"Random Forest Regression",
 				"qml":								"mlregressionrandomforest.qml",
 				"function":							"MLRegressionRandomForest"
 			},
@@ -44,22 +44,22 @@
 				"icon": 							"analysis-ml-classification.svg"
 			},
 			{
-				"title":							"Boosting",
+				"title":							"Boosting Classification",
 				"qml":								"mlclassificationboosting.qml",
 				"function":							"MLClassificationBoosting"
 			},
 			{
-				"title":							"K-Nearest Neighbors",
+				"title":							"K-Nearest Neighbors Classification",
 				"qml":								"mlclassificationknn.qml",
 				"function":							"MLClassificationKNN"
 			},
 			{
-				"title": 							"Linear Discriminant Analysis",
+				"title": 							"Linear Discriminant Classification",
 				"qml": 								"mlclassificationlda.qml",
 				"function": 						"MLClassificationLDA"
 			},
 			{
-				"title":							"Random Forest",
+				"title":							"Random Forest Classification",
 				"qml":								"mlclassificationrandomforest.qml",
 				"function":							"MLClassificationRandomForest"
 			},
@@ -68,22 +68,22 @@
 				"icon": 							"analysis-ml-clustering.svg"
 			},
 			{
-				"title":							"Density based",
+				"title":							"Density-based Clustering",
 				"qml":								"mlclusteringdensitybased.qml",
 				"function":							"MLClusteringDensityBased"
 			},
 			{
-				"title":							"Fuzzy c-means",
+				"title":							"Fuzzy c-means Clustering",
 				"qml":								"mlfuzzycmeans.qml",
 				"function":							"MLFuzzyCMeans"
 			},
 			{
-				"title":							"Hierarchical",
+				"title":							"Hierarchical Clustering",
 				"qml":								"mlclusteringhier.qml",
 				"function":							"MLClusteringHier"
 			},
 			{
-				"title":							"K-Means",
+				"title":							"K-Means Clustering",
 				"qml":								"mlclusteringkmeans.qml",
 				"function":							"MLClusteringKMeans"
 			}

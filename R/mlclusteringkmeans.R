@@ -287,9 +287,9 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     clusterInfoTable$addColumnInfo(name = 'cluster', title = 'Cluster', type = 'integer')
     clusterInfoTable$addColumnInfo(name = 'size', title = 'Size', type = 'integer')
     if(options[["tableClusterInfoWSS"]])
-      clusterInfoTable$addColumnInfo(name = 'withinss', title = 'Within Sum of Squares', type = 'number', format = 'dp:2')
+      clusterInfoTable$addColumnInfo(name = 'withinss', title = 'Within sum of squares', type = 'number', format = 'dp:2')
     if(options[["tableClusterInfoSilhouette"]])
-      clusterInfoTable$addColumnInfo(name = 'silh_scores', title = 'Silhouette scores', type = 'number', format = 'dp:2')
+      clusterInfoTable$addColumnInfo(name = 'silh_scores', title = 'Silhouette score', type = 'number', format = 'dp:2')
 
     if(!ready)
       return()

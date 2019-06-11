@@ -29,23 +29,9 @@ Form
     VariablesForm
     {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"     ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["scale"]  }
-        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors")                                                        }
-        AssignedVariablesList  { name: "weights"; title: qsTr("Weights"); singleVariable: true; allowedColumns: ["scale"]              }
-    }
-
-    GroupBox
-    {
-
-    title: qsTr("Penalty")
-
-    RadioButtonGroup
-    {
-        name: "penalty"
-        RadioButton { value: "ridge"      ; text: qsTr("Ridge")      ; checked: true   }
-        RadioButton { value: "lasso"      ; text: qsTr("Lasso")      ; id: lasso       }
-        RadioButton { value: "elasticNet" ; text: qsTr("Elastic Net"); id: elasticNet  }
-    }
+        AssignedVariablesList  { name: "target"     ; title: qsTr("Target")    ; singleVariable: true; allowedColumns: ["scale"] }
+        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors")                                                  }
+        AssignedVariablesList  { name: "weights"    ; title: qsTr("Weights")   ; singleVariable: true; allowedColumns: ["scale"] }
     }
 
     GroupBox {
@@ -57,66 +43,79 @@ Form
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "plotPredPerf"; text: qsTr("Predictive performance plot") }
-        CheckBox { name: "plotCVLambda"; text: qsTr("λ evaluation plot")           }
+        CheckBox { name: "plotLars"    ; text: qsTr("Variable trace")
+            CheckBox { name: "legendLars"; text: qsTr("Show legend")          }
+        }
+        CheckBox { name: "plotCVLambda"; text: qsTr("\u03BB evaluation")
+            CheckBox { name: "legendCVLambda"; text: qsTr("Show legend")      }
+        }
+        CheckBox { name: "plotPredPerf"; text: qsTr("Predictive performance") }
     }
 
-    ExpanderButton
-    {
-        title: qsTr("Training Parameters")
-
-        GroupBox {
-            DoubleField  { name: "alpha"      ; text: qsTr("α (elastic net only):")  ; defaultValue: 0.5 ; min: 0     ; max: 1; fieldWidth: 60; enabled: elasticNet.checked }
-            DoubleField  { name: "thresh"     ; text: qsTr("Convergence threshold:") ; defaultValue: 1e-7; min: 1e-999; max: 1; fieldWidth: 60                              }
-            PercentField { name: "dataTrain"  ; text: qsTr("Data used for trainnig:"); defaultValue: 80                                                                     }
-            CheckBox     { name: "standardize"; text: qsTr("Standardize data")       ; checked: true                                                                        }
-            CheckBox     { name: "intercept"  ; text: qsTr("Fit intercept")          ; checked: true                                                                        }
-        }
+    Section {
+        text: qsTr("Training Parameters")
 
         RadioButtonGroup {
-            title: qsTr("λ (shrinkage)")
+            title: qsTr("Shrinkage parameter (\u03BB)")
             name: "shrinkage"
-            RadioButton { text: qsTr("Minimum CV MSE")  ; name: "optMin"; checked: true             }
-            RadioButton { text: qsTr("Max. within 1 SE"); name: "opt1SE"                            }
-            RadioButton { text: qsTr("Manual")          ; name: "manual"  ; childrenOnSameRow: true
-                DoubleField { name: "lambda"; defaultValue: 1 ; min: 0; max: 999999; fieldWidth: 60 }
+            RadioButton { text: qsTr("Minimum CV MSE")               ; name: "optMin"; checked: true             }
+            RadioButton { text: qsTr("Largest \u03BB within 1 SE of min."); name: "opt1SE"                            }
+            RadioButton { text: qsTr("Manual")                       ; name: "manual"  ; childrenOnSameRow: true
+                DoubleField { name: "lambda"; defaultValue: 1 ; min: 0; max: 999999; fieldWidth: 60              }
             }
         }
 
-    }
+        ColumnLayout {
 
-    ExpanderButton
-    {
-        title: qsTr("Predictions")
+            GroupBox {
+                DoubleField  { name: "alpha"      ; text: qsTr("Elastic net parameter (α):"); defaultValue: 0.5 ; min: 0     ; max: 1; fieldWidth: 60; visible: elasticNet.checked }
+                DoubleField  { name: "thresh"     ; text: qsTr("Convergence threshold:")    ; defaultValue: 1e-7; min: 1e-999; max: 1; fieldWidth: 60; visible: false              }
+                PercentField { name: "dataTrain"  ; text: qsTr("Data used for training:")   ; defaultValue: 80                                                                     }
+                CheckBox     { name: "intercept"  ; text: qsTr("Fit intercept")             ; checked: true                                                                        }
+                CheckBox     { name: "standardize"; text: qsTr("Standardize data")          ; checked: true                                                                        }
+                CheckBox     { name: "seedBox"    ; text: qsTr("Set seed:")                 ; childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+                }
+            }
 
-        VariablesForm
-        {
-        AvailableVariablesList { name: "allVariablesApply" }
-        AssignedVariablesList  { name: "indicator"  ; title: qsTr("Apply indicator"); singleVariable: true; allowedColumns: ["nominal"]; enabled: indicator.checked }
+                GroupBox
+                    {
+
+                    title: qsTr("Penalty")
+
+                    RadioButtonGroup
+                    {
+                        name: "penalty"
+                        RadioButton { value: "ridge"      ; text: qsTr("Ridge")      ; checked: true   }
+                        RadioButton { value: "lasso"      ; text: qsTr("Lasso")      ; id: lasso       }
+                        RadioButton { value: "elasticNet" ; text: qsTr("Elastic net"); id: elasticNet  }
+                    }
+                    }
         }
 
-        GroupBox
-        {
+    }
 
-        title: qsTr("Data predition")
+    Section {
+        text: qsTr("Predictions")
+        debug: true
 
         RadioButtonGroup
         {
             name: "applyModel"
-            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data")                ; checked: true }
-            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to indicator"); id: indicator }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")                   }
+            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
         }
-        }
-    }
 
-    ExpanderButton
-    {
-        title: qsTr("Advanced")
-
-        GroupBox {
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+        VariablesForm {
+            visible: applyIndicator.checked
+            height: 150
+            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+            AssignedVariablesList {
+                name: "indicator"
+                title: qsTr("Apply indicator")
+                singleVariable: true
+                allowedColumns: ["nominal"]
             }
         }
     }

@@ -31,44 +31,25 @@ Form
         AvailableVariablesList { name: "allVariablesList" }
         AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["scale"]                               }
         AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")                                                                                     }
-        AssignedVariablesList  { name: "indicator" ; title: qsTr("Apply indicator"); singleVariable: true; allowedColumns: ["nominal"]; enabled: indicator.checked }
     }
 
-    GroupBox
-    {
+    GroupBox {
+        title: qsTr("Tables")
 
-    GridLayout {
+        CheckBox { name: "regRanForVarImpTable"; text: qsTr("Variable importance") }
+    }
 
-        GroupBox {
-            title: qsTr("Tables")
+    GroupBox {
+        title: qsTr("Plots")
 
-            CheckBox { name: "regRanForVarImpTable"; text: qsTr("Variable importance") }
-        }
-
-        GroupBox {
-            title: qsTr("Plots")
-
-            CheckBox { name: "plotVarImpAcc"        ; text: qsTr("Mean decrease in accuracy")     }
-            CheckBox { name: "plotVarImpPur"        ; text: qsTr("Total increase in node purity") }
-            CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
-            CheckBox { name: "plotPredPerformance"  ; text: qsTr("Predictive performance")	      }
-
-        }
-
-        RadioButtonGroup
-        {
-            title: qsTr("Model application")
-            name: "applyModel"
-
-            RadioButton { value: "noApp"         ; text: qsTr("Do not apply model")                     ; checked: true }
-            RadioButton { value: "applyIndicator"; text: qsTr("Apply model according to indicator")     ; id: indicator }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Apply model to missing values in target")                }
-        }
-        }
+        CheckBox { name: "plotVarImpAcc"        ; text: qsTr("Mean decrease in accuracy")     }
+        CheckBox { name: "plotVarImpPur"        ; text: qsTr("Total increase in node purity") }
+        CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
+        CheckBox { name: "plotPredPerformance"  ; text: qsTr("Predictive performance")	      }
 
     }
 
-    ExpanderButton
+    Section
     {
         title: qsTr("Model Specifications")
 
@@ -78,6 +59,9 @@ Form
                 IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
                 PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
                 PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
+                CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+                }
             }
 
             RadioButtonGroup {
@@ -92,15 +76,29 @@ Form
         }
     }
 
-    ExpanderButton
-    {
-        title: qsTr("Advanced")
+    Section {
+          text: qsTr("Predictions")
+          debug: true
 
-        GroupBox {
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-            }
+              RadioButtonGroup
+              {
+                  name: "applyModel"
+                  RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+                  RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+                  RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+              }
+
+              VariablesForm {
+              visible: applyIndicator.checked
+                  height: 150
+                  AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+                  AssignedVariablesList {
+                              name: "indicator"
+                              title: qsTr("Apply indicator")
+                              singleVariable: true
+                              allowedColumns: ["nominal"]
+                  }
+              }
         }
-    }
 
 }
