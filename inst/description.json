@@ -8,7 +8,7 @@
 		"maintainer":							"JASP Team <info@jasp-stats.org>",
 		"website":								"www.jasp-stats.org",
 		"license":								"GPL (>= 2)",
-		"icon": 								"analysis-ml-clustering.svg"
+		"icon": 								"analysis-ml-ribbon.svg"
 	},
 
 	"requiredPackages":	[ ],
