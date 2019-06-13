@@ -30,7 +30,7 @@ Form
     {
         AvailableVariablesList { name: "allVariablesList" }
         AssignedVariablesList  { name: "target"     ; title: qsTr("Target")    ; singleVariable: true; allowedColumns: ["scale"] }
-        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors")                                                  }
+        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors") ; allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]       }
         AssignedVariablesList  { name: "weights"    ; title: qsTr("Weights")   ; singleVariable: true; allowedColumns: ["scale"] }
     }
 
