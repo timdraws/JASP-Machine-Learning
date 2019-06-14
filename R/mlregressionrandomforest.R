@@ -17,270 +17,356 @@
 
 MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   
-	# Preparatory work
-	dataset <- .readDataRegressionAnalyses(dataset, options)
-	.errorHandlingRegressionAnalyses(dataset, options)
-	
-	# Check if analysis is ready to run
-	ready <- .regressionAnalysesReady(options, type = "randomForest")
+  # Read dataset
+  dataset <- .regRanForReadData(dataset, options)
+  
+  # Check if results can be computed
+  ready <- (!is.null(options$target) && length(.v(options$predictors)) > 0)
+  
+  # Error checking
+  if (ready) errors <- .regRanForErrorHandling(dataset, options)
+  
+  # Compute (a list of) results from which tables and plots can be created
+  if (ready) regRanForResults <- .regRanForComputeResults(jaspResults, dataset, options)
+  
+  # Output tables
+  .regRanForTable(      jaspResults, options, regRanForResults, ready)
+  .regRanForVarImpTable(jaspResults, options, regRanForResults, ready)
+  .regRanForApplyTable( jaspResults, options, regRanForResults, ready)
 
-  # Compute results and create the model summary table
-	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "randomForest")
-
-  # Add test set indicator to data
-  .addTestIndicatorToData(options, jaspResults, ready, purpose = "regression")
-
-  # Create the data split plot
-	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "regression", type = "randomForest")
-
-  # Create the evaluation metrics table
-	.regressionEvaluationMetrics(dataset, options, jaspResults, ready, position = 3)
-
-  # Create the variable importance table
-  .randomForestVariableImportance(options, jaspResults, ready, position = 4, purpose = "regression")
-
-  # Create the trees vs model error plot
-  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 5, purpose = "regression")
-
-  # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
-
-  # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7, purpose = "regression")
-
-  # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 8, purpose = "regression")
-
+  # Output plots
+  if (ready) .regRanForPlotVarImpAcc(        jaspResults, options, regRanForResults)
+  if (ready) .regRanForPlotVarImpPur(        jaspResults, options, regRanForResults)
+  if (ready) .regRanForPlotTreesVsModelError(jaspResults, options, regRanForResults)
+  if (ready) .regRanForPlotPredPerformance(  jaspResults, options, regRanForResults)
+  
+  return()
 }
 
-.randomForestRegression <- function(dataset, options, jaspResults){
+# Read dataset
+.regRanForReadData <- function(dataset, options) {
   
-  dataset                   <- na.omit(dataset)
-  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
-    train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
+  if (options$target == "")    options$target <- NULL
+  if (options$indicator == "") options$indicator <- NULL
+  
+  data <- .readDataSetToEnd(columns.as.numeric = options$target, columns = options$predictors,
+                            columns.as.factor = options$indicator)
+  
+  return(data)
+}
+
+# Check for errors
+.regRanForErrorHandling <- function(dataset, options) {
+  
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
+  }
+  
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
+  
+  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
+  if (length(.v(options$predictors)) < 2L) {
+    JASP:::.quitAnalysis("Please provide at least 2 predictors.")
+  }
+  
+}
+
+# Compute results
+.regRanForComputeResults <- function(jaspResults, dataset, options, analysisOptions) {
+  
+  if (!is.null(jaspResults[["stateRegRanForResults"]])) return (jaspResults[["stateRegRanForResults"]]$object)
+  
+  results <- list()
+  results[["spec"]] <- .regRanForCalcSpecs(dataset, options)
+  
+  # Set seed	
+  if (options$seedBox) set.seed(options$seed)
+  
+  # Prepare data
+  preds <- which(colnames(dataset) %in% .v(options$predictors)) # predictors
+  target <- which(colnames(dataset) == .v(options$target)) # target
+  if(options$indicator != "") indicator <- which(colnames(dataset) == .v(options$indicator))
+  
+  # Deal with NAs: omit all rows that contain at least one missing value
+  if (options$applyModel == "applyImpute") { # save target NA observations to make predictions later
+    
+    idxApply <- which(is.na(dataset[, target]))
+    predImpute <- cbind(dataset[idxApply, target, drop = FALSE], na.omit(dataset[idxApply, preds, drop = FALSE]))
+    
   } else {
-    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
+    
+    dataset <- na.omit(dataset) 
+    
   }
-  trainAndValid           <- dataset[train.index, ]
-  valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
-  test                    <- dataset[-train.index, ]
-  valid                   <- trainAndValid[valid.index, ]
-  train                   <- trainAndValid[-valid.index, ]
-
-  train_predictors <- train[, .v(options[["predictors"]])]
-  train_target <- train[, .v(options[["target"]])]
-  valid_predictors <- valid[, .v(options[["predictors"]])]
-  valid_target <- valid[, .v(options[["target"]])]
-  test_predictors <- test[, .v(options[["predictors"]])]
-  test_target <- test[, .v(options[["target"]])]
-
-  if(options[["noOfPredictors"]] == "manual") {
-    noOfPredictors <- options[["numberOfPredictors"]]
+  
+  # Splitting the data into training set, test set, and application set in case indicator is provided
+  if (options$applyModel == "applyIndicator" && options$indicator != "") {
+    
+    idxApply <- which(dataset[, indicator] == 1)
+    idxModel <- which(dataset[, indicator] == 0)
+    
+    applyData <- dataset[idxApply, , drop = FALSE]
+    modelData <- dataset[idxModel, , drop = FALSE]
+    
+  } else if (options$applyModel == "applyImpute") {
+    
+    applyData <- predImpute
+    modelData <- dataset[-idxApply, , drop = FALSE]
+    
   } else {
-    noOfPredictors <- floor(sqrt(length(options[["predictors"]])))
+    
+    modelData <- dataset
+    
   }
-
-  if(options[["modelOpt"]] == "optimizationManual"){
-
-      rfit_valid <- randomForest::randomForest(x = train_predictors, y = train_target, xtest = valid_predictors, ytest = valid_target,
-                                              ntree = options[["noOfTrees"]], mtry = noOfPredictors,
-                                              sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                              importance = TRUE, keep.forest = TRUE)
-      rfit_test <- randomForest::randomForest(x = train_predictors, y = train_target, xtest = test_predictors, ytest = test_target,
-                                              ntree = options[["noOfTrees"]], mtry = noOfPredictors,
-                                              sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                              importance = TRUE, keep.forest = TRUE)
-      noOfTrees <- options[["noOfTrees"]]
-
-  } else if(options[["modelOpt"]] == "optimizationError"){
-
-    rfit_valid <- randomForest::randomForest(x = train_predictors, y = train_target, xtest = valid_predictors, ytest = valid_target,
-                                        ntree = options[["maxTrees"]], mtry = noOfPredictors,
-                                        sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                        importance = TRUE, keep.forest = TRUE)
-    oobError <- rfit_valid$mse
-    optimTrees <- which.min(oobError)[length(which.min(oobError))]
-
-    rfit_test <- randomForest::randomForest(x = train_predictors, y = train_target, xtest = test_predictors, ytest = test_target,
-                                            ntree = optimTrees, mtry = noOfPredictors,
-                                            sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                            importance = TRUE, keep.forest = TRUE)
-
-    noOfTrees <- optimTrees
-
+  
+  idtrainPreds <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
+  idtestPreds <- (1:nrow(modelData))[-idtrainPreds]
+  
+  trainPreds <- modelData[idtrainPreds, preds, drop = FALSE]
+  trainTarget <- modelData[idtrainPreds, target]
+  testPreds  <- modelData[idtestPreds, preds, drop = FALSE]
+  testTarget  <- modelData[idtestPreds, target]
+  
+  # Run Random Forest
+  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, testPreds = testPreds, testTarget = testTarget,
+                                                 ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
+                                                 sampsize = ceiling(options$bagFrac * nrow(dataset)),
+                                                 importance = TRUE, keep.forest = TRUE)
+  
+  results[["data"]]       <- list(trainPreds = trainPreds, trainTarget = trainTarget,
+                                  testPreds = testPreds, testTarget = testTarget)
+  
+  results[["importance"]] <- results$res$importance
+  modPred                 <- results$res$test$predicted
+  
+  # Making a variable importance table
+  results[["varImp"]] <- plyr::arrange(data.frame(
+    Variable = .unv(as.factor(names(results$res$importance[,1]))),
+    MeanIncrMSE = results$res$importance[, 1],
+    TotalDecrNodeImp = results$res$importance[, 2]
+  ), -MeanIncrMSE)
+  
+  # Predictive performance
+  results[["predPerf"]] <- data.frame(pred = as.numeric(modPred), obs = as.numeric(testTarget))
+  results[["testMSE"]]  <- mean((modPred - testTarget)^2)
+  results[["testR2"]]   <- round(cor(modPred, testTarget)^2, 2)
+  
+  # Applying the model
+  if(options$indicator != "") {
+    results[["apply"]] <- randomForest::predict.randomForest(results$res, applyData, type = "response")
+  } else {
+    results[["apply"]] <- NULL
   }
-
-  rfit_train <- randomForest::randomForest(x = train_predictors, y = train_target, xtest = train_predictors, ytest = train_target,
-                                    ntree = noOfTrees, mtry = noOfPredictors,
-                                    sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                    importance = TRUE, keep.forest = TRUE)
-
-  # Create results object
-  regressionResult <- list()
-  regressionResult[["rfit_test"]]           <- rfit_test
-  regressionResult[["rfit_valid"]]          <- rfit_valid
-  regressionResult[["rfit_train"]]          <- rfit_train
-
-  regressionResult[["noOfTrees"]]           <- noOfTrees
-  regressionResult[["predPerSplit"]]        <- noOfPredictors
-  regressionResult[["bagFrac"]]             <- ceiling(options[["bagFrac"]]*nrow(dataset))
-
-  regressionResult[["validMSE"]]            <- mean((rfit_valid$test[["predicted"]] - valid[,.v(options[["target"]])])^2)
-  regressionResult[["testMSE"]]             <- mean((rfit_test$test[["predicted"]] - test[,.v(options[["target"]])])^2)
-
-  regressionResult[["testPred"]]            <- rfit_test$test[["predicted"]]
-  regressionResult[["testReal"]]            <- test[,.v(options[["target"]])]
-
-  regressionResult[["oobError"]]            <- rfit_test$mse[length(rfit_test$mse)]
-  regressionResult[["varImp"]]              <- plyr::arrange(data.frame(
-                                                              Variable = .unv(as.factor(names(rfit_test$importance[,1]))),
-                                                              MeanIncrMSE = rfit_test$importance[, 1],
-                                                              TotalDecrNodeImp = rfit_test$importance[, 2]
-                                                            ), -TotalDecrNodeImp)
-
-  regressionResult[["ntrain"]]              <- nrow(train)
-  regressionResult[["nvalid"]]              <- nrow(valid)
-  regressionResult[["ntest"]]               <- nrow(test)
-
-  regressionResult[["train"]]               <- train
-  regressionResult[["valid"]]               <- valid
-  regressionResult[["test"]]                <- test
-
-  testIndicatorColumn <- rep(1, nrow(dataset))
-  testIndicatorColumn[train.index] <- 0
-  regressionResult[["testIndicatorColumn"]] <- testIndicatorColumn
-   
-  return(regressionResult)
+  
+  # Save results to state
+  jaspResults[["stateregRanForResults"]] <- createJaspState(results)
+  jaspResults[["stateregRanForResults"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                              "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                              "dataTrain", "bagFrac", "seedBox", "seed"))
+  
+  return(results)
 }
 
-.randomForestVariableImportance <- function(options, jaspResults, ready, position, purpose){
-
-  if(!is.null(jaspResults[["tableVariableImportance"]]) || !options[["tableVariableImportance"]]) return()
+.regRanForCalcSpecs <- function(dataset, options) {
+  specs <- list()
   
-  tableVariableImportance <- createJaspTable(title = "Variable Importance")
-  tableVariableImportance$position <- position
-  tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors", "modelOpt", "maxTrees",
-                                                "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox",
-                                                "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
-
-  tableVariableImportance$addColumnInfo(name = "predictor",  title = " ", type = "string")
-  tableVariableImportance$addColumnInfo(name = "MDiA",  title = "Mean decrease in accuracy", type = "number")
-  tableVariableImportance$addColumnInfo(name = "MDiNI",  title = "Total increase in node purity", type = "number")
+  # Setting the number of variables considered at each split
+  if (options$noOfPredictors == "manual") {
+    specs$noOfPredictors <- as.integer(options$numberOfPredictors)
+  } else {
+    specs$noOfPredictors <- if (!is.null(options$target) && !is.factor(options$target)) 
+      max(floor(length(.v(options$predictors))/3), 1) else floor(sqrt(length(.v(options$predictors))))
+  }
   
-  jaspResults[["tableVariableImportance"]] <- tableVariableImportance
+  return(specs)
+}
 
-  if(!ready)  return()
-
-  result <- base::switch(purpose,
-                          "classification" = jaspResults[["classificationResult"]]$object,
-                          "regression" = jaspResults[["regressionResult"]]$object)
-
-  varImpOrder <- sort(result[["rfit_test"]]$importance[,1], decr = TRUE, index.return = TRUE)$ix
+.regRanForTable <- function(jaspResults, options, regRanForResults, ready, analysisOptions) {
+  if (!is.null(jaspResults[["regRanForTable"]])) return()
   
-  tableVariableImportance[["predictor"]] <- .unv(.v(result[["varImp"]]$Variable))
-  tableVariableImportance[["MDiA"]]      <- result[["varImp"]]$MeanIncrMSE    
-  tableVariableImportance[["MDiNI"]]     <- result[["varImp"]]$TotalDecrNodeImp
+  # Create table and bind to jaspResults
+  regRanForTable <- createJaspTable(title = "Random Forest Regression Model Summary")
+  jaspResults[["regRanForTable"]] <- regRanForTable
+  jaspResults[["regRanForTable"]]$position <- 1
+  jaspResults[["regRanForTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                       "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                       "dataTrain", "bagFrac", "seedBox", "seed"))
+  
+  # Add column info
+  if(options$dataTrain < 1){
+    regRanForTable$addColumnInfo(name = "testMSE",  title = "Test Set MSE", type = "number", format = "sf:4")
+  }
+  if (options$dataTrain < 1) {
+    regRanForTable$addColumnInfo(name = "testR2",  title = "Test Set R\u00B2", type = "number", format = "sf:4")
+  }
+  regRanForTable$addColumnInfo(name = "oobMSE",  title = "OOB MSE"             , type = "number", format = "sf:4")
+  regRanForTable$addColumnInfo(name = "ntrees",  title = "Trees"               , type = "integer")
+  regRanForTable$addColumnInfo(name = "mtry"  ,  title = "Predictors per split", type = "integer")
+  regRanForTable$addColumnInfo(name = "nTrain",  title = "n(Train)"            , type = "integer")
+  regRanForTable$addColumnInfo(name = "nTest" ,  title = "n(Test)"             , type = "integer")
+  
+  # Add data per column
+  if (options$dataTrain < 1){ regRanForTable[["testError"]] <- if (ready) regRanForResults$testError   else "." }
+  if (options$dataTrain < 1){ regRanForTable[["testR2"]]    <- if (ready) regRanForResults$testR2      else "." }
+  regRanForTable[["oobMSE"]]  <- if (ready) regRanForResults$res$mse[length(regRanForResults$res$mse)] else "."
+  regRanForTable[["ntrees"]]  <- if (ready) regRanForResults$res$ntree else "."
+  regRanForTable[["mtry"]]    <- if (ready) regRanForResults$res$mtry else "."
+  regRanForTable[["nTrain"]]  <- if (ready) nrow(regRanForResults$data$trainPreds) else "."
+  regRanForTable[["nTest"]]   <- if (ready) nrow(regRanForResults$data$testPreds) else "."
   
 }
 
-.randomForestTreesErrorPlot <- function(options, jaspResults, ready, position, purpose){
-
-  if(!is.null(jaspResults[["plotTreesVsModelError"]]) || !options[["plotTreesVsModelError"]]) return()
-
-  title <- base::switch(purpose, "classification" = "Out-of-bag Classification Accuracy Plot", "regression" = "Out-of-bag Mean Squared Error Plot")
-
-  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = title, width = 500, height = 300)
-  plotTreesVsModelError$position <- position
-  plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
-                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
-  jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
-
-  if(!ready) return()
-
-  result <- base::switch(purpose,
-                  "classification" = jaspResults[["classificationResult"]]$object,
-                  "regression" = jaspResults[["regressionResult"]]$object)
-  xTitle <- base::switch(purpose,
-                          "classification" = "Out-of-bag \nClassification Accuracy",
-                          "regression" = "Out-of-bag \nMean Squared Error")
-
-  values <- base::switch(purpose,
-                        "classification" = 1 - result[["rfit_valid"]]$err.rate[1:result[["noOfTrees"]],1],
-                        "regression" = result[["rfit_valid"]]$mse[1:result[["noOfTrees"]]])
-
-  values2 <- base::switch(purpose,
-                          "classification" = 1 - result[["rfit_train"]]$err.rate[,1],
-                          "regression" = result[["rfit_train"]]$mse)
-  values <- c(values, values2)
-
-  treesMSE <- data.frame(
-    trees = rep(1:length(values2), 2),
-    error = values, 
-    type = rep(c("Validation set", "Training set"), each = length(values2))
-  )
-
-  xBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["trees"]], min.n = 4)
-  yBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["error"]], min.n = 4)
+.regRanForVarImpTable <- function(jaspResults, options, regRanForResults, ready, analysisOptions) {
+  if (!options$regRanForVarImpTable || !is.null(jaspResults[["regRanForVarImpTable"]])) return()
   
-  p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error, linetype = type)) +
-        JASPgraphs::geom_line()
-
-  p <- p + ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
-            ggplot2::scale_y_continuous(name = xTitle, labels = yBreaks, breaks = yBreaks) +
-            ggplot2::labs(linetype = "") +
-            ggplot2::scale_linetype_manual(values = c(2,1))
-  p <- JASPgraphs::themeJasp(p, legend.position = "top")
-
-  plotTreesVsModelError$plotObject <- p
+  # Create table
+  regRanForVarImpTable <- createJaspTable(title = "Variable Importance")
+  jaspResults[["regRanForVarImpTable"]] <- regRanForVarImpTable
+  jaspResults[["regRanForVarImpTable"]]$position <- 2
+  jaspResults[["regRanForVarImpTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                             "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                             "dataTrain", "bagFrac", "seedBox", "seed",
+                                                             "regRanForVarImpTable"))
+  
+  # Add column info
+  regRanForVarImpTable$addColumnInfo(name = "predictor",  title = " ", type = "string")
+  regRanForVarImpTable$addColumnInfo(name = "acc",  title = "Mean decr. in accuracy", type = "number", format = "sf:4")
+  regRanForVarImpTable$addColumnInfo(name = "pur",  title = "Total incr. in node purity", type = "number",
+                                     format = "sf:4")
+  
+  # Add data per column
+  regRanForVarImpTable[["predictor"]] <- if(ready) as.character(regRanForResults$varImp$Variable) else "."
+  regRanForVarImpTable[["acc"]]       <- if(ready) regRanForResults$varImp$MeanIncrMSE            else "."
+  regRanForVarImpTable[["pur"]]       <- if(ready) regRanForResults$varImp$TotalDecrNodeImp       else "."
+  
 }
 
-.randomForestPlotDecreaseAccuracy <- function(options, jaspResults, ready, position, purpose){
-
-  if(!is.null(jaspResults[["plotDecreaseAccuracy"]]) || !options[["plotDecreaseAccuracy"]]) return()
-
-  plotDecreaseAccuracy <- createJaspPlot(plot = NULL, title = "Mean Decrease in Accuracy", width = 500, height = 300)
-  plotDecreaseAccuracy$position <- position
-  plotDecreaseAccuracy$dependOn(options = c("plotDecreaseAccuracy", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
-                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
-  jaspResults[["plotDecreaseAccuracy"]] <- plotDecreaseAccuracy
-
-  if(!ready) return()
-
-  result <- base::switch(purpose,
-                        "classification" = jaspResults[["classificationResult"]]$object,
-                        "regression" = jaspResults[["regressionResult"]]$object)
+.regRanForApplyTable <- function(jaspResults, options, regRanForResults, ready, analysisOptions) {
+  if (!is.null(jaspResults[["regRanForApplyTable"]])) return()
+  if (options$indicator == "") return()
   
-  p <- ggplot2::ggplot(result[["varImp"]], ggplot2::aes(x = reorder(Variable, MeanIncrMSE), y = MeanIncrMSE)) +
+  # Create table and bind to jaspResults
+  regRanForApplyTable <- createJaspTable(title = "Random Forest Model Predictions")
+  jaspResults[["regRanForApplyTable"]] <- regRanForApplyTable
+  jaspResults[["regRanForApplyTable"]]$position <- 3
+  jaspResults[["regRanForApplyTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                            "dataTrain", "bagFrac", "seedBox", "seed",
+                                                            "applyModel"))
+  
+  # Add column info
+  regRanForApplyTable$addColumnInfo(name = "row",  title = "Row", type = "integer")
+  regRanForApplyTable$addColumnInfo(name = "pred",  title = "Prediction", type = "number", format = "sf:4")
+  
+  # Add data per column
+  regRanForApplyTable[["row"]]  <- if (ready) as.numeric(rownames(as.data.frame(regRanForResults$apply))) else "."
+  regRanForApplyTable[["pred"]]  <- if (ready) as.numeric(regRanForResults$apply) else "."
+  
+}
+
+.regRanForPlotVarImpAcc <- function(jaspResults, options, regRanForResults, ready) {
+  if (!options$plotVarImpAcc) return()
+  
+  regRanForPlotVarImpAcc <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(regRanForResults$varImp, ggplot2::aes(x = reorder(Variable, MeanIncrMSE), y = MeanIncrMSE)) +
       ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
-      ggplot2::labs(x = "", y = "Mean Decrease in Accuracy")
-  p <-JASPgraphs::themeJasp(p, horizontal = TRUE, xAxis = FALSE) + ggplot2::theme(axis.ticks.y = ggplot2::element_blank())
+      ggplot2::labs(x = "", y = "Mean Decrease in Accuracy"),
+    horizontal = TRUE
+  )
   
-  plotDecreaseAccuracy$plotObject <- p
+  regRanForPlotVarImpAcc <- createJaspPlot(plot = regRanForPlotVarImpAcc, 
+                                             title = "Mean Decrease in Accuracy per Variable",
+                                             width = 400, height = 20 * nrow(regRanForResults$varImp) + 60)
+  
+  jaspResults[["regRanForPlotVarImpAcc"]] <- regRanForPlotVarImpAcc
+  jaspResults[["regRanForPlotVarImpAcc"]]$position <- 4
+  jaspResults[["regRanForPlotVarImpAcc"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                               "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                               "dataTrain", "bagFrac", "seedBox", "seed",
+                                                               "plotVarImpAcc"))
 }
 
-.randomForestPlotIncreasePurity <- function(options, jaspResults, ready, position, purpose){
-
-  if(!is.null(jaspResults[["plotIncreasePurity"]]) || !options[["plotIncreasePurity"]]) return()
-
-  plotIncreasePurity <- createJaspPlot(plot = NULL, title = "Total Increase in Node Purity", width = 500, height = 300)
-  plotIncreasePurity$position <- position
-  plotIncreasePurity$dependOn(options = c("plotIncreasePurity", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
-                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
-  jaspResults[["plotIncreasePurity"]] <- plotIncreasePurity
-
-  if(!ready) return()
-
-  result <- base::switch(purpose,
-                      "classification" = jaspResults[["classificationResult"]]$object,
-                      "regression" = jaspResults[["regressionResult"]]$object)
+.regRanForPlotVarImpPur <- function(jaspResults, options, regRanForResults, ready) {
+  if (!options$plotVarImpPur) return()
   
-  p <- ggplot2::ggplot(result[["varImp"]], ggplot2::aes(x = reorder(Variable, TotalDecrNodeImp), y = TotalDecrNodeImp)) +
-        ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
-        ggplot2::labs(x = "", y = "Total Increase in Node Purity")
-  p <- JASPgraphs::themeJasp(p, horizontal = TRUE, xAxis = FALSE) + ggplot2::theme(axis.ticks.y = ggplot2::element_blank())
+  regRanForPlotVarImpPur <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(regRanForResults$varImp,
+                    ggplot2::aes(x = reorder(Variable, TotalDecrNodeImp), y = TotalDecrNodeImp)) +
+      ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
+      ggplot2::labs(x = "", y = "Total Increase in Node Purity"),
+    horizontal = TRUE
+  )
+  
+  regRanForPlotVarImpPur <- createJaspPlot(plot = regRanForPlotVarImpPur,
+                                           title = "Total Increase in Node Purity per Variable",
+                                           width = 400, height = 20 * nrow(regRanForResults$varImp) + 60)
+  
+  jaspResults[["regRanForPlotVarImpPur"]] <- regRanForPlotVarImpPur
+  jaspResults[["regRanForPlotVarImpPur"]]$position <- 5
+  jaspResults[["regRanForPlotVarImpPur"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                               "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                               "dataTrain", "bagFrac", "seedBox", "seed",
+                                                               "plotVarImpPur"))
+}
 
-  plotIncreasePurity$plotObject <- p
+.regRanForPlotTreesVsModelError <- function(jaspResults, options, regRanForResults, ready) {
+  if (!options$plotTreesVsModelError) return()
+  
+  treesMSE <- dplyr::tibble(
+    trees = 1:length(regRanForResults$res$mse),
+    MSE = regRanForResults$res$mse
+  )
+  
+  plotTreesVsModelError <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = MSE)) +
+      ggplot2::geom_line(size = 1) +
+      ggplot2::xlab("Trees") +
+      ggplot2::ylab("OOB Mean Squared Error")
+  )
+  
+  plotTreesVsModelError <- createJaspPlot(plot = plotTreesVsModelError, title = "Trees vs. Model Error",
+                                          width = 400, height = 400)
+  
+  jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
+  jaspResults[["plotTreesVsModelError"]]$position <- 6
+  jaspResults[["plotTreesVsModelError"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                              "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                              "dataTrain", "bagFrac", "seedBox", "seed",
+                                                              "plotTreesVsModelError"))
+  
+}
+
+.regRanForPlotPredPerformance <- function(jaspResults, options, regRanForResults, ready) {
+  if (!options$plotPredPerf) return()
+  
+  limits <- c(round(min(c(min(floor(regRanForResults$predPerf$pred))  , min(floor(regRanForResults$predPerf$obs))))),
+              round(max(c(max(ceiling(regRanForResults$predPerf$pred)), max(ceiling(regRanForResults$predPerf$obs))))))
+  
+  regRanForPredPerfPlot <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = regRanForResults$predPerf, mapping = ggplot2::aes(x = obs, y = pred)) +
+      JASPgraphs::geom_point() +
+      ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y),
+                         col = "darkred", size = 1) +
+      ggplot2::scale_x_continuous("Observed" , limits = limits, breaks = pretty(limits)) +
+      ggplot2::scale_y_continuous("Predicted", limits = limits, breaks = pretty(limits))
+  )
+  
+  if (options$dataTrain < 1) {
+    title <- "Predictive Performance on Test Set"
+  } else {
+    title <- "Predictive Performance on Training Set"
+  }
+  
+  regRanForPredPerfPlot <- createJaspPlot(plot = regRanForPredPerfPlot, title = title, width = 400, height = 400)
+  
+  jaspResults[["plotPredPerformance"]] <- regRanForPredPerfPlot
+  jaspResults[["plotPredPerformance"]]$position <- 7
+  jaspResults[["plotPredPerformance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+                                                            "noOfTrees", "noOfPredictors", "numberOfPredictors",
+                                                            "dataTrain", "bagFrac", "seedBox", "seed",
+                                                            "plotPredPerformance"))
 }

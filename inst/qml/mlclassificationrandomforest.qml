@@ -16,310 +16,93 @@
 // <http://www.gnu.org/licenses/>.
 //
 
-import QtQuick			2.8
-import QtQuick.Layouts	1.3
-import JASP.Controls	1.0
-import JASP.Widgets		1.0
-import JASP.Theme		1.0
+import QtQuick 2.8
+import QtQuick.Layouts 1.3
+import JASP.Controls 1.0
+import JASP.Theme 1.0
 
-Form {
+// All Analysis forms must be built with the From QML item
+Form
+{
+    usesJaspResults: true
 
-    VariablesForm {
+    VariablesForm
+    {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { 
-            id: target
-            name: "target"
-            title: qsTr("Target")
-            singleVariable: true
-            allowedColumns: ["nominal", "ordinal", "nominalText"] 
-        }
-        AssignedVariablesList { 
-            id: predictors
-            name: "predictors"
-            title: qsTr("Predictors")
-            allowedColumns: ["nominal", "ordinal", "nominalText", "scale"]              
-        }
+        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "ordinal"] }
+        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")                                                                    }
     }
 
-    GroupBox {
-        title: qsTr("Tables")
-
-        CheckBox { 
-            text: qsTr("Confusion matrix") 
-            name: "confusionTable"
-            checked: true
-
-            CheckBox { 
-                text: qsTr("Display proportions")
-                name: "confusionProportions"
-            } 
-        }   
-
-        CheckBox {
-            text: qsTr("Class proportions")
-            name: "classProportionsTable"
-        }  
-
-        CheckBox {
-            text: qsTr("Evaluation metrics")
-            name: "validationMeasures"
-        }    
-
-        CheckBox { 
-            name: "tableVariableImportance"
-            text: qsTr("Variable importance")                
-        }
-    }
-
-    GroupBox {
-        title: qsTr("Plots")
-
-        CheckBox { 
-            text: qsTr("Data split") 
-            name: "dataSplitPlot"
-            checked: true
-        }
-
-        CheckBox { 
-            name: "plotTreesVsModelError"
-            text: qsTr("Out-of-bag accuracy")        
-        }
-
-        CheckBox { 
-            name: "rocCurve"
-            text: qsTr("ROC curves") 
-        }
-
-        CheckBox { 
-            name: "andrewsCurve"
-            text: qsTr("Andrews curves") 
-        }
-
-        CheckBox { 
-            name: "plotDecreaseAccuracy"
-            text: qsTr("Mean decrease in accuracy") 
-        }
-
-        CheckBox { 
-            name: "plotIncreasePurity"
-            text: qsTr("Total increase in node purity") 
-        }
-
-        CheckBox { 
-            name: "decisionBoundary"
-            text: qsTr("Decision boundary matrix")
-
-            RowLayout {
-
-                CheckBox {
-                    name: "plotLegend"
-                    text: qsTr("Legend")
-                    checked: true 
-                }
-
-                CheckBox {
-                    name: "plotPoints"
-                    text: qsTr("Points")
-                    checked: true 
-                }
-            }
-        }
-    }
-
-    Section {
-        title: qsTr("Data Split Preferences")
-
-        RadioButtonGroup {
-            title: qsTr("Holdout Test Data")
-            name: "holdoutData"
-
-            RadioButton {
-                id: holdoutManual
-                name: "holdoutManual"
-                childrenOnSameRow: true
-                text: qsTr("Sample")
-
-                RowLayout {
-                
-                    PercentField {    
-                        name: "testDataManual"
-                        defaultValue: 20
-                        min: 5
-                        max: 95 
-                    }
-
-                    Text {
-                        text: qsTr("of all data")
-                        enabled: true
-                    }
-                }
-            }
-
-            CheckBox { 
-                id: addIndicator  
-                name: "addIndicator"
-                text: qsTr("Add generated indicator to data")
-                Layout.leftMargin: 20
-                enabled: holdoutManual.checked
-
-                ComputedColumnField { 
-                    name: 		"testIndicatorColumn"
-                    text: 		"Name: "
-                    fieldWidth: 120
-                    visible:    addIndicator.checked
-                }
-            }
-
-            RadioButton {
-                id: testSetIndicator
-                name: "testSetIndicator"
-                label: qsTr("Test set indicator:")
-                childrenOnSameRow: true
-
-                DropDown {
-                    name: "testSetIndicatorVariable"
-                    showVariableTypeIcon: true
-                    addEmptyValue: true
-                    placeholderText: qsTr("None")
-                }
-            }
-        }
-
-        RadioButtonGroup {
-            title: qsTr("Training and Validation Data")
-            name: "modelValid"
-
-            RadioButton {
-                name: "validationManual"
-                childrenOnSameRow: true
-                checked: true
-                text: qsTr("Sample")
-
-                RowLayout {
-
-                    PercentField {     
-                        name: "validationDataManual"
-                        defaultValue: 20
-                        min: 5
-                        max: 95
-                    }
-
-                    Text {
-                        text: qsTr("for validation data")
-                        enabled: true
-                    }
-                }
-            }
-        }
-    }
-
-    Section {
-        title: qsTr("Training Parameters")
+    GridLayout {
 
         GroupBox {
-            title: qsTr("Algorithmic Settings")
+            title: qsTr("Tables")
 
-            PercentField { 
-                name: "bagFrac"       
-                text: qsTr("Training data used per tree:")
-                defaultValue: 50 
-            }
-            
-            RowLayout {
-
-                DropDown {
-                    id: noOfPredictors
-                    name: "noOfPredictors"
-                    indexDefaultValue: 0
-                    label: qsTr("Predictors per split:")
-                    values:
-                    [
-                        { label: "Auto", value: "auto"},
-                        { label: "Manual", value: "manual"}
-                    ]
-                } 
-
-                IntegerField  { 
-                    name: "numberOfPredictors"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    visible: noOfPredictors.currentIndex == 1 
-                }
-            }
-
-            CheckBox { 
-                text: qsTr("Scale predictors") 
-                name: "scaleEqualSD"
-                checked: true
-            }
-
-            CheckBox { 
-                name: "seedBox"
-                text: qsTr("Set seed:")
-                childrenOnSameRow: true
-
-                DoubleField { 
-                    name: "seed"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    fieldWidth: 60 
-                }
-            }
+            CheckBox { name: "classRanForConfTable"   ;	text: qsTr("Confusion table")    ; checked: true }
+            CheckBox { name: "tableVariableImportance";	text: qsTr("Variable importance")                }
         }
 
-        RadioButtonGroup {
-            title: qsTr("Number of Trees")
-            name: "modelOpt"
+        GroupBox {
+            title: qsTr("Plots")
 
-            RadioButton { 
-                text: qsTr("Fixed")                     
-                name: "optimizationManual" 
-
-                IntegerField { 
-                    name: "noOfTrees"
-                    text: qsTr("Trees:")
-                    defaultValue: 100
-                    min: 1
-                    max: 999999
-                    fieldWidth: 60
-                }
-            }
-            
-            RadioButton { 
-                text: qsTr("Optimized")
-                name: "optimizationError"
-                checked: true 
-
-                IntegerField { 
-                    name: "maxTrees"
-                    text: qsTr("Max. trees:") 
-                    defaultValue: 100
-                    min: 1
-                    max: 999999
-                    fieldWidth: 60
-                }
-            }
+            CheckBox { name: "plotVarImp1";           text: qsTr("Mean decrease in accuracy")     }
+            CheckBox { name: "plotVarImp2";           text: qsTr("Total increase in node purity") }
+            CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
         }
+
     }
 
-    Item {
-        height: 			saveModel.height
-        Layout.fillWidth: 	true
-        Layout.columnSpan: 2
+    ExpanderButton
+    {
+        title: qsTr("Training Parameters")
 
-        Button 
-        {
-            id: 			saveModel
-            anchors.right: 	parent.right
-            text: 			qsTr("<b>Save Model</b>")
-            enabled: 		predictors.count > 1 && target.count > 0
-            onClicked:      
-            {
-                
-             }
-            debug: true	
+        GridLayout {
+
+            RadioButtonGroup {
+                title: qsTr("Predictors considered per split")
+                name: "noOfPredictors"
+                RadioButton { name: "auto"  ; text: qsTr("Auto")   ; checked: true}
+                RadioButton { name: "manual"; text: qsTr("Manual") ; childrenOnSameRow: true
+                    IntegerField { name: "numberOfPredictors"; min: 1; max: 999999; defaultValue: 1; fieldWidth: 60 }
+                }
+            }
+
+            GroupBox {
+                IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
+                PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
+                PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
+                CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+                }
+            }
+
         }
+
     }
+
+    Section {
+          text: qsTr("Predictions")
+          debug: true
+
+              RadioButtonGroup
+              {
+                  name: "applyModel"
+                  RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+                  RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+                  RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+              }
+
+              VariablesForm {
+              visible: applyIndicator.checked
+                  height: 150
+                  AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+                  AssignedVariablesList {
+                              name: "indicator"
+                              title: qsTr("Apply indicator")
+                              singleVariable: true
+                              allowedColumns: ["nominal"]
+                  }
+              }
+        }
+
 }

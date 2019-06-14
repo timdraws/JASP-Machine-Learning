@@ -8,3 +8,4 @@ Website: www.jasp-stats.org
 Maintainer: JASP Team <info@jasp-stats.org>
 Description: A module for Machine Learning
 License: GPL (>= 2)
+Imports: gbm, randomForest
