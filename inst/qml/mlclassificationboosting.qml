@@ -28,9 +28,9 @@ Form
 
     VariablesForm
     {
-        AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "ordinal"]                  }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")                                                                                     }
+        AvailableVariablesList { name: "allVariablesList"                                                                                                   }
+        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")    ; singleVariable: true; allowedColumns: ["nominal", "ordinal", "nominalText"] }
+        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]              }
     }
 
     GroupBox {
@@ -62,7 +62,7 @@ Form
                     IntegerField {
                         name: "cvFolds"
                         afterLabel: qsTr("-fold cross-validation")
-                        defaultValue: 10
+                        defaultValue: 3
                         min: 2
                         max: 30
                         fieldWidth: 25
@@ -79,6 +79,9 @@ Form
                 IntegerField { name: "nNode"    ; text: qsTr("Min. no. observations in node:"); defaultValue: 10  ; min: 1; max: 999999; fieldWidth: 60 }
                 PercentField { name: "dataTrain"; text: qsTr("Data used for training:")       ; defaultValue: 80                                        }
                 PercentField { name: "bagFrac"  ; text: qsTr("Training data used per tree:")  ; defaultValue: 50                                        }
+                CheckBox     { name: "seedBox"     ; text: qsTr("Set seed:")                     ; childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+                }
             }
 
         }

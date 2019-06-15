@@ -126,9 +126,9 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   idxTrain <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
   idxTest <- (1:nrow(modelData))[-idxTrain]
   
-  trainPreds <- modelData[idxTrain, c(preds, target), drop = FALSE]
-  testPreds <- modelData[idxTest, preds, drop = FALSE]
-  testTarget <- modelData[idxTest, target]
+  trainData   <- modelData[idxTrain, c(preds, target), drop = FALSE]
+  testPreds   <- modelData[idxTest, preds, drop = FALSE]
+  testTarget  <- as.factor(modelData[idxTest, target])
   
   # Prepare Boosting
   formula <- as.formula(paste(.v(options$target), "~", paste(.v(options$predictors), collapse = " + ")))
@@ -146,12 +146,12 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   }
   
   # Run Boosting
-  results[["res"]] <- gbm::gbm(formula = formula, data = trainPreds, n.trees = options$noOfTrees,
+  results[["res"]] <- gbm::gbm(formula = formula, data = trainData, n.trees = options$noOfTrees,
                                shrinkage = options$shrinkage, interaction.depth = options$intDepth,
                                cv.folds = cv.folds, bag.fraction = options$bagFrac, n.minobsinnode = options$nNode,
                                distribution = "multinomial")
 
-  results[["data"]] <- list(trainPreds = trainPreds, testPreds = testPreds, testTarget = testTarget)
+  results[["data"]] <- list(trainData = trainData, testPreds = testPreds, testTarget = testTarget)
   results[["relInf"]] <- summary(results$res, plot = FALSE)
   
   if (options$modelOpt != "noOpt") {
@@ -167,7 +167,7 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Predictive Performance
   results[["testError"]] <- mean(testTarget != as.character(modPred))
   results[["testAUC"]]   <- 999999 # tk put AUC here
-  results[["confTable"]] <- table("Pred" = factor(results$preds, levels = levels(results$data$testTarget)),
+  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels(results$data$testTarget)),
                                   "True" = factor(results$data$testTarget))
 
   # Apply model to new data if requested
