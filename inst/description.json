@@ -11,7 +11,7 @@
 		"icon": 								"analysis-ml-ribbon.svg"
 	},
 
-	"requiredPackages":	[ ],
+	"requiredPackages":	[ "kknn",  "Rtsne", "colorspace", "gbm", "dbscan", "ggdendro", "ggplot2", "cluster" ],
 
 	"menu":
 		[
@@ -54,7 +54,7 @@
 				"function":							"MLClassificationKNN"
 			},
 			{
-				"title": 							"Linear Discriminant Classification",
+				"title": 							"Linear Discriminant Analysis",
 				"qml": 								"mlclassificationlda.qml",
 				"function": 						"MLClassificationLDA"
 			},

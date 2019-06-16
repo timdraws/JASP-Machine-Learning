@@ -94,7 +94,8 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   
   cfit <- e1071::cmeans(dataset[, .v(options[["predictors"]])],
                         centers = options[['noOfClusters']],
-                        iter.max = options[['noOfIterations']])
+                        iter.max = options[['noOfIterations']],
+                        m = options[["m"]])
   
   v <- cfit$centers
   clabels <- cfit$cluster
@@ -119,7 +120,7 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   res[["pred.values"]] <- cfit$cluster
   res[['clusters']] <- options[['noOfClusters']]
   res[["N"]] <- nrow(dataset)
-  res[['size']] <- cfit$size
+  res[['size']] <- round(cfit$size, 0)
   res[['centroids']] <- cfit$centers
   res[['WSS']] <- csumsqrs$within.ss
   res[['TSS']] <- csumsqrs$tot.ss
@@ -130,24 +131,49 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   n = length(cfit$cluster)
   k = nrow(cfit$centers)
   D = csumsqrs$tot.within.ss
-  res[['AIC']] <- D + 2*m*k
-  res[['BIC']] <- D + log(n)*m*k
-  png(tempfile())
-  dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "fanny",
-                              k = res[['clusters']])
-  dev.off()
-  res[['Silh_score']] <- dSilh$silinfo$avg.width
-  res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+  res[['AIC']] <- round(D + 2*m*k, 2)
+  res[['BIC']] <- round(D + log(n)*m*k, 2)
+  res[['Silh_score']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]], 2)
+  res[['silh_scores']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]], 2)
   return(res)
 }
 
 .cMeansClusteringSilh <- function(dataset, options) {
-  dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "fanny",
-                              k.max = options[["maxClusters"]])
+  
+  avg_silh <- numeric(options[["maxClusters"]] - 1)
+  res<-list()
+  res[['clusterrange']] <- 1:options[["maxClusters"]]
+  
+  for (i in 2:options[['maxClusters']]) {
+    cfit_tmp <- e1071::cmeans(dataset[, .v(options[["predictors"]])],
+                       centers = i,
+                       iter.max = options[['noOfIterations']],
+                       m = options[["m"]])
+    silh <- summary(cluster::silhouette(cfit_tmp$cluster, dist(dataset[, .v(options[["predictors"]])])))
+    avg_silh[i] <- silh[4]
+  }
+  opt_n_clusters <- which.max(avg_silh)
+  
   cfit <- e1071::cmeans(dataset[, .v(options[["predictors"]])],
-                centers = dSilh$nbclust,
+                centers = opt_n_clusters,
                 iter.max = options[['noOfIterations']],
                 m = options[['m']])
+  
+  v <- cfit$centers
+  clabels <- cfit$cluster
+  
+  .sumsqr <- function(x, v, clusters){
+    sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
+    bwss <- sumsqr(v[clusters,])
+    wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
+    twss <- sum(wss)
+    tss <- bwss + twss
+    ss <- list(bwss, wss, twss, tss)
+    names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
+    return(ss)
+  }
+  
+  csumsqrs <- .sumsqr(dataset[, .v(options[["predictors"]])], v, clabels)
   
   res <- list()
   res[['Predictions']] <- data.frame(
@@ -155,24 +181,23 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
     'Cluster' = cfit$cluster
   )
   res[["pred.values"]] <- cfit$cluster
-  res[['clusters']] <- options[['noOfClusters']]
+  res[['clusters']] <- opt_n_clusters
   res[["N"]] <- nrow(dataset)
-  res[['size']] <- cfit$size
+  res[['size']] <- round(cfit$size, 0)
   res[['centroids']] <- cfit$centers
   res[['WSS']] <- csumsqrs$within.ss
   res[['TSS']] <- csumsqrs$tot.ss
   res[['BSS']] <- csumsqrs$between.ss
   res[['AICweights']] <- 1
   res[['BICweights']] <- 1
-  res[['Silh_score']] <- dSilh$silinfo$avg.width
   m = ncol(cfit$centers)
   n = length(cfit$cluster)
   k = nrow(cfit$centers)
   D = csumsqrs$tot.within.ss
-  res[['AIC']] <- D + 2*m*k
-  res[['BIC']] <- D + log(n)*m*k
-  res[['Silh_score']] <- dSilh$silinfo$avg.width
-  res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+  res[['AIC']] <- round(D + 2*m*k, 2)
+  res[['BIC']] <- round(D + log(n)*m*k, 2)
+  res[['Silh_score']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]], 2)
+  res[['silh_scores']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]], 2)
   return(res)
 }
 
@@ -183,12 +208,12 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   res<-list()
   res[['clusterrange']] <- 1:options[["maxClusters"]]
   
-  for(i in 1:options[["maxClusters"]]){
+  for(i in 2:options[["maxClusters"]]){
     
     cfit_tmp <- e1071::cmeans(dataset[, .v(options[["predictors"]])],
                               centers = i,
                               iter.max = options[['noOfIterations']],
-                              m = 2)
+                              m = options[["m"]])
     
     v_tmp <- cfit_tmp$centers
     clabels_tmp <- cfit_tmp$cluster
@@ -233,7 +258,7 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
     'Observation' = 1:nrow(dataset),
     'Cluster' = cfit$cluster
   )
-  res[['size']] <- cfit$size
+  res[['size']] <- round(cfit$size, 0)
   res[['centroids']] <- cfit$centers
   
   v <- cfit$centers
@@ -259,17 +284,15 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   n = length(cfit$cluster)
   k = nrow(cfit$centers)
   D = csumsqrs$tot.within.ss
-  res[['AIC']] <- D + 2*m*k
-  res[['BIC']] <- D + log(n)*m*k
+  res[['AIC']] <- round(D + 2*m*k, 2)
+  res[['BIC']] <- round(D + log(n)*m*k, 2)
   res[["N"]] <- nrow(dataset)
   dAIC <- res[["AIC_store"]][res[['clusters']]] - min(res[['AIC_store']])
   res[['AICweights']] <- exp((-.5)*dAIC)/sum(exp((-.5)*dAIC))
   dBIC <- res[['BIC_store']][res[['clusters']]] - min(res[['BIC_store']])
   res[["BICweights"]] <- exp((-.5)*dBIC)/sum(exp((-.5)*dBIC))
-  dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "fanny",
-                              k = res[['clusters']])
-  res[['Silh_score']] <- dSilh$silinfo$avg.width
-  res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+  res[['Silh_score']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]], 2)
+  res[['silh_scores']] <- round(summary(cluster::silhouette(cfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]], 2)
   return(res)
 }
 
@@ -277,25 +300,18 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
   
-  evaluationTable                       <- createJaspTable("K-Means Clustering Model Summary")
+  evaluationTable                       <- createJaspTable("Fuzzy c-means Clustering Model Summary")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(options =c("predictors", "noOfClusters", "noOfIterations", "algorithm",
-                                    "aicweights", "modelOpt", "seed", "maxClusters", "scaleEqualSD"))
+                                      "modelOpt", "seed", "maxClusters", "scaleEqualSD"))
   
   evaluationTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:1')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:1')
-  evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette value', type = 'number', format = 'dp:1')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'number', format = 'dp:1')
-  if(options[["aicweights"]]){
-    evaluationTable$addColumnInfo(name = "aicweights", title = "w(AIC)", type = "number", format = "dp:2")
-    evaluationTable$addColumnInfo(name = "bicweights", title = "w(BIC)", type = "number", format = "dp:2")
-  }
-  
-  evaluationTable$addCitation("Hartigan, J. A., & Wong, M. A. (1979). Algorithm AS 136: A k-means clustering algorithm. Journal of the Royal Statistical Society. Series C (Applied Statistics), 28(1), 100-108.")
-  evaluationTable$addCitation("Wagenmakers, E. J., & Farrell, S. (2004). AIC model selection using Akaike weights. Psychonomic bulletin & review, 11(1), 192-196.")
+  evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:1')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   
   if(!ready)
     return()
@@ -306,8 +322,6 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   }
   
   row <- data.frame(clusters = res[['clusters']], measure = res[['BSS']]/res[['TSS']], aic = res[['AIC']], bic = res[['BIC']], Silh = res[['Silh_score']], n = res[["N"]])
-  if(options[["aicweights"]])
-    row <- cbind(row, aicweights = res[["AICweights"]], bicweights = res[["BICweights"]])
   evaluationTable$addRows(row)
 }
 
@@ -322,14 +336,17 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
     clusterInfoTable$dependOn(options =c("tableClusterInformation","predictors", "modelOpt",
                                        "noOfClusters", "tableClusterInfoSize",
                                        "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD",
-                                       "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters"))
+                                       "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters",
+                                       "tableClusterInfoWSS", "tableClusterInfoSilhouette"))
     clusterInfoTable$position               <- 2
     clusterInfoTable$transpose              <- TRUE
     
     clusterInfoTable$addColumnInfo(name = 'cluster', title = 'Cluster', type = 'integer')
     clusterInfoTable$addColumnInfo(name = 'size', title = 'Size', type = 'integer')
-    clusterInfoTable$addColumnInfo(name = 'withinss', title = 'Within Sum of Squares', type = 'number', format = 'dp:2')
-    clusterInfoTable$addColumnInfo(name = 'silh_scores', title = 'Silhouette scores', type = 'number', format = 'dp:2')
+    if(options[["tableClusterInfoWSS"]])
+      clusterInfoTable$addColumnInfo(name = 'withinss', title = 'Within sum of squares', type = 'number', format = 'dp:2')
+    if(options[["tableClusterInfoSilhouette"]])
+      clusterInfoTable$addColumnInfo(name = 'silh_scores', title = 'Silhouette score', type = 'number', format = 'dp:2')
     
     if(!ready)
       return()
@@ -345,7 +362,11 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
     withinss <- res[["WSS"]]
     silh_scores <- res[['silh_scores']]
     
-    row <- data.frame(cluster = cluster, size = size, withinss = withinss, silh_scores = silh_scores)
+    row <- data.frame(cluster = cluster, size = size)
+    if(options[["tableClusterInfoWSS"]])
+      row <- cbind(row, withinss = withinss)
+    if(options[["tableClusterInfoSilhouette"]])
+      row <- cbind(row, silh_scores = silh_scores)
     
     if(options[['tableClusterInfoCentroids']]){
       for( i in 1:length(options[["predictors"]])){
@@ -396,7 +417,8 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
       p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
       jaspResults[["plot2dCluster"]] 		<- createJaspPlot(plot = p, title= "T-sne Cluster Plot", width = 400, height = 300)
       jaspResults[["plot2dCluster"]]		$dependOn(options =c("predictors", "noOfClusters", "noOfIterations",
-                                                         "aicweights", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD"))
+                                                         "aicweights", "modelOpt", "ready", "seed", "plot2dCluster",
+                                                         "maxClusters", "scaleEqualSD", "seedBox"))
       jaspResults[["plot2dCluster"]] 		$position <- 3
     }
   }
@@ -410,8 +432,8 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   } else if(ready && options[['withinssPlot']] && options[["modelOpt"]] != "validationManual"){
     if(is.null(jaspResults[["optimPlot"]])){
       
-      values <- res[['WithinSumSquares_store']]
-      d <- data.frame(x = 1:options[["maxClusters"]], y = values)
+      values <- res[['WithinSumSquares_store']][2:options[["maxClusters"]]]
+      d <- data.frame(x = 2:options[["maxClusters"]], y = values)
       
       xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x)
       yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y)
@@ -421,12 +443,13 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
       
       p <- p + ggplot2::scale_x_continuous(name = "Cluster", breaks = xBreaks, limits = range(xBreaks))
       p <- p + ggplot2::scale_y_continuous(name = "Within Sum of Squares", breaks = yBreaks, limits = range(yBreaks))
+      p <- p + JASPgraphs::geom_point(data = data.frame(x = res[['clusters']], y = values[res[['clusters']]-1]), ggplot2::aes(x = x, y = y), fill = "red")
       
       p <- JASPgraphs::themeJasp(p)
       
       jaspResults[["optimPlot"]] 		 <- createJaspPlot(plot = p, title= "Within Sum of Squares Plot", height = 300, width = 400)
-      jaspResults[["optimPlot"]]		   $dependOn(options =c("predictors", "noOfClusters", "noOfIterations",
-                                                        "aicweights", "modelOpt", "ready", "seed", "withinssPlot", "scaleEqualSD"))
+      jaspResults[["optimPlot"]]		   $dependOn(options =c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm",
+                                                          "aicweights", "modelOpt", "ready", "seed", "withinssPlot", "scaleEqualSD", "maxClusters"))
       jaspResults[["optimPlot"]] 		 $position <- 4
     }
   }

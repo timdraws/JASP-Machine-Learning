@@ -36,8 +36,10 @@ GroupBox {
     title: qsTr("Tables")
 
     CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
-    CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false }
-    CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false }
+        CheckBox { text: qsTr("Within sum of squares") ; name: "tableClusterInfoWSS" ; checked: true}
+        CheckBox { text: qsTr("Silhouette score") ; name: "tableClusterInfoSilhouette" ; checked: false}
+        CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false }
+        CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false }
     }
 }
 
@@ -54,13 +56,12 @@ Section {
     RadioButtonGroup {
         title: qsTr("Model optimization")
         name: "modelOpt"
-        RadioButton { text: qsTr("k-distance")                             ; name: "k-distance" }
         RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
     }
 
     GroupBox {
-        DoubleField { name: "eps"; text: qsTr("eps:") ; decimals: 2; defaultValue: 2 ; min: -1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
-        IntegerField { name: "minPts"; text: qsTr("minPts:") ; defaultValue: 5 ; min: 1; max: 999999; fieldWidth: 60 }
+        DoubleField { name: "eps"; text: qsTr("eps:") ; decimals: 2; defaultValue: 2 ; min: 0.001; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
+        DoubleField { name: "minPts"; text: qsTr("minPts:") ; decimals: 2; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60 }
         ComboBox { name: "distance"; label: qsTr("Distance metric:");
             model: ListModel {
                 ListElement { key: "Normal densities"            ; value: "Normal densities" }

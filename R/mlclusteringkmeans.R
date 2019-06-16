@@ -114,37 +114,48 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     res[['AICweights']] <- 1
     res[['BICweights']] <- 1
     png(tempfile())
-    dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "kmeans",
-                                k = res[['clusters']])
-    dev.off()
+
     m = ncol(kfit$centers)
     n = length(kfit$cluster)
     k = nrow(kfit$centers)
     D = kfit$tot.withinss
     res[['AIC']] <- D + 2*m*k
     res[['BIC']] <- D + log(n)*m*k
-    res[['Silh_score']] <- dSilh$silinfo$avg.width
-    res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+    res[['Silh_score']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+    res[['silh_scores']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]]
     return(res)
 }
 
 .kMeansClusteringSilh <- function(dataset, options) {
-  png(tempfile())
-  dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "kmeans",
-                              k.max = options[["maxClusters"]])
-  dev.off()
+  
+  avg_silh <- numeric(options[["maxClusters"]] - 1)
+  res<-list()
+  res[['clusterrange']] <- 1:options[["maxClusters"]]
+
+  for (i in 2:res[['clusterrange']]) {
+    kfit_tmp <- kmeans(dataset[, .v(options[["predictors"]])],
+                   centers = i,
+                   iter.max = options[['noOfIterations']],
+                   nstart = options[['noOfRandomSets']],
+                   algorithm = options[['algorithm']])
+    silh <- summary(cluster::silhouette(kfit_tmp$cluster, dist(dataset[, .v(options[["predictors"]])])))
+    avg_silh[i] <- silh[4]
+  }
+  opt_n_clusters <- which.max(avg_silh)
+  
   kfit <- kmeans(dataset[, .v(options[["predictors"]])],
-                 centers = dSilh$nbclust,
+                 centers = opt_n_clusters,
                  iter.max = options[['noOfIterations']],
                  nstart = options[['noOfRandomSets']],
                  algorithm = options[['algorithm']])
+  
   res <- list()
   res[['Predictions']] <- data.frame(
     'Observation' = 1:nrow(dataset),
     'Cluster' = kfit$cluster
   )
   res[["pred.values"]] <- kfit$cluster
-  res[['clusters']] <- options[['noOfClusters']]
+  res[['clusters']] <- opt_n_clusters
   res[["N"]] <- nrow(dataset)
   res[['size']] <- kfit$size
   res[['centroids']] <- kfit$centers
@@ -153,14 +164,14 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
   res[['BSS']] <- kfit$betweenss
   res[['AICweights']] <- 1
   res[['BICweights']] <- 1
-  res[['Silh_score']] <- dSilh$silinfo$avg.width
+  res[['Silh_score']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]]
   m = ncol(kfit$centers)
   n = length(kfit$cluster)
   k = nrow(kfit$centers)
   D = kfit$tot.withinss
   res[['AIC']] <- D + 2*m*k
   res[['BIC']] <- D + log(n)*m*k
-  res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+  res[['silh_scores']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]]
   return(res)
 }
 
@@ -207,10 +218,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
                        iter.max = options[['noOfIterations']],
                        nstart = options[['noOfRandomSets']],
                        algorithm = options[['algorithm']])
-    png(tempfile())
-    dSilh <- factoextra::eclust(dataset[, .v(options[["predictors"]])], "kmeans",
-                                k = res[['clusters']])
-    dev.off()
+    
     res[["model"]] <- kfit
     res[['Predictions']] <- data.frame(
         'Observation' = 1:nrow(dataset),
@@ -221,7 +229,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     res[['WSS']] <- kfit$withinss
     res[['TSS']] <- kfit$totss
     res[['BSS']] <- kfit$betweenss
-    res[['Silh_score']] <- dSilh$silinfo$avg.width
+    res[['Silh_score']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]]
     m = ncol(kfit_tmp$centers)
     n = length(kfit_tmp$cluster)
     k = nrow(kfit_tmp$centers)
@@ -233,7 +241,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     res[['AICweights']] <- exp((-.5)*dAIC)/sum(exp((-.5)*dAIC))
     dBIC <- res[['BIC_store']][res[['clusters']]] - min(res[['BIC_store']])
     res[["BICweights"]] <- exp((-.5)*dBIC)/sum(exp((-.5)*dBIC))
-    res[['silh_scores']] <- dSilh$silinfo$clus.avg.widths
+    res[['silh_scores']] <- summary(cluster::silhouette(kfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]]
     return(res)
 }
 
@@ -265,7 +273,8 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     evaluationTable$addFootnote(message=message, symbol="<i>Note.</i>")
   }
 
-  row <- data.frame(clusters = res[['clusters']], measure = res[['BSS']]/res[['TSS']], aic = res[['AIC']], bic = res[['BIC']], Silh = res[['Silh_score']], n = res[["N"]])
+  row <- data.frame(clusters = res[['clusters']], measure = res[['BSS']]/res[['TSS']], aic = round(res[['AIC']], 2),
+                    bic = round(res[['BIC']], 2), Silh = round(res[['Silh_score']], 2), n = round(res[["N"]], 0))
   evaluationTable$addRows(row)
 }
 
