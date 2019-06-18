@@ -98,7 +98,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   }
   jaspResults[["res"]] <- createJaspState(res)
   jaspResults[["res"]]$dependOn(options =c("predictors", "noOfClusters", "linkage", "modelOpt", "seed", 
-                                           "maxClusters", "seedBox", "scaleEqualSD", "distance"))
+                                           "maxClusters", "seedBox", "scaleEqualSD", "distance", "Pearson correlation"))
   
   return(jaspResults[["res"]]$object)
 }
@@ -118,13 +118,20 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
     sum(scale(x, scale = FALSE)^2)
   }
   
-  hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
-                        method = options[["linkage"]]), k = options[['noOfClusters']])
-                 
+  hfit <- 0
+  if (options[["distance"]] == "Pearson correlation") {
+    hfit <- cutree(hclust(as.dist(1-cor(t(dataset[, .v(options[["predictors"]])]),
+                                        method="pearson")),
+                          method = options[["linkage"]]), k = options[['noOfClusters']])
+  } else {
+    hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
+                  method = options[["linkage"]]), k = options[['noOfClusters']])
+  }
+  
   res <- list()
   res[['Predictions']] <- data.frame(
-  'Observation' = 1:nrow(dataset),
-  'Cluster' = hfit
+    'Observation' = 1:nrow(dataset),
+    'Cluster' = hfit
   )
   
   res[["pred.values"]] <- hfit
@@ -133,8 +140,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[["size"]] <- as.data.frame(table(hfit))[,2]
   res[["linkage"]] <- options[["linkage"]]
   
-  # dim <- kmeans(dataset[, .v(options[["predictors"]])], res[['clusters']])
-  m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
+  m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
   
   withinss <- 0
   for (i in 1:length(table(hfit))) {
@@ -156,9 +162,11 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[['BIC']] <- D + log(n)*m*k
   res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
   res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  
   return(res)
 }
 
+  
 .hierClusteringOptimized <- function(dataset, options){
   
   .disttovar <- function(x) {
@@ -179,15 +187,23 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[['clusterrange']] <- 1:options[["maxClusters"]]
   
   for (i in 2:res[['clusterrange']]) {
+    
     hfit_tmp <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
-                              method = options[["linkage"]]), k = i)
+                            method = options[["linkage"]]), k = i)
     silh <- summary(cluster::silhouette(hfit_tmp, dist(dataset[, .v(options[["predictors"]])])))
     avg_silh[i] <- silh[4]
   }
   opt_n_clusters <- which.max(avg_silh)
   
-  hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
-                        method = options[["linkage"]]), k = opt_n_clusters)
+  hfit <- 0
+  if (options[["distance"]] == "Pearson correlation") {
+    hfit <- cutree(hclust(as.dist(1-cor(t(dataset[, .v(options[["predictors"]])]),
+                                        method="pearson")),
+                          method = options[["linkage"]]), k = opt_n_clusters)
+  } else {
+    hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
+                          method = options[["linkage"]]), k = opt_n_clusters)
+  }
   
   res <- list()
   res[['Predictions']] <- data.frame(
@@ -200,8 +216,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[["N"]] <- nrow(dataset)
   res[["size"]] <- as.data.frame(table(hfit))[,2]
   res[["linkage"]] <- options[["linkage"]]
-  # dim <- kmeans(dataset[, .v(options[["predictors"]])], res[['clusters']])
-  m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
+  m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
   
   withinss <- 0
   for (i in 1:length(table(hfit))) {
@@ -223,6 +238,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[['BIC']] <- D + log(n)*m*k
   res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
   res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  
   return(res)
 }
 
@@ -249,10 +265,9 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   for(i in 1:options[['maxClusters']]){
     
     hfit_tmp <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
-                  method = options[["linkage"]]), k = i)
+                              method = options[["linkage"]]), k = i)
     
-    # dim <- kmeans(dataset[, .v(options[["predictors"]])], centers = i)
-    m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
+    m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
     wss <- 0
     for (j in 1:length(table(hfit_tmp))) {
       if (m == 1) {
@@ -262,7 +277,6 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
       }
     }
     
-
     res[['WithinSumSquares_store']][i] = sum(wss) # $within.cluster.ss
     n = length(hfit_tmp)
     k = length(table(hfit_tmp))
@@ -281,8 +295,15 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   } 
   
   # predictions for best model.
-  hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
-                        method = options[["linkage"]]), k = res[['clusters']])
+  hfit <- 0
+  if (options[["distance"]] == "Pearson correlation") {
+    hfit <- cutree(hclust(as.dist(1-cor(t(dataset[, .v(options[["predictors"]])]),
+                                        method="pearson")),
+                          method = options[["linkage"]]), k = res[['clusters']])
+  } else {
+    hfit <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
+                          method = options[["linkage"]]), k = res[['clusters']])
+  }
   
   res[['Predictions']] <- data.frame(
     'Observation' = 1:nrow(dataset),
@@ -304,8 +325,6 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   res[['WSS']] <- sum(withinss)
   res[['TSS']] <- .tss(dist(dataset[, .v(options[["predictors"]])]))
   res[['BSS']] <- res[['TSS']]-res[['WSS']]
-  res[['Silh_score']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
-  # dim <- kmeans(dataset[, .v(options[["predictors"]])], res[['clusters']])
   m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
   n = length(hfit)
   k = length(table(hfit))
@@ -316,6 +335,8 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   dAIC <- res[["AIC_store"]][res[['clusters']]] - min(res[['AIC_store']])
   dBIC <- res[['BIC_store']][res[['clusters']]] - min(res[['BIC_store']])
   res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
+  res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  
   return(res)
 }
 
@@ -377,8 +398,6 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
     if(!ready)
       return()
     
-  } else {
-    return()
   }
   
   cluster <- 1:res[["clusters"]]
@@ -420,17 +439,18 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
       unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
       data <- dataset[unique.rows, .v(options[["predictors"]])]
       
-      #if(options[["distance"]] == "Euclidean") {
-      #  data <- dist(dataset[, .v(options[["predictors"]])])
-      #} else {
-      #  data <- as.dist(1-cor(dataset[, .v(options[["predictors"]])],
-      #                        method="pearson"))
-      #}
-      
       tsne_out <- Rtsne::Rtsne(as.matrix(data), perplexity = nrow(data)/4)
       
-      hfit <- cutree(hclust(dist(data), method = options[["linkage"]]),
-                            k = res[['clusters']])
+      hfit <- 0
+      if (options[["distance"]] == "Pearson correlation") {
+        hfit <- cutree(hclust(as.dist(1-cor(t(data),
+                                            method="pearson")),
+                              method = options[["linkage"]]), k = res[['clusters']])
+      } else {
+        hfit <- cutree(hclust(dist(data),
+                              method = options[["linkage"]]), k = res[['clusters']])
+      }
+  
                      pred.values <- hfit
                      
                      tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], col = pred.values)
@@ -458,9 +478,18 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
         set.seed(options[["seed"]])
       unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
       data <- dataset[unique.rows, .v(options[["predictors"]])]
-      hc <- hclust(dist(data), method = options[["linkage"]])
-      # hc$labels <- replicate(nrow(data), " ")
-      p <- ggdendro::ggdendrogram(hc) # + ggdendro::theme_dendro()
+
+      hc <- 0
+      if (options[["distance"]] == "Pearson correlation") {
+        hc <- hclust(as.dist(1-cor(t(data),
+                                            method="pearson")),
+                              method = options[["linkage"]])
+      } else {
+        hc <- hclust(dist(data),
+                              method = options[["linkage"]])
+      }
+      
+      p <- ggdendro::ggdendrogram(hc)
       p <- JASPgraphs::themeJasp(p) + ggdendro::theme_dendro()
       
       jaspResults[["dendrogram"]] 		 <- createJaspPlot(plot = p, title= "Dendrogram", height = 300, width = 400)
@@ -483,3 +512,4 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
 .ss <- function(x) {
   sum(scale(x, scale = FALSE)^2)
 }
+
