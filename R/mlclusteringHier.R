@@ -160,9 +160,14 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   D = res[['WSS']]
   res[['AIC']] <- D + 2*m*k
   res[['BIC']] <- D + log(n)*m*k
-  res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
-  res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
   
+  if (options[["distance"]] == "Pearson correlation") {
+    res[['silh_scores']] <- summary(cluster::silhouette(hfit, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[2]]
+    res[["Silh_score"]] <- summary(cluster::silhouette(hfit, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[4]]
+  } else {
+    res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
+    res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  }
   return(res)
 }
 
@@ -190,7 +195,11 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
     
     hfit_tmp <- cutree(hclust(dist(dataset[, .v(options[["predictors"]])]),
                             method = options[["linkage"]]), k = i)
-    silh <- summary(cluster::silhouette(hfit_tmp, dist(dataset[, .v(options[["predictors"]])])))
+    if (options[["distance"]] == "Pearson correlation") {
+      silh <- summary(cluster::silhouette(hfit_tmp, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))
+    } else {
+      silh <- summary(cluster::silhouette(hfit_tmp, dist(dataset[, .v(options[["predictors"]])])))
+    }
     avg_silh[i] <- silh[4]
   }
   opt_n_clusters <- which.max(avg_silh)
@@ -236,8 +245,14 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   D = res[['WSS']]
   res[['AIC']] <- D + 2*m*k
   res[['BIC']] <- D + log(n)*m*k
-  res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
-  res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  
+  if (options[["distance"]] == "Pearson correlation") {
+    res[['silh_scores']] <- summary(cluster::silhouette(hfit, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[2]]
+    res[["Silh_score"]] <- summary(cluster::silhouette(hfit, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[4]]
+  } else {
+    res[['silh_scores']] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[2]]
+    res[["Silh_score"]] <- summary(cluster::silhouette(hfit, dist(dataset[, .v(options[["predictors"]])])))[[4]]
+  }
   
   return(res)
 }

@@ -210,9 +210,12 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
     res[["one"]] = 1
   }
   
-  if (res[["one"]] == 0 && res[["zero"]] == 0) {
+  if (res[["one"]] == 0 && res[["zero"]] == 0 && options[["distance"]] == "Normal densities") {
     res[['Silh_score']] <- summary(cluster::silhouette(densityfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]]
     res[['silh_scores']] <- summary(cluster::silhouette(densityfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]]
+  } else if (res[["one"]] == 0 && res[["zero"]] == 0 && options[["distance"]] == "Correlated densities") {
+    res[['Silh_score']] <- summary(cluster::silhouette(densityfit$cluster, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[4]]
+    res[['silh_scores']] <- summary(cluster::silhouette(densityfit$cluster, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[2]]
   } else {
     res[['Silh_score']] <- 0
     res[['silh_scores']] <- 0
