@@ -16,66 +16,28 @@
 #
 
 MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
-  
-  .ss <- function(x) {
-    sum(scale(x, scale = FALSE)^2)
-  }
-  
-  .disttovar <- function(x) {
-    mean(x**2)/2
-  }
-  
-  .tss <- function(x) {
-    n <- nrow(as.matrix(x))
-    .disttovar(x)*(n-1)
-  }
-  
 
   # read variables ##
-  dataset             <- .densityClusteringReadData(dataset, options)
+  dataset <- .readDataClusteringAnalyses(dataset, options)
   
   # error handling & code variable names in base64
-  .densityClusteringErrorHandling(dataset, options)
-  ready               <- length(options[["predictors"]][options[["predictors"]] != ""] > 0)
+  .errorHandlingClusteringAnalyses(dataset, options)
+  ready  <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2
   
   # Run the analysis and save the results
-  res                 <- .densityClustering(dataset, options, jaspResults, ready)
+  clusterResult                 <- .densityClustering(dataset, options, jaspResults, ready)
   
   # create the evaluation table
-  .densityClusteringSummaryTable(dataset, res, options, jaspResults, ready)
+  .densityClusteringSummaryTable(dataset, clusterResult, options, jaspResults, ready)
   
   # create the cluster information table
-  .densityClusteringInformationTable(dataset, options, res, jaspResults, ready)
+  .densityClusteringInformationTable(dataset, options, clusterResult, jaspResults, ready)
   
   # Create the cluster plot
-  .densityBasedClusterPlot(dataset, options, res, jaspResults, ready)
+  .tsneClusterPlot(dataset, options, clusterResult, type = "densitybased", jaspResults, ready, position = 3)
   
   # Create the k-distance plot
-  .kdistPlot(dataset, options, res, jaspResults, ready)
-}
-
-.densityClusteringReadData <- function(dataset, options){
-  predictors <- unlist(options[['predictors']])
-  predictors <- predictors[predictors != ""]
-  if (is.null(dataset)) {
-    dataset <- .readDataSetToEnd(columns.as.numeric = predictors, exclude.na.listwise = predictors)
-  }
-  if(options[["scaleEqualSD"]]){
-    dataset <- scale(dataset)
-  }
-  return(dataset)
-}
-
-.densityClusteringErrorHandling <- function(dataset, options){
-  predictors <- unlist(options$predictors)
-  if(length(predictors[predictors != '']) > 0){
-    for(i in 1:length(predictors)){
-      errors <- .hasErrors(dataset, perform, type = c('infinity', 'observations'),
-                           all.target = predictors[i],
-                           observations.amount = "< 2",
-                           exitAnalysisIfErrors = TRUE)
-    }
-  }
+  .kdistPlot(dataset, options, clusterResult, jaspResults, ready)
 }
 
 .densityClustering <- function(dataset, options, jaspResults, ready){
@@ -228,7 +190,7 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
   
-  evaluationTable                       <- createJaspTable("Density based Clustering")
+  evaluationTable                       <- createJaspTable("Density-Based Clustering")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(c("predictors", "eps", "minPts", "modelOpt", "seed", "scaleEqualSD", 'k-distplot', "distance"))
@@ -338,48 +300,6 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   }
 }
 
-.densityBasedClusterPlot <- function(dataset, options, res, jaspResults, ready){
-  if(!ready && options[['plot2dCluster']]){
-    p <- createJaspPlot(plot = NULL, title= "Cluster Plot", width = 400, height = 300)
-    p$setError("Plotting not possible: No analysis has been run.")
-    return()
-  } else if(ready && options[['plot2dCluster']]){
-    if(is.null(jaspResults[["plot2dCluster"]])){
-      
-      if(options[["seedBox"]])
-        set.seed(options[["seed"]])
-      
-      unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
-      data <- dataset[unique.rows, .v(options[["predictors"]])]
-      tsne_out <- Rtsne::Rtsne(as.matrix(data), perplexity = nrow(data)/4)
-      
-      densityfit <- 0
-      if (options[["distance"]] == "Correlated densities") {
-        densityfit <- dbscan::dbscan(as.dist(1-cor(t(data),
-                                                   method = "pearson")),
-                                     eps = res[['eps']],
-                                     minPts = res[['MinPts']])
-      } else {
-        densityfit <- dbscan::dbscan(data,
-                                     eps = res[['eps']],
-                                     minPts = res[['MinPts']])
-      }
-      
-      pred.values <- densityfit$cluster
-      
-      tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], col = pred.values)
-      p <- ggplot2::ggplot(tsne_plot) + ggplot2::geom_point(ggplot2::aes(x = x, y = y, fill = factor(col)), size = 4, stroke = 1, shape = 21, color = "black") + ggplot2::xlab(NULL) + ggplot2::ylab(NULL)
-      p <- p + ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = res[["clusters"]] + 1))
-      p <- JASPgraphs::themeJasp(p)
-      p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
-      jaspResults[["plot2dCluster"]] 		<- createJaspPlot(plot = p, title= "T-sne Cluster Plot", width = 400, height = 300)
-      jaspResults[["plot2dCluster"]]		$dependOn(options =c("predictors", "eps", "minPts", "modelOpt", "seed",
-                                                           "scaleEqualSD", "ready", "plot2dCluster", "seedBox", "distance"))
-      jaspResults[["plot2dCluster"]] 		$position <- 3
-    }
-  }
-}
-
 .kdistPlot <- function(dataset, options, res, jaspResults, ready){
   if(!ready && options[['k-distplot']]){
     p <- createJaspPlot(plot = NULL, title= "K-distance plot", width = 400, height = 300)
@@ -421,6 +341,19 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
       jaspResults[["optimPlot"]] 		 $position <- 4
     }
   }
+}
+
+.ss <- function(x) {
+  sum(scale(x, scale = FALSE)^2)
+}
+
+.disttovar <- function(x) {
+  mean(x**2)/2
+}
+
+.tss <- function(x) {
+  n <- nrow(as.matrix(x))
+  .disttovar(x)*(n-1)
 }
 
 

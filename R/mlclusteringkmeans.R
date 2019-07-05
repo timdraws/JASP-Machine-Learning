@@ -17,50 +17,26 @@
 
 MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     # read variables ##
-    dataset             <- .kMeansClusteringReadData(dataset, options)
+    dataset <- .readDataClusteringAnalyses(dataset, options)
     
     # error handling & code variable names in base64
-    .kMeansClusteringErrorHandling(dataset, options)
-    ready               <- length(options[["predictors"]][options[["predictors"]] != ""] > 0)
+    .errorHandlingClusteringAnalyses(dataset, options)
+    ready  <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2
     
     # Run the analysis and save the results
-    res                 <- .kMeansClustering(dataset, options, jaspResults, ready)
+    clusterResult <- .kMeansClustering(dataset, options, jaspResults, ready)
     
     # create the evaluation table
-    .kMeansClusteringSummaryTable(res, options, jaspResults, ready)
+    .kMeansClusteringSummaryTable(clusterResult, options, jaspResults, ready)
     
     # create the cluster information table
-    .kMeansClusteringInformationTable(options, res, jaspResults, ready)
+    .kMeansClusteringInformationTable(options, clusterResult, jaspResults, ready)
     
     # Create the cluster plot
-    .kMeansClusterPlot(dataset, options, res, jaspResults, ready)
+    .tsneClusterPlot(dataset, options, clusterResult, type = "kmeans", jaspResults, ready, position = 3)
     
     # Create the within ss vs cluster plot
-    .kMeansWithinSumOfSquaresPlot(options, res, jaspResults, ready)
-}
-
-.kMeansClusteringReadData <- function(dataset, options){
-  predictors <- unlist(options['predictors'])
-  predictors <- predictors[predictors != ""]
-  if (is.null(dataset)) {
-          dataset <- .readDataSetToEnd(columns.as.numeric = predictors, exclude.na.listwise = predictors)
-  }
-  if(options[["scaleEqualSD"]]){
-    dataset <- scale(dataset)
-  }
-  return(dataset)
-}
-
-.kMeansClusteringErrorHandling <- function(dataset, options){
-  predictors <- unlist(options$predictors)
-  if(length(predictors[predictors != '']) > 0){
-      for(i in 1:length(predictors)){
-          errors <- .hasErrors(dataset, perform, type = c('infinity', 'observations'),
-                               all.target = predictors[i],
-                               observations.amount = "< 2",
-                               exitAnalysisIfErrors = TRUE)
-      }
-  }
+    .kMeansWithinSumOfSquaresPlot(options, clusterResult, jaspResults, ready)
 }
 
 .kMeansClustering <- function(dataset, options, jaspResults, ready){
@@ -342,37 +318,6 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     }
 
     clusterInfoTable$addRows(row)
-  }
-}
-
-.kMeansClusterPlot <- function(dataset, options, res, jaspResults, ready){
-  if(!ready && options[['plot2dCluster']]){
-    p <- createJaspPlot(plot = NULL, title= "Cluster Plot", width = 400, height = 300)
-    p$setError("Plotting not possible: No analysis has been run.")
-    return()
-  } else if(ready && options[['plot2dCluster']]){
-    if(is.null(jaspResults[["plot2dCluster"]])){
-      
-      if(options[["seedBox"]])
-        set.seed(options[["seed"]])
-      
-      unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
-      data <- dataset[unique.rows, .v(options[["predictors"]])]
-      tsne_out <- Rtsne::Rtsne(as.matrix(data), perplexity = nrow(data) / 4)
-      
-      kfit <- kmeans(data, centers = res[["clusters"]], iter.max = options[['noOfIterations']], nstart = options[['noOfRandomSets']], algorithm = options[['algorithm']])
-      pred.values <- kfit$cluster
-      
-      tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], col = pred.values)
-      p <- ggplot2::ggplot(tsne_plot) + ggplot2::geom_point(ggplot2::aes(x = x, y = y, fill = factor(col)), size = 4, stroke = 1, shape = 21, color = "black") + ggplot2::xlab(NULL) + ggplot2::ylab(NULL)
-      p <- p + ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = res[["clusters"]]))
-      p <- JASPgraphs::themeJasp(p)
-      p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
-      jaspResults[["plot2dCluster"]] 		<- createJaspPlot(plot = p, title= "T-sne Cluster Plot", width = 400, height = 300)
-      jaspResults[["plot2dCluster"]]		$dependOn(options =c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm",
-                                          "aicweights", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox"))
-      jaspResults[["plot2dCluster"]] 		$position <- 3
-    }
   }
 }
 

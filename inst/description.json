@@ -68,12 +68,12 @@
 				"icon": 							"analysis-ml-clustering.svg"
 			},
 			{
-				"title":							"Density-based Clustering",
+				"title":							"Density-Based Clustering",
 				"qml":								"mlclusteringdensitybased.qml",
 				"function":							"MLClusteringDensityBased"
 			},
 			{
-				"title":							"Fuzzy C-means Clustering",
+				"title":							"Fuzzy C-Means Clustering",
 				"qml":								"mlfuzzycmeans.qml",
 				"function":							"MLFuzzyCMeans"
 			},

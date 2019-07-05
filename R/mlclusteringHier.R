@@ -18,50 +18,26 @@
 MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   
   # read variables ##
-  dataset             <- .hierClusteringReadData(dataset, options)
+  dataset <- .readDataClusteringAnalyses(dataset, options)
   
   # error handling & code variable names in base64
-  .hierClusteringErrorHandling(dataset, options)
-  ready               <- length(options[["predictors"]][options[["predictors"]] != ""] > 0)
+  .errorHandlingClusteringAnalyses(dataset, options)
+  ready  <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2
   
   # Run the analysis and save the results
-  res                 <- .hierClustering(dataset, options, jaspResults, ready)
+  clusterResult <- .hierClustering(dataset, options, jaspResults, ready)
   
   # create the evaluation table
-  .hierClusteringSummaryTable(res, options, jaspResults, ready)
+  .hierClusteringSummaryTable(clusterResult, options, jaspResults, ready)
   
   # create the cluster information table
-  .hierClusteringInformationTable(options, res, jaspResults, ready)
+  .hierClusteringInformationTable(options, clusterResult, jaspResults, ready)
   
   # Create the cluster plot
-  .hierClusterPlot(dataset, options, res, jaspResults, ready)
+  .tsneClusterPlot(dataset, options, clusterResult, type = "hierarchical", jaspResults, ready, position = 3)
   
   # Create dendrogram
-  .hierdendrogram(dataset, options, res, jaspResults, ready)
-}
-
-.hierClusteringReadData <- function(dataset, options){
-  predictors <- unlist(options['predictors'])
-  predictors <- predictors[predictors != ""]
-  if (is.null(dataset)) {
-    dataset <- .readDataSetToEnd(columns.as.numeric = predictors, exclude.na.listwise = predictors)
-  }
-  if(options[["scaleEqualSD"]]){
-    dataset <- scale(dataset)
-  }
-  return(dataset)
-}
-
-.hierClusteringErrorHandling <- function(dataset, options){
-  predictors <- unlist(options$predictors)
-  if(length(predictors[predictors != '']) > 0){
-    for(i in 1:length(predictors)){
-      errors <- .hasErrors(dataset, perform, type = c('infinity', 'observations'),
-                           all.target = predictors[i],
-                           observations.amount = "< 2",
-                           exitAnalysisIfErrors = TRUE)
-    }
-  }
+  .hierdendrogram(dataset, options, clusterResult, jaspResults, ready)
 }
 
 .hierClustering <- function(dataset, options, jaspResults, ready){
@@ -366,11 +342,11 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
                                       "seed", "linkage", "modelOpt", "distance"))
   
   evaluationTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   
   if(!ready)
     return()
@@ -434,47 +410,6 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   }
   
   clusterInfoTable$addRows(row)
-}
-
-.hierClusterPlot <- function(dataset, options, res, jaspResults, ready){
-  if(!ready && options[['plot2dCluster']]){
-    p <- createJaspPlot(plot = NULL, title= "Cluster Plot", width = 400, height = 300)
-    p$setError("Plotting not possible: No analysis has been run.")
-    return()
-  } else if(ready && options[['plot2dCluster']]){
-    if(is.null(jaspResults[["plot2dCluster"]])){
-      
-      if(options[["seedBox"]])
-        set.seed(options[["seed"]])
-      
-      unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
-      data <- dataset[unique.rows, .v(options[["predictors"]])]
-      
-      tsne_out <- Rtsne::Rtsne(as.matrix(data), perplexity = nrow(data)/4)
-      
-      hfit <- 0
-      if (options[["distance"]] == "Pearson correlation") {
-        hfit <- cutree(hclust(as.dist(1-cor(t(data),
-                                            method="pearson")),
-                              method = options[["linkage"]]), k = res[['clusters']])
-      } else {
-        hfit <- cutree(hclust(dist(data),
-                              method = options[["linkage"]]), k = res[['clusters']])
-      }
-  
-                     pred.values <- hfit
-                     
-                     tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], col = pred.values)
-                     p <- ggplot2::ggplot(tsne_plot) + ggplot2::geom_point(ggplot2::aes(x = x, y = y, fill = factor(col)), size = 4, stroke = 1, shape = 21, color = "black") + ggplot2::xlab(NULL) + ggplot2::ylab(NULL)
-                     p <- p + ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = res[["clusters"]]))
-                     p <- JASPgraphs::themeJasp(p)
-                     p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
-                     jaspResults[["plot2dCluster"]] 		<- createJaspPlot(plot = p, title= "T-sne Cluster Plot", width = 400, height = 300)
-                     jaspResults[["plot2dCluster"]]		$dependOn(options =c("predictors", "noOfClusters", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD",
-                                                                          "distance", "linkage", "modelOpt", "seedBox"))
-                     jaspResults[["plot2dCluster"]] 		$position <- 3
-    }
-  }
 }
 
 .hierdendrogram <- function(dataset, options, res, jaspResults, ready){
