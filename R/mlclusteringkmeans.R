@@ -140,6 +140,11 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
                    algorithm = options[['algorithm']])
     silh <- summary(cluster::silhouette(kfit_tmp$cluster, dist(dataset[, .v(options[["predictors"]])])))
     avg_silh[i] <- silh[4]
+
+    v_tmp <- kfit_tmp$centers
+    clabels_tmp <- kfit_tmp$cluster
+    csumsqrs_tmp <- .sumsqr(dataset[, .v(options[["predictors"]])], v_tmp, clabels_tmp) 
+    res[['WithinSumSquares_store']][i] <- csumsqrs_tmp$tot.within.ss
   }
   opt_n_clusters <- which.max(avg_silh)
   
@@ -148,8 +153,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
                  iter.max = options[['noOfIterations']],
                  nstart = options[['noOfRandomSets']],
                  algorithm = options[['algorithm']])
-  
-  res <- list()
+
   res[['Predictions']] <- data.frame(
     'Observation' = 1:nrow(dataset),
     'Cluster' = kfit$cluster
@@ -249,18 +253,18 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
-  evaluationTable                       <- createJaspTable("K-Means Clustering Model Summary")
+  evaluationTable                       <- createJaspTable("K-Means Clustering")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(options =c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm",
                                       "aicweights", "modelOpt", "seed", "maxClusters", "scaleEqualSD"))
 
   evaluationTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
 
   evaluationTable$addCitation("Hartigan, J. A., & Wong, M. A. (1979). Algorithm AS 136: A k-means clustering algorithm. Journal of the Royal Statistical Society. Series C (Applied Statistics), 28(1), 100-108.")
   evaluationTable$addCitation("Wagenmakers, E. J., & Farrell, S. (2004). AIC model selection using Akaike weights. Psychonomic bulletin & review, 11(1), 192-196.")

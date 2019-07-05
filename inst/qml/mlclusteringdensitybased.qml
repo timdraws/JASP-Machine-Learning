@@ -50,11 +50,11 @@ GroupBox {
 }
 
 Section {
-    title: qsTr("Training parameters")
+    title: qsTr("Training Parameters")
 
     GridLayout {
     RadioButtonGroup {
-        title: qsTr("Model optimization")
+        title: qsTr("Model Optimization")
         name: "modelOpt"
         RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
     }

@@ -73,7 +73,7 @@
 				"function":							"MLClusteringDensityBased"
 			},
 			{
-				"title":							"Fuzzy c-means Clustering",
+				"title":							"Fuzzy C-means Clustering",
 				"qml":								"mlfuzzycmeans.qml",
 				"function":							"MLFuzzyCMeans"
 			},

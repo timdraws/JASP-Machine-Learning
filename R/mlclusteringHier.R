@@ -359,7 +359,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
   
-  evaluationTable                       <- createJaspTable("Hierarchical Clustering Model Summary")
+  evaluationTable                       <- createJaspTable("Hierarchical Clustering")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(options =c("predictors", "noOfClusters", "maxClusters", "scaleEqualSD",
@@ -389,9 +389,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
 
 .hierClusteringInformationTable <- function(options, res, jaspResults, ready){
   
-  if(!is.null(jaspResults[["clusterInfoTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
-  
-  if (options[['tableClusterInformation']]){
+  if(!is.null(jaspResults[["clusterInfoTable"]]) || !options[['tableClusterInformation']]) return() #The options for this table didn't change so we don't need to rebuild it
     
     clusterInfoTable                        <- createJaspTable("Cluster Information")
     jaspResults[["clusterInfoTable"]]       <- clusterInfoTable
@@ -412,8 +410,6 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
     
     if(!ready)
       return()
-    
-  }
   
   cluster <- 1:res[["clusters"]]
   size <- res[["size"]]

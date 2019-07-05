@@ -228,19 +228,19 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
   
-  evaluationTable                       <- createJaspTable("Density based Clustering Model Summary")
+  evaluationTable                       <- createJaspTable("Density based Clustering")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(c("predictors", "eps", "minPts", "modelOpt", "seed", "scaleEqualSD", 'k-distplot', "distance"))
   
   evaluationTable$addColumnInfo(name = 'clusters', title = 'Cluster(s)', type = 'integer')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   evaluationTable$addColumnInfo(name = 'eps', title = 'Eps', type = 'integer')
   evaluationTable$addColumnInfo(name = 'minPts', title = 'MinPts', type = 'integer')
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   
   if(!ready)
     return()

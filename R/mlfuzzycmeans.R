@@ -100,17 +100,6 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   v <- cfit$centers
   clabels <- cfit$cluster
   
-  .sumsqr <- function(x, v, clusters){
-    sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
-    bwss <- sumsqr(v[clusters,])
-    wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
-    twss <- sum(wss)
-    tss <- bwss + twss
-    ss <- list(bwss, wss, twss, tss)
-    names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
-    return(ss)
-  }
-  
   csumsqrs <- .sumsqr(dataset[, .v(options[["predictors"]])], v, clabels)
   res <- list()
   res[['Predictions']] <- data.frame(
@@ -151,6 +140,11 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
                        m = options[["m"]])
     silh <- summary(cluster::silhouette(cfit_tmp$cluster, dist(dataset[, .v(options[["predictors"]])])))
     avg_silh[i] <- silh[4]
+
+    v_tmp <- cfit_tmp$centers
+    clabels_tmp <- cfit_tmp$cluster
+    csumsqrs_tmp <- .sumsqr(dataset[, .v(options[["predictors"]])], v_tmp, clabels_tmp) 
+    res[['WithinSumSquares_store']][i] <- csumsqrs_tmp$tot.within.ss
   }
   opt_n_clusters <- which.max(avg_silh)
   
@@ -162,20 +156,8 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   v <- cfit$centers
   clabels <- cfit$cluster
   
-  .sumsqr <- function(x, v, clusters){
-    sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
-    bwss <- sumsqr(v[clusters,])
-    wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
-    twss <- sum(wss)
-    tss <- bwss + twss
-    ss <- list(bwss, wss, twss, tss)
-    names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
-    return(ss)
-  }
-  
   csumsqrs <- .sumsqr(dataset[, .v(options[["predictors"]])], v, clabels)
   
-  res <- list()
   res[['Predictions']] <- data.frame(
     'Observation' = 1:nrow(dataset),
     'Cluster' = cfit$cluster
@@ -218,17 +200,6 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
     v_tmp <- cfit_tmp$centers
     clabels_tmp <- cfit_tmp$cluster
     
-    .sumsqr <- function(x, v, clusters){
-      sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
-      bwss <- sumsqr(v[clusters,])
-      wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
-      twss <- sum(wss)
-      tss <- bwss + twss
-      ss <- list(bwss, wss, twss, tss)
-      names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
-      return(ss)
-    }
-    
     csumsqrs_tmp <- .sumsqr(dataset[, .v(options[["predictors"]])], v_tmp, clabels_tmp)
     
     res[['WithinSumSquares_store']][i] <- csumsqrs_tmp$tot.within.ss
@@ -264,17 +235,6 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   v <- cfit$centers
   clabels <- cfit$cluster
   
-  .sumsqr <- function(x, v, clusters){
-    sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
-    bwss <- sumsqr(v[clusters,])
-    wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
-    twss <- sum(wss)
-    tss <- bwss + twss
-    ss <- list(bwss, wss, twss, tss)
-    names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
-    return(ss)
-  }
-  
   csumsqrs <- .sumsqr(dataset[, .v(options[["predictors"]])], v, clabels)
   
   res[['WSS']] <- csumsqrs$within.ss
@@ -300,18 +260,18 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   
   if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
   
-  evaluationTable                       <- createJaspTable("Fuzzy c-means Clustering Model Summary")
+  evaluationTable                       <- createJaspTable("Fuzzy C-means Clustering")
   jaspResults[["evaluationTable"]]      <- evaluationTable
   jaspResults[["evaluationTable"]]$position <- 1
   evaluationTable$dependOn(options =c("predictors", "noOfClusters", "noOfIterations", "algorithm",
                                       "modelOpt", "seed", "maxClusters", "scaleEqualSD"))
   
   evaluationTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
+  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
   evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:1')
   evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:1')
   evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:1')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
   
   if(!ready)
     return()
@@ -453,4 +413,15 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
       jaspResults[["optimPlot"]] 		 $position <- 4
     }
   }
+}
+
+.sumsqr <- function(x, v, clusters){
+  sumsqr <- function(x) sum(scale(x, scale = FALSE)^2)
+  bwss <- sumsqr(v[clusters,])
+  wss <- sapply(split(as.data.frame(x), clusters), sumsqr)
+  twss <- sum(wss)
+  tss <- bwss + twss
+  ss <- list(bwss, wss, twss, tss)
+  names(ss) <- c("between.ss", "within.ss", "tot.within.ss", "tot.ss")
+  return(ss)
 }

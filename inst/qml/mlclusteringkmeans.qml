@@ -53,11 +53,11 @@ Form {
     }
 
     Section {
-        title: qsTr("Training parameters")
+        title: qsTr("Training Parameters")
 
         GridLayout {
           RadioButtonGroup {
-              title: qsTr("Model optimization")
+              title: qsTr("Model Optimization")
               name: "modelOpt"
               RadioButton { text: qsTr("AIC")                             ; name: "validationAIC" }
               RadioButton { text: qsTr("BIC")                             ; name: "validationBIC" ; checked: true }
