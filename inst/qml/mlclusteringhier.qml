@@ -47,12 +47,13 @@ Form {
 
     GroupBox {
         title: qsTr("Plots")
-        CheckBox { text: qsTr("T-sne cluster plot")       ; name: "plot2dCluster" ; checked: false; enabled: true}
+        CheckBox { text: qsTr("T-sne cluster plot") ; name: "plot2dCluster" ; checked: false; enabled: true}
+        CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
         CheckBox { text: qsTr("Dendrogram")         ; name: "dendrogram"    ; checked: false; enabled: true}
     }
 
     Section {
-        title: qsTr("Training parameters")
+        title: qsTr("Training Parameters")
 
         GridLayout {
           RadioButtonGroup {
@@ -60,7 +61,7 @@ Form {
               name: "modelOpt"
               RadioButton { text: qsTr("AIC")                             ; name: "validationAIC" }
               RadioButton { text: qsTr("BIC")                             ; name: "validationBIC" ; checked: true }
-              RadioButton { text: qsTr("Silhouette")                      ; name: "silhouette"  ; id: silhouette}
+              RadioButton { text: qsTr("Silhouette")                      ; name: "validationSilh"  ; id: silhouette}
               RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
           }
 
@@ -70,7 +71,7 @@ Form {
               ComboBox { name: "distance"; label: qsTr("Distance metric:");
                   model: ListModel {
                       ListElement { key: "Euclidean"            ; value: "Euclidean" }
-                      ListElement { key: "Pearson correlation"                    ; value: "Pearson correlation" }
+                      ListElement { key: "Pearson correlation"  ; value: "Pearson correlation" }
                   }
               }
               ComboBox { name: "linkage"; label: qsTr("Linkage:");

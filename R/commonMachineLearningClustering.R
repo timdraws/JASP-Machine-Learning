@@ -55,6 +55,19 @@
   return(ss)
 }
 
+.disttovar <- function(x) {
+  mean(x**2)/2
+}
+
+.tss <- function(x) {
+  n <- nrow(as.matrix(x))
+  .disttovar(x)*(n-1)
+}
+
+.ss <- function(x) {
+  sum(scale(x, scale = FALSE)^2)
+}
+
 .clustering <- function(dataset, options, jaspResults, ready, type){
   
   if(!is.null(jaspResults[["clusterResult"]])) return()
@@ -67,10 +80,12 @@
       clusterResult <- .kMeansClustering(dataset, options, jaspResults)
     } else if(type == "cmeans"){
       clusterResult <- .cMeansClustering(dataset, options, jaspResults)
+    } else if(type == "hierarchical"){
+      clusterResult <- .hierarchicalClustering(dataset, options, jaspResults)
     }
     jaspResults[["clusterResult"]] <- createJaspState(clusterResult)
-    jaspResults[["clusterResult"]]$dependOn(options =c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m"))
+    jaspResults[["clusterResult"]]$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage"))
   }
 }
 
@@ -80,12 +95,13 @@
 
   title <- base::switch(type,
                         "kmeans" = "K-Means Clustering",
-                        "cmeans" = "Fuzzy C-Means Clustering")
+                        "cmeans" = "Fuzzy C-Means Clustering",
+                        "hierarchical" = "Hierarchical Clustering")
 
   clusteringTable                       <- createJaspTable(title)
   clusteringTable$position <- 1
-  clusteringTable$dependOn(options =c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm",
-                                      "aicweights", "modelOpt", "seed", "maxClusters", "scaleEqualSD", "m"))
+  clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage"))
 
   clusteringTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
   clusteringTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
@@ -120,7 +136,7 @@
     clusterInfoTable$dependOn(options =c("tableClusterInformation","predictors", "modelOpt", "noOfIterations",
                                         "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette",
                                         "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS",
-                                        "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m"))
+                                        "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance"))
   clusterInfoTable$position               <- 2
   clusterInfoTable$transpose              <- TRUE
 
@@ -235,7 +251,7 @@
 
 .clusterOptimizationPlot <- function(dataset, options, jaspResults, ready, position){
 
-if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]]) return()
+if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options[["modelOpt"]] == "validationManual") return()
 
   optimPlot <- createJaspPlot(plot = NULL, title = "Within Sum of Squares Plot", width = 400, height = 300)
   optimPlot$position <- position
@@ -244,7 +260,7 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]]) return()
                                           "linkage", "m", "withinssPlot"))
   jaspResults[["optimPlot"]] <- optimPlot
 
-  if(!ready || options[["modelOpt"]] == "validationManual") return()
+  if(!ready) return()
 
   clusterResult <- jaspResults[["clusterResult"]]$object  
 
