@@ -17,12 +17,12 @@
 
 MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   
-  # read variables ##
+  # Preparatory work
   dataset <- .readDataClusteringAnalyses(dataset, options)
-  
-  # error handling & code variable names in base64
   .errorHandlingClusteringAnalyses(dataset, options)
-  ready  <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2
+  
+  # Check if analysis is ready to run
+  ready  <- .clusterAnalysesReady(options)
   
   # Run the analysis and save the results
   clusterResult <- .hierClustering(dataset, options, jaspResults, ready)

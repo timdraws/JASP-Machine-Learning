@@ -26,6 +26,7 @@ Form {
     VariablesForm {
         AvailableVariablesList {name: "variables"}
         AssignedVariablesList {
+            id: predictors
             name: "predictors"
             title: qsTr("Variables")
             singleVariable: false
@@ -86,28 +87,44 @@ Form {
         }
       }
 
-      Section {
-        text: qsTr("Predictions")
-        debug: true
+    //   Section {
+    //     text: qsTr("Predictions")
+    //     debug: true
 
-            RadioButtonGroup
-            {
-                name: "applyModel"
-                RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-                RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-                RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-            }
+    //         RadioButtonGroup
+    //         {
+    //             name: "applyModel"
+    //             RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //             RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //             RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //         }
 
-            VariablesForm {
-            visible: applyIndicator.checked
-                height: 150
-                AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-                AssignedVariablesList {
-                            name: "indicator"
-                            title: qsTr("Apply indicator")
-                            singleVariable: true
-                            allowedColumns: ["nominal"]
-                        }
-            }
-      }
+    //         VariablesForm {
+    //         visible: applyIndicator.checked
+    //             height: 150
+    //             AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //             AssignedVariablesList {
+    //                         name: "indicator"
+    //                         title: qsTr("Apply indicator")
+    //                         singleVariable: true
+    //                         allowedColumns: ["nominal"]
+    //                     }
+    //         }
+    //   }
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 1
+            onClicked:      { }
+            debug: true	
+        }
+    }
 }
