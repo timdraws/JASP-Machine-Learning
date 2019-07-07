@@ -84,10 +84,12 @@
       clusterResult <- .hierarchicalClustering(dataset, options, jaspResults)
     } else if(type == "densitybased"){
       clusterResult <- .densityBasedClustering(dataset, options, jaspResults)
+    } else if(type == "randomForest"){
+      clusterResult <- .randomForestClustering(dataset, options, jaspResults)
     }
     jaspResults[["clusterResult"]] <- createJaspState(clusterResult)
     jaspResults[["clusterResult"]]$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts"))
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
   }
 }
 
@@ -99,12 +101,13 @@
                         "kmeans" = "K-Means Clustering",
                         "cmeans" = "Fuzzy C-Means Clustering",
                         "hierarchical" = "Hierarchical Clustering",
-                        "densitybased" = "Density-Based Clustering")
+                        "densitybased" = "Density-Based Clustering",
+                        "randomForest" = "Random Forest Clustering")
 
   clusteringTable                       <- createJaspTable(title)
   clusteringTable$position <- 1
   clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "k-distplot"))
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
 
   clusteringTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
   clusteringTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
@@ -145,7 +148,7 @@
     clusterInfoTable$dependOn(options =c("tableClusterInformation","predictors", "modelOpt", "noOfIterations",
                                         "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette",
                                         "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS", "minPts", "eps",
-                                        "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance"))
+                                        "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance", "noOfTrees"))
   clusterInfoTable$position               <- 2
   clusterInfoTable$transpose              <- TRUE
 
@@ -221,7 +224,7 @@
   clusterPlot$position <- position
   clusterPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "labels"))
+                                          "linkage", "m", "labels", "noOfTrees"))
   jaspResults[["plot2dCluster"]] <- clusterPlot
 
   if(!ready) return()
@@ -256,6 +259,12 @@
       }
       pred.values <- fit$cluster
       colSize <- clusterResult[["clusters"]] + 1
+  } else if(type == "randomForest"){
+    fit <- randomForest::randomForest(x = data, y = NULL, ntree = options[["noOfTrees"]], 
+                  proximity = TRUE, oob.prox = TRUE)
+    hrfit <- hclust(as.dist(1 - fit$proximity), method = "ward.D2")
+    pred.values <- cutree(hrfit, k = clusterResult[["clusters"]])
+    colSize <- clusterResult[["clusters"]]
   }
 
   clusterAssignment <- factor(pred.values)
@@ -284,7 +293,7 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
   optimPlot$position <- position
   optimPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "withinssPlot"))
+                                          "linkage", "m", "withinssPlot", "noOfTrees"))
   jaspResults[["optimPlot"]] <- optimPlot
 
   if(!ready) return()

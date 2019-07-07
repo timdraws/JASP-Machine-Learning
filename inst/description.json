@@ -86,6 +86,11 @@
 				"title":							"K-Means Clustering",
 				"qml":								"mlclusteringkmeans.qml",
 				"function":							"MLClusteringKMeans"
+			},
+			{
+				"title":							"Random Forest Clustering",
+				"qml":								"mlclusteringrandomforest.qml",
+				"function":							"MLClusteringRandomForest"
 			}
 		]
 }

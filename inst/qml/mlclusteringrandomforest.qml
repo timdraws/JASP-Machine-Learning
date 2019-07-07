@@ -21,14 +21,99 @@ import JASP.Controls 1.0
 import JASP.Widgets 1.0
 
 Form {
-    id: form
-
     VariablesForm {
+        AvailableVariablesList {name: "variables"}
         AssignedVariablesList {
+            id: predictors
             name: "predictors"
             title: qsTr("Variables")
-            singleItem: false
-            allowedColumns: ["nominal", "scale", "ordinal"]
+            singleVariable: false
+            allowedColumns: ["ordinal", "scale"]
+        }
+    }
+
+    GroupBox {
+        title: qsTr("Tables")
+
+        CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
+          CheckBox { text: qsTr("Within sum of squares") ; name: "tableClusterInfoWSS" ; checked: true}
+          CheckBox { text: qsTr("Silhouette score") ; name: "tableClusterInfoSilhouette" ; checked: false}
+          CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false}
+          CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false}
+      }
+    }
+
+    GroupBox {
+        title: qsTr("Plots")
+
+        CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
+        CheckBox { text: qsTr("T-sne cluster plot")     ; name: "plot2dCluster" ; checked: false; enabled: true;
+            CheckBox {text: qsTr("Labels")  ; name: "labels"; checked: false }}
+    }
+
+    Section {
+        title: qsTr("Training Parameters")
+
+        GridLayout {
+          RadioButtonGroup {
+              title: qsTr("Model Optimization")
+              name: "modelOpt"
+              RadioButton { text: qsTr("AIC")                             ; name: "validationAIC" }
+              RadioButton { text: qsTr("BIC")                             ; name: "validationBIC" ; checked: true }
+              RadioButton { text: qsTr("Silhouette")                      ; name: "validationSilh" }
+              RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
+          }
+
+          GroupBox {
+              IntegerField { name: "noOfClusters"; text: qsTr("Clusters:") ; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
+              IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
+              IntegerField { name: "noOfTrees"; text: qsTr("Trees:") ; defaultValue: 1000 ; min: 1; max: 999999; fieldWidth: 60 }
+              CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
+              CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
+                  DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+              }
+          }
+        }
+      }
+
+    //   Section {
+    //     text: qsTr("Predictions")
+    //     debug: true
+
+    //         RadioButtonGroup
+    //         {
+    //             name: "applyModel"
+    //             RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //             RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //             RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //         }
+
+    //         VariablesForm {
+    //         visible: applyIndicator.checked
+    //             height: 150
+    //             AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //             AssignedVariablesList {
+    //                         name: "indicator"
+    //                         title: qsTr("Apply indicator")
+    //                         singleVariable: true
+    //                         allowedColumns: ["nominal"]
+    //                     }
+    //         }
+    //   }
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 1
+            onClicked:      { }
+            debug: true	
         }
     }
 }
