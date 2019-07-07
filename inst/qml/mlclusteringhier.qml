@@ -51,7 +51,10 @@ Form {
         CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
         CheckBox { text: qsTr("Dendrogram")         ; name: "dendrogram"    ; checked: false; enabled: true}
         CheckBox { text: qsTr("T-sne cluster plot")     ; name: "plot2dCluster" ; checked: false; enabled: true;
-            CheckBox {text: qsTr("Labels")  ; name: "labels"; checked: false }}
+            RowLayout{ CheckBox {text: qsTr("Legend")  ; name: "legend"; checked: true } 
+                    CheckBox {text: qsTr("Labels")  ; name: "labels"; checked: false }
+            }
+        }
     }
 
     Section {

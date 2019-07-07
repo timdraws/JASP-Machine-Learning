@@ -224,7 +224,7 @@
   clusterPlot$position <- position
   clusterPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "labels", "noOfTrees"))
+                                          "linkage", "m", "labels", "noOfTrees", "legend"))
   jaspResults[["plot2dCluster"]] <- clusterPlot
 
   if(!ready) return()
@@ -234,34 +234,39 @@
   if(options[["seedBox"]]) set.seed(options[["seed"]])
       
   unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
-  data <- dataset[unique.rows, .v(options[["predictors"]])]
-  tsne_out <- Rtsne::Rtsne(as.matrix(data), perplexity = nrow(data) / 4)
-
+  if(is.null(jaspResults[["tsneOutput"]])){
+    tsne_out <- Rtsne::Rtsne(as.matrix(dataset), perplexity = nrow(dataset) / 4, check_duplicates = FALSE)
+    jaspResults[["tsneOutput"]] <- createJaspState(tsne_out)
+    jaspResults[["tsneOutput"]]$dependOn(options = c("predictors", "seedBox", "seed"))
+  } else {
+    tsne_out <- jaspResults[["tsneOutput"]]$object
+  }
+  
   if(type == "kmeans" || type == "cmeans"){
     fit <- base::switch(type,
-                        "kmeans" = kmeans(data, centers = clusterResult[["clusters"]], iter.max = options[['noOfIterations']], nstart = options[['noOfRandomSets']], algorithm = options[['algorithm']]),
-                        "cmeans" = e1071::cmeans(data, centers = clusterResult[["clusters"]], iter.max = options[['noOfIterations']], m = options[['m']]))  
+                        "kmeans" = kmeans(dataset, centers = clusterResult[["clusters"]], iter.max = options[['noOfIterations']], nstart = options[['noOfRandomSets']], algorithm = options[['algorithm']]),
+                        "cmeans" = e1071::cmeans(dataset, centers = clusterResult[["clusters"]], iter.max = options[['noOfIterations']], m = options[['m']]))  
     pred.values <- fit$cluster
     colSize <- clusterResult[["clusters"]]
   } else if(type == "hierarchical"){
       if (options[["distance"]] == "Pearson correlation") {
-        hfit <- cutree(hclust(as.dist(1-cor(t(data), method="pearson")), method = options[["linkage"]]), k = clusterResult[['clusters']])
+        hfit <- cutree(hclust(as.dist(1-cor(t(dataset), method="pearson")), method = options[["linkage"]]), k = clusterResult[['clusters']])
       } else {
-        hfit <- cutree(hclust(dist(data), method = options[["linkage"]]), k = clusterResult[['clusters']])
+        hfit <- cutree(hclust(dist(dataset), method = options[["linkage"]]), k = clusterResult[['clusters']])
       }
       pred.values <- hfit
       colSize <- clusterResult[["clusters"]]
   } else if (type == "densitybased"){
       if (options[["distance"]] == "Correlated densities") {
-        fit <- dbscan::dbscan(as.dist(1-cor(t(data), method = "pearson")), eps = options[['eps']], minPts = options[['minPts']])
+        fit <- dbscan::dbscan(as.dist(1-cor(t(dataset), method = "pearson")), eps = options[['eps']], minPts = options[['minPts']])
       } else {
-        fit <- dbscan::dbscan(data, eps = options[['eps']], minPts = options[['minPts']])
+        fit <- dbscan::dbscan(dataset, eps = options[['eps']], minPts = options[['minPts']])
       }
       pred.values <- fit$cluster
       colSize <- clusterResult[["clusters"]] + 1
   } else if(type == "randomForest"){
-    fit <- randomForest::randomForest(x = data, y = NULL, ntree = options[["noOfTrees"]], 
-                  proximity = TRUE, oob.prox = TRUE)
+    fit <- randomForest::randomForest(x = dataset, y = NULL, ntree = options[["noOfTrees"]], 
+                                      proximity = TRUE, oob.prox = TRUE)
     hrfit <- hclust(as.dist(1 - fit$proximity), method = "ward.D2")
     pred.values <- cutree(hrfit, k = clusterResult[["clusters"]])
     colSize <- clusterResult[["clusters"]]
@@ -276,10 +281,14 @@
         ggplot2::xlab(NULL) + 
         ggplot2::ylab(NULL) +
         ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = colSize))
-  p <- JASPgraphs::themeJasp(p, legend.position = "right")
+  if(options[["legend"]]){
+    p <- JASPgraphs::themeJasp(p, legend.position = "right")
+  } else {
+    p <- JASPgraphs::themeJasp(p)
+  }
   p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
   if(options[["labels"]])
-    p <- p + ggrepel::geom_text_repel(ggplot2::aes(label=rownames(data), x = x, y = y), hjust=-0.5, data = tsne_plot) # of (rownames(data))
+    p <- p + ggrepel::geom_text_repel(ggplot2::aes(label=rownames(dataset), x = x, y = y), hjust=-1, vjust=1, data = tsne_plot) # of (rownames(data))
   
   clusterPlot$plotObject <- p
   

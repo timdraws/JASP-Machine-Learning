@@ -33,11 +33,14 @@ ready  <- .clusterAnalysesReady(options)
 # create the cluster information table
 .clusterInformationTable(options, jaspResults, ready, type = "randomForest")
 
+# create the variable importance table
+.randomForestClusteringVarImpTable(options, jaspResults, ready)
+
 # Create the within sum of squares plot
-.clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+.clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
 
 # Create the cluster plot
-.tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 4)
+.tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 5)
 
 }
 
@@ -152,6 +155,7 @@ if(options[["modelOpt"]] == "validationManual"){
   clusterResult[['BIC']] <- bic
   clusterResult[['Silh_score']] <- Silh_score
   clusterResult[['silh_scores']] <- silh_scores
+  clusterResult[["fit"]] <- rfit
 
   if(options[["modelOpt"]] != "validationManual"){
     clusterResult[['silhStore']] <- avg_silh
@@ -161,5 +165,36 @@ if(options[["modelOpt"]] == "validationManual"){
   }
 
   return(clusterResult)
+}
+
+.randomForestClusteringVarImpTable <- function(options, jaspResults, ready){
+
+  if (!is.null(jaspResults[["importanceTable"]]) || !options[["importanceTable"]]) return()
+  
+  # Create table
+  importanceTable <- createJaspTable(title = "Variable Importance")
+  importanceTable$position <- 3
+  importanceTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees", "importanceTable"))
+  
+  # Add column info
+  importanceTable$addColumnInfo(name = "variable",  title = " ", type = "string")
+  importanceTable$addColumnInfo(name = "measure",  title = "Mean decrease in Gini Index", type = "number", format = "sf:4")
+
+  jaspResults[["importanceTable"]] <- importanceTable
+
+  if(!ready) return()
+
+  clusterResult <- jaspResults[["clusterResult"]]$object
+  fit <- clusterResult[["fit"]]
+  varImp <- fit[["importance"]]
+  ord <- order(varImp, decreasing = TRUE)
+  name <- .unv(rownames(varImp)[ord])
+  values <- as.numeric(varImp[ord])
+  
+  # Add data per column
+  row <- data.frame(variable = name, measure = values)
+  importanceTable$addRows(row)
+
 }
 
