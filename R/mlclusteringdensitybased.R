@@ -33,11 +33,11 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   # create the cluster information table
   .clusterInformationTable(options, jaspResults, ready, type = "densitybased")
   
-  # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "densitybased", position = 3)
-  
   # Create the k-distance plot
-  .densityBasedClusteringKdistPlot(dataset, options, jaspResults, ready, position = 4)
+  .densityBasedClusteringKdistPlot(dataset, options, jaspResults, ready, position = 3)
+
+  # Create the cluster plot
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "densitybased", position = 4)
 }
 
 .densityBasedClustering <- function(dataset, options, jaspResults){
@@ -130,7 +130,7 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["kdistPlot"]]) || !options[["k-distplot"]]) return()
 
-  kdistPlot <- createJaspPlot(plot = NULL, title = "K-Distance Plot", width = 400, height = 300)
+  kdistPlot <- createJaspPlot(plot = NULL, title = "K-Distance Plot", width = 500, height = 300)
   kdistPlot$position <- position
   kdistPlot$dependOn(options = c("predictors", "eps", "minPts", "modelOpt", "seed", "scaleEqualSD", "ready", "k-distplot", "distance"))
   jaspResults[["kdistPlot"]] <- kdistPlot

@@ -217,11 +217,11 @@
 
   if(!is.null(jaspResults[["plot2dCluster"]]) || !options[["plot2dCluster"]]) return()
 
-  clusterPlot <- createJaspPlot(plot = NULL, title = "T-sne Cluster Plot", width = 400, height = 300)
+  clusterPlot <- createJaspPlot(plot = NULL, title = "T-sne Cluster Plot", width = 500, height = 300)
   clusterPlot$position <- position
   clusterPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m"))
+                                          "linkage", "m", "labels"))
   jaspResults[["plot2dCluster"]] <- clusterPlot
 
   if(!ready) return()
@@ -257,15 +257,21 @@
       pred.values <- fit$cluster
       colSize <- clusterResult[["clusters"]] + 1
   }
-      
-  tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], col = pred.values)
+
+  clusterAssignment <- factor(pred.values)
+  if(type=="densitybased")
+    levels(clusterAssignment)[levels(clusterAssignment)=="0"] <- "Noisepoint"  
+  tsne_plot <- data.frame(x = tsne_out$Y[,1], y = tsne_out$Y[,2], Cluster = clusterAssignment)
   p <- ggplot2::ggplot(tsne_plot) + 
-        ggplot2::geom_point(ggplot2::aes(x = x, y = y, fill = factor(col)), size = 4, stroke = 1, shape = 21, color = "black") + 
+        ggplot2::geom_point(ggplot2::aes(x = x, y = y, fill = Cluster), size = 4, stroke = 1, shape = 21, color = "black") + 
         ggplot2::xlab(NULL) + 
         ggplot2::ylab(NULL) +
         ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = colSize))
-  p <- JASPgraphs::themeJasp(p)
+  p <- JASPgraphs::themeJasp(p, legend.position = "right")
   p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+  if(options[["labels"]])
+    p <- p + ggrepel::geom_text_repel(ggplot2::aes(label=rownames(data), x = x, y = y), hjust=-0.5, data = tsne_plot) # of (rownames(data))
+  
   clusterPlot$plotObject <- p
   
 }
@@ -274,7 +280,7 @@
 
 if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options[["modelOpt"]] == "validationManual") return()
 
-  optimPlot <- createJaspPlot(plot = NULL, title = "Within Sum of Squares Plot", width = 400, height = 300)
+  optimPlot <- createJaspPlot(plot = NULL, title = "Within Sum of Squares Plot", width = 500, height = 300)
   optimPlot$position <- position
   optimPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",

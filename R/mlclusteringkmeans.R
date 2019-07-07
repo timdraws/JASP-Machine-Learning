@@ -33,11 +33,11 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     # create the cluster information table
     .clusterInformationTable(options, jaspResults, ready, type = "kmeans")
 
-    # Create the cluster plot
-    .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 3)
-    
     # Create the within sum of squares plot
-    .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
+    .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+
+    # Create the cluster plot
+    .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 4)
 }
 
 .kMeansClustering <- function(dataset, options, jaspResults, ready){

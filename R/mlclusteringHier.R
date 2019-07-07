@@ -33,14 +33,14 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   # create the cluster information table
   .clusterInformationTable(options, jaspResults, ready, type = "hierarchical")
 
-  # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "hierarchical", position = 3)
-
   # Create the within sum of squares plot
-  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
+  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
   
   # Create dendrogram
-  .hierarchicalClusteringDendogram(dataset, options, jaspResults, ready, position = 5)
+  .hierarchicalClusteringDendogram(dataset, options, jaspResults, ready, position = 4)
+
+  # Create the cluster plot
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "hierarchical", position = 5)
 }
 
 .hierarchicalClustering <- function(dataset, options, jaspResults){
@@ -173,7 +173,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["dendrogram"]]) || !options[["dendrogram"]]) return()
 
-  dendrogram <- createJaspPlot(plot = NULL, title = "Dendogram", width = 400, height = 300)
+  dendrogram <- createJaspPlot(plot = NULL, title = "Dendogram", width = 500, height = 300)
   dendrogram$position <- position
   dendrogram$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",

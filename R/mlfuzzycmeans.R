@@ -33,11 +33,11 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   # create the cluster information table
   .clusterInformationTable(options, jaspResults, ready, type = "cmeans")
 
-  # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "cmeans", position = 3)
-  
   # Create the within sum of squares plot
-  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
+  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+
+  # Create the cluster plot
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "cmeans", position = 4)
   
 }
 
