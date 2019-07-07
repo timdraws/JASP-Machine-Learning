@@ -34,7 +34,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   .clusterInformationTable(options, jaspResults, ready, type = "hierarchical")
 
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, type = "hierarchical", jaspResults, ready, position = 3)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "hierarchical", position = 3)
 
   # Create the within sum of squares plot
   .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
@@ -79,7 +79,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
       silh <- summary(cluster::silhouette(hfit_tmp, dist(dataset[, .v(options[["predictors"]])])))
       avg_silh[i - 1] <- silh[["avg.width"]]
 
-      m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
+      m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
 
       wss <- numeric(length(table(hfit_tmp)))
       for (j in 1:length(table(hfit_tmp))) {
@@ -121,7 +121,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   clusters <- clusters
   size <- as.data.frame(table(hfit))[,2]
 
-  m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
+  m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
 
   wss <- numeric(length(table(hfit)))
   for (j in 1:length(table(hfit))) {

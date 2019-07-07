@@ -24,336 +24,135 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   # Check if analysis is ready to run
   ready  <- .clusterAnalysesReady(options)
   
-  # Run the analysis and save the results
-  clusterResult                 <- .densityClustering(dataset, options, jaspResults, ready)
+    # Run the analysis and save the results in the state
+  .clustering(dataset, options, jaspResults, ready, type = "densitybased")
   
-  # create the evaluation table
-  .densityClusteringSummaryTable(dataset, clusterResult, options, jaspResults, ready)
+  # create the model summary table
+  .clusteringTable(options, jaspResults, ready, type = "densitybased")
   
   # create the cluster information table
-  .densityClusteringInformationTable(dataset, options, clusterResult, jaspResults, ready)
+  .clusterInformationTable(options, jaspResults, ready, type = "densitybased")
   
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, clusterResult, type = "densitybased", jaspResults, ready, position = 3)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "densitybased", position = 3)
   
   # Create the k-distance plot
-  .kdistPlot(dataset, options, clusterResult, jaspResults, ready)
+  .densityBasedClusteringKdistPlot(dataset, options, jaspResults, ready, position = 4)
 }
 
-.densityClustering <- function(dataset, options, jaspResults, ready){
-  
-  .ss <- function(x) {
-    sum(scale(x, scale = FALSE)^2)
-  }
-  
-  .disttovar <- function(x) {
-    mean(x**2)/2
-  }
-  
-  .tss <- function(x) {
-    n <- nrow(as.matrix(x))
-    .disttovar(x)*(n-1)
-  }
-  
-  if(!is.null(jaspResults[["res"]]$object)) return(jaspResults[["res"]]$object)
-  
-  # set the seed so that every time the same set is chosen (to prevent random results) ##
-  if(options[["seedBox"]])
-    set.seed(options[["seed"]])
-  
-  if(ready){
-      res <- .densityClusteringManual(dataset, options)
+.densityBasedClustering <- function(dataset, options, jaspResults){
+
+  if(options[["modelOpt"]] == "validationManual"){
+      
+    if (options[["distance"]] == "Correlated densities") {
+      dfit <- dbscan::dbscan(as.dist(1-cor(t(as.data.frame(dataset[, .v(options[["predictors"]])])), method = "pearson")), eps = options[['eps']], minPts = options[['minPts']])
     } else {
-    res <- list()
-  }
-  jaspResults[["res"]] <- createJaspState(res)
-  jaspResults[["res"]]$dependOn(c("predictors", "eps", "minPts", "modelOpt", "seed", 
-                                         "seedBox", "scaleEqualSD", "distance",
-                                  "Correlated densities"))
-  
-  return(jaspResults[["res"]]$object)
-}
+      dfit <- dbscan::dbscan(as.data.frame(dataset[, .v(options[["predictors"]])]), eps = options[['eps']], minPts = options[['minPts']])
+    }
 
-.densityClusteringManual <- function(dataset, options){
-  
-  .ss <- function(x) {
-    sum(scale(x, scale = FALSE)^2)
-  }
-  
-  .disttovar <- function(x) {
-    mean(x**2)/2
-  }
-  
-  .tss <- function(x) {
-    n <- nrow(as.matrix(x))
-    .disttovar(x)*(n-1)
-  }
-  
-  densityfit <- 0
-  if (options[["distance"]] == "Correlated densities") {
-     densityfit <- dbscan::dbscan(as.dist(1-cor(t(as.data.frame(dataset[, .v(options[["predictors"]])])),
-                                                              method = "pearson")),
-                                 eps = options[['eps']],
-                                 minPts = options[['minPts']])
-  } else {
-    densityfit <- dbscan::dbscan(as.data.frame(dataset[, .v(options[["predictors"]])]),
-                                 eps = options[['eps']],
-                                 minPts = options[['minPts']])
+    noisePoints <- length(dfit$cluster[dfit$cluster == 0])
+    clusters <- ifelse(noisePoints > 0, yes = length(table(dfit$cluster)) - 1, no = length(table(dfit$cluster)))
+
   }
 
-  res <- list()
-  res[['Predictions']] <- data.frame(
-    'Observation' = 1:nrow(dataset),
-    'Cluster' = densityfit$cluster
-  )
-  res[["pred.values"]] <- densityfit$cluster
-  res[["noisePoints"]] <- length(densityfit$cluster[densityfit$cluster == 0])
-  if (res[["noisePoints"]] > 0) {
-    res[["clusters"]] <- length(table(densityfit$cluster))-1
-  } else {
-    res[["clusters"]] <- length(table(densityfit$cluster))
-  }
-  res[['eps']] <- densityfit$eps
-  res[["N"]] <- nrow(dataset)
-  res[['size']] <- as.data.frame(table(densityfit$cluster))[,2]
+  m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
   
-  res[["MinPts"]] <- options[["minPts"]]
-
-  m = dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
-  
-  withinss <- 0
-  for (i in 1:res[["clusters"]]) {
+  wss <- numeric(clusters)
+  for(i in 1:clusters) {
     if (m == 1) {
-      withinss[i] <- .ss(dataset[, .v(options[["predictors"]])][densityfit$cluster == i])
+      wss[i] <- .ss(dataset[, .v(options[["predictors"]])][dfit$cluster == i])
     } else {
-      withinss[i] <- .ss(dataset[, .v(options[["predictors"]])][densityfit$cluster == i,])
+      wss[i] <- .ss(dataset[, .v(options[["predictors"]])][dfit$cluster == i,])
     }
   }
-  
-  res[['WSS_table']] <- withinss
-  res[['WSS']] <- sum(res[['WSS_table']])
-  
-  tss <- 0
-  if (res[["noisePoints"]] > 0) {
-    tss <- .tss(dist(dataset[, .v(options[["predictors"]])][densityfit$cluster != 0]))
+
+  if(noisePoints > 0) {
+    tss <- .tss(dist(dataset[, .v(options[["predictors"]])][dfit$cluster != 0]))
   } else {
     tss <- .tss(dist(dataset[, .v(options[["predictors"]])]))
   }
-  
-  res[['TSS']] <- tss
-  res[['BSS']] <- res[['TSS']]-res[['WSS']]
-  n = length(densityfit$cluster)
-  k = res[["clusters"]]
-  D = res[['WSS']]
-  res[['AIC']] <- D + 2*m*k
-  res[['BIC']] <- D + log(n)*m*k
-  
-  cluster_nul <- 0 
-  for (i in 1:length(densityfit$cluster)) {
-    if (densityfit$cluster[i] == 0) {
-      cluster_nul <- cluster_nul + 1
-    } 
+
+  pred.values <- dfit$cluster
+  clusters <- clusters
+  size <- as.data.frame(table(dfit$cluster))[,2]
+
+  n <- length(dfit$cluster)
+  k <- clusters
+  D <- sum(wss)
+  aic <- D + 2*m*k
+  bic <- D + log(n)*m*k
+
+  nullClusters <- oneClusters <- 0 
+  for (i in 1:length(dfit$cluster)) {
+    if (dfit$cluster[i] == 0) {
+      nullClusters <- nullClusters + 1
+    } else if(dfit$cluster[i] == 1){
+      oneClusters <- oneClusters + 1
+    }
   }
   
-  res[["zero"]] = 0
-  if (cluster_nul == length(densityfit$cluster)) {
-    res[["zero"]] = 1
-  }
+  zeroMark <- ifelse(nullClusters == length(dfit$cluster), yes = 1, no = 0)
+  oneMark <- ifelse(oneClusters == length(dfit$cluster), yes = 1, no = 0)
   
-  cluster_one <- 0
-  for (i in 1:length(densityfit$cluster)) {
-    if (densityfit$cluster[i] == 1) {
-      cluster_one <- cluster_one + 1
-    } 
-  }
-  
-  res[["one"]] = 0
-  if (cluster_one == length(densityfit$cluster)) {
-    res[["one"]] = 1
-  }
-  
-  if (res[["one"]] == 0 && res[["zero"]] == 0 && options[["distance"]] == "Normal densities") {
-    res[['Silh_score']] <- summary(cluster::silhouette(densityfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[4]]
-    res[['silh_scores']] <- summary(cluster::silhouette(densityfit$cluster, dist(dataset[, .v(options[["predictors"]])])))[[2]]
-  } else if (res[["one"]] == 0 && res[["zero"]] == 0 && options[["distance"]] == "Correlated densities") {
-    res[['Silh_score']] <- summary(cluster::silhouette(densityfit$cluster, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[4]]
-    res[['silh_scores']] <- summary(cluster::silhouette(densityfit$cluster, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))[[2]]
+  if (oneMark == 0 && zeroMark == 0){
+    if(options[["distance"]] == "Normal densities"){
+      silhouettes <- summary(cluster::silhouette(dfit$cluster, dist(dataset[, .v(options[["predictors"]])])))
+    } else if(options[["distance"]] == "Correlated densities"){
+      silhouettes <- summary(cluster::silhouette(dfit$cluster, as.dist(1-cor(t(dataset[, .v(options[["predictors"]])])))))
+    }
   } else {
-    res[['Silh_score']] <- 0
-    res[['silh_scores']] <- 0
-  }
-  
-  return(res)
-}
-  
-.densityClusteringSummaryTable <- function(dataset, res, options, jaspResults, ready){
-  
-  if(!is.null(jaspResults[["evaluationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
-  
-  evaluationTable                       <- createJaspTable("Density-Based Clustering")
-  jaspResults[["evaluationTable"]]      <- evaluationTable
-  jaspResults[["evaluationTable"]]$position <- 1
-  evaluationTable$dependOn(c("predictors", "eps", "minPts", "modelOpt", "seed", "scaleEqualSD", 'k-distplot', "distance"))
-  
-  evaluationTable$addColumnInfo(name = 'clusters', title = 'Cluster(s)', type = 'integer')
-  evaluationTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
-  evaluationTable$addColumnInfo(name = 'eps', title = 'Eps', type = 'integer')
-  evaluationTable$addColumnInfo(name = 'minPts', title = 'MinPts', type = 'integer')
-  evaluationTable$addColumnInfo(name = 'measure', title = 'R\u00B2', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'aic', title = 'AIC', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'bic', title = 'BIC', type = 'number', format = 'dp:2')
-  evaluationTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:2')
-  
-  if(!ready)
-    return()
-  
-
-  clusters <- res[["clusters"]]
-  
-  row <- data.frame(clusters = clusters, eps = round(res[["eps"]], 2), minPts = res[["MinPts"]],
-                    measure = res[['BSS']]/res[['TSS']], aic = res[['AIC']],
-                    bic = res[['BIC']], Silh = res[['Silh_score']], n = res[["N"]])
-  
-  if(res[["zero"]] == 1) {
-    message <- "Your cluster model contains 0 clusters and only Noisepoints, we advise to change the Eps and MinPts parameters."
-    evaluationTable$addFootnote(message=message, symbol="<i>Note.</i>")
-  }
-  
-  if(res[["one"]] == 1) {
-    message <- "Your cluster model contains 1 cluster and 0 Noisepoints. You could change the Eps and MinPts parameters."
-    evaluationTable$addFootnote(message=message, symbol="<i>Note.</i>")
-  }
-  
-  if (is.null(dim(dataset[, .v(options[["predictors"]])])) && options[['k-distplot']]) {
-    message <- "Creating a k-distance plot is not possible, as there are no distances to be calculated, increase the dimensionality of your model"
-    evaluationTable$addFootnote(message=message, symbol="<i>Note.</i>")
-  }
-  
-  evaluationTable$addRows(row)
+    silhouettes <- list("avg.width" = 0, "clus.avg.widths" = rep(0, clusters))
   }
 
-.densityClusteringInformationTable <- function(dataset, options, res, jaspResults, ready){
-  
-  if(!is.null(jaspResults[["clusterInfoTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
-  
-  if (options[['tableClusterInformation']]){
-    
-    clusterInfoTable                        <- createJaspTable("Cluster Information")
-    jaspResults[["clusterInfoTable"]]       <- clusterInfoTable
-    clusterInfoTable$dependOn(c("tableClusterInformation","predictors", "eps", "minPts", "modelOpt",
-                                "scaleEqualSD", "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares",
-                                "tableClusterInfoWSS", "tableClusterInfoSilhouette", "distance"))
-    clusterInfoTable$position               <- 2
-    clusterInfoTable$transpose              <- TRUE
-    
-    clusterInfoTable$addColumnInfo(name = 'cluster', title = 'Cluster', type = 'integer')
-    clusterInfoTable$addColumnInfo(name = 'size', title = 'Size', type = 'integer')
-    if(options[["tableClusterInfoWSS"]])
-      clusterInfoTable$addColumnInfo(name = 'withinss_table', title = 'Within sum of squares', type = 'number', format = 'dp:2')
-    if(options[["tableClusterInfoSilhouette"]])
-      clusterInfoTable$addColumnInfo(name = 'silh_scores', title = 'Silhouette score', type = 'number', format = 'dp:2')
+  Silh_score <- silhouettes[["avg.width"]]
+  silh_scores <- silhouettes[["clus.avg.widths"]]
 
-    if(!ready)
-      return()
-    
-    size <- res[["size"]]
-    if (sum(size) == res[["noisePoints"]]) {
-      cluster = 0
-    } else if (res[["noisePoints"]] > 0) {
-      cluster <- c("Noisepoints", 1:(res[["clusters"]]))
-    } else {
-      cluster <- 1:res[["clusters"]]
-    }
-    
-    withinss_table <- 0
-    if (sum(size) == res[["noisePoints"]]) {
-      withinss_table <- 0
-    } else if (res[["noisePoints"]] > 0) {
-      withinss_table <- c(0, res[["WSS_table"]])
-    } else {
-      withinss_table <- res[["WSS_table"]]
-    }
-    
-    silh_scores <- res[['silh_scores']]
-    if (res[["noisePoints"]] > 0) {
-      silh_scores[1] = 0
-    }
-    
-    row <- data.frame(cluster = cluster, size = size)
-    
-    if(options[["tableClusterInfoWSS"]])
-      row <- cbind(row, withinss_table = withinss_table)
-    if(options[["tableClusterInfoSilhouette"]])
-      row <- cbind(row, silh_scores = silh_scores)
-    
-    if(options[['tableClusterInfoBetweenSumSquares']]){
-      message <- paste0('The Between Sum of Squares of the ', res[["clusters"]], ' cluster model is ', round(res[['BSS']],2))
-      clusterInfoTable$addFootnote(message=message, symbol="<i>Note.</i>")
-    }
-    
-    if(options[['tableClusterInfoTotalSumSquares']]){
-      message <- paste0('The Total Sum of Squares of the ', res[["clusters"]], ' cluster model is ', round(res[['TSS']],2))
-      clusterInfoTable$addFootnote(message=message, symbol="<i>Note.</i>")
-    }
-    
-    clusterInfoTable$addRows(row)
-  }
+  clusterResult <- list()
+  clusterResult[["pred.values"]] <- pred.values
+  clusterResult[['clusters']] <- clusters
+  clusterResult[["N"]] <- nrow(dataset)
+  clusterResult[['size']] <- size
+  clusterResult[['WSS']] <- wss
+  clusterResult[['TSS']] <- tss
+  clusterResult[['BSS']] <- clusterResult[['TSS']] - sum(clusterResult[['WSS']])
+  clusterResult[['AIC']] <- aic
+  clusterResult[['BIC']] <- bic
+  clusterResult[['Silh_score']] <- Silh_score
+  clusterResult[['silh_scores']] <- silh_scores
+  clusterResult[["zeroMark"]] <- zeroMark
+  clusterResult[["oneMark"]] <- oneMark
+  clusterResult[["noisePoints"]] <- noisePoints
+
+  return(clusterResult)
 }
 
-.kdistPlot <- function(dataset, options, res, jaspResults, ready){
-  if(!ready && options[['k-distplot']]){
-    p <- createJaspPlot(plot = NULL, title= "K-distance plot", width = 400, height = 300)
-    p$setError("Plotting not possible: No analysis has been run.")
-    return()
-  } else if(ready && options[['k-distplot']]){
-    if(is.null(jaspResults[["optimPlot"]])){
-      
-      unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
-      data <- dataset[unique.rows, .v(options[["predictors"]])]
-      
-      res_knn = 0
-      dim_knn = 0
-      x_knn <- 0
-      if (options[["distance"]] == "Correlated densities") {
-        res_knn = dbscan::kNNdist(as.dist(1-cor(t(as.data.frame(data)), method = "pearson")),
-                          k = res[['MinPts']])
-        # if (is.null(dim(dataset[, .v(options[["predictors"]])])))
-        # p <- createJaspPlot(plot = NULL, title= "k-distance plot",
-        #                     width = 400, height = 300)
-        # p$setError("Plotting not possible, no distances can be calculated, increase dimensionality")
-        
-      } else {
-        res_knn = dbscan::kNNdist(data , k = res[['MinPts']])
-        
-      }
-      dim_knn = dim(res_knn)
-      x_knn =  seq(1, dim_knn[1]*(dim_knn[2]-1))
-      p <- ggplot2::ggplot() + 
-        ggplot2::geom_line(ggplot2::aes(x = x_knn , y = sort(res_knn[,2:res[['MinPts']]]))) +
+.densityBasedClusteringKdistPlot <- function(dataset, options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["kdistPlot"]]) || !options[["k-distplot"]]) return()
+
+  kdistPlot <- createJaspPlot(plot = NULL, title = "K-Distance Plot", width = 400, height = 300)
+  kdistPlot$position <- position
+  kdistPlot$dependOn(options = c("predictors", "eps", "minPts", "modelOpt", "seed", "scaleEqualSD", "ready", "k-distplot", "distance"))
+  jaspResults[["kdistPlot"]] <- kdistPlot
+
+  if(!ready) return()
+
+  unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
+  data <- dataset[unique.rows, .v(options[["predictors"]])]
+  if(options[["distance"]] == "Correlated densities"){
+    knnDist <- dbscan::kNNdist(as.dist(1-cor(t(as.data.frame(data)), method = "pearson")), k = options[['minPts']])
+  } else {
+    knnDist <- dbscan::kNNdist(data , k = options[['minPts']])
+  }
+  knnDims <- dim(knnDist)
+  knnValues <- seq(from = 1, to = knnDims[1] * (knnDims[2]-1), by = 1)
+  p <- ggplot2::ggplot() + 
+        ggplot2::geom_line(ggplot2::aes(x = knnValues , y = sort(knnDist[,2:options[['minPts']]]))) +
         ggplot2::xlab('Points sorted by distance') + 
-        ggplot2::ylab('kNN distance')
-      p <- JASPgraphs::themeJasp(p)
-      
-      jaspResults[["optimPlot"]] 		 <- createJaspPlot(plot = p,
-                                                      title= "K-distance plot", height = 300, width = 400)
-      jaspResults[["optimPlot"]]		   $dependOn(options =c("predictors", "eps", "minPts", "modelOpt", "seed",
-                                                          "scaleEqualSD", "ready", "k-distplot", "distance"))
-      jaspResults[["optimPlot"]] 		 $position <- 4
-    }
-  }
-}
+        ggplot2::ylab('K-nn distance')
+  p <- JASPgraphs::themeJasp(p)
 
-.ss <- function(x) {
-  sum(scale(x, scale = FALSE)^2)
-}
-
-.disttovar <- function(x) {
-  mean(x**2)/2
-}
-
-.tss <- function(x) {
-  n <- nrow(as.matrix(x))
-  .disttovar(x)*(n-1)
+  kdistPlot$plotObject <- p
 }
 
 

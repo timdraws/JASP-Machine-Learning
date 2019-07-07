@@ -82,10 +82,12 @@
       clusterResult <- .cMeansClustering(dataset, options, jaspResults)
     } else if(type == "hierarchical"){
       clusterResult <- .hierarchicalClustering(dataset, options, jaspResults)
+    } else if(type == "densitybased"){
+      clusterResult <- .densityBasedClustering(dataset, options, jaspResults)
     }
     jaspResults[["clusterResult"]] <- createJaspState(clusterResult)
     jaspResults[["clusterResult"]]$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage"))
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts"))
   }
 }
 
@@ -96,12 +98,13 @@
   title <- base::switch(type,
                         "kmeans" = "K-Means Clustering",
                         "cmeans" = "Fuzzy C-Means Clustering",
-                        "hierarchical" = "Hierarchical Clustering")
+                        "hierarchical" = "Hierarchical Clustering",
+                        "densitybased" = "Density-Based Clustering")
 
   clusteringTable                       <- createJaspTable(title)
   clusteringTable$position <- 1
   clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage"))
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "k-distplot"))
 
   clusteringTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
   clusteringTable$addColumnInfo(name = 'n', title = 'N', type = 'integer')
@@ -121,11 +124,17 @@
     message <- "The optimum number of clusters is the maximum number of clusters. You might want to adjust the range of optimization."
     clusteringTable$addFootnote(message=message, symbol="<i>Note.</i>")
   }
+
+  if(type=="densitybased"){
+    if(clusterResult[["zeroMark"]] == 1)
+      clusteringTable$addFootnote(message = "Your cluster model contains 0 clusters and only Noisepoints, we advise to change the Eps and MinPts parameters.", symbol="<i>Note.</i>") 
+    if(clusterResult[["oneMark"]] == 1)
+      clusteringTable$addFootnote(message = "Your cluster model contains 1 cluster and 0 Noisepoints. You could change the Eps and MinPts parameters.", symbol="<i>Note.</i>") 
+  }
   
   row <- data.frame(clusters = clusterResult[['clusters']], measure = clusterResult[['BSS']]/clusterResult[['TSS']], aic = round(clusterResult[['AIC']], 2),
                     bic = round(clusterResult[['BIC']], 2), Silh = round(clusterResult[['Silh_score']], 2), n = clusterResult[["N"]])
   clusteringTable$addRows(row)
-
 }
 
 .clusterInformationTable <- function(options, jaspResults, ready, type){
@@ -135,7 +144,7 @@
     clusterInfoTable                        <- createJaspTable("Cluster Information")
     clusterInfoTable$dependOn(options =c("tableClusterInformation","predictors", "modelOpt", "noOfIterations",
                                         "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette",
-                                        "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS",
+                                        "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS", "minPts", "eps",
                                         "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance"))
   clusterInfoTable$position               <- 2
   clusterInfoTable$transpose              <- TRUE
@@ -161,10 +170,21 @@
     }
   }
 
-  cluster <- 1:clusterResult[["clusters"]]
   size <- clusterResult[["size"]]
+  cluster <- 1:clusterResult[["clusters"]]
   withinss <- clusterResult[["WSS"]]
   silh_scores <- clusterResult[['silh_scores']]
+
+  if(type == "densitybased"){
+    if(sum(size) == clusterResult[["noisePoints"]]) {
+      cluster <- 0
+      withinss <- 0
+    } else if(clusterResult[["noisePoints"]] > 0) {
+      cluster <- c("Noisepoints", 1:(clusterResult[["clusters"]]))
+     withinss <- c(0, withinss)
+     silh_scores[1] <- 0
+    }
+  }
 
   row <- data.frame(cluster = cluster, size = size)
   if(options[["tableClusterInfoWSS"]])
@@ -180,6 +200,7 @@
         }
     }
   }
+
   clusterInfoTable$addRows(row)
 
   if(options[['tableClusterInfoBetweenSumSquares']]){
@@ -192,7 +213,7 @@
   }
 }
 
-.tsneClusterPlot <- function(dataset, options, type, jaspResults, ready, position){
+.tsneClusterPlot <- function(dataset, options, jaspResults, ready, type, position){
 
   if(!is.null(jaspResults[["plot2dCluster"]]) || !options[["plot2dCluster"]]) return()
 

@@ -34,7 +34,7 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   .clusterInformationTable(options, jaspResults, ready, type = "cmeans")
 
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, type = "cmeans", jaspResults, ready, position = 3)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "cmeans", position = 3)
   
   # Create the within sum of squares plot
   .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
@@ -75,10 +75,10 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
       csumsqrs_tmp <- .sumsqr(dataset[, .v(options[["predictors"]])], v_tmp, clabels_tmp) 
       wssStore[i - 1] <- csumsqrs_tmp$tot.within.ss
 
-      m = ncol(cfit_tmp$centers)
-      n = length(cfit_tmp$cluster)
-      k = nrow(cfit_tmp$centers)
-      D = csumsqrs_tmp$tot.within.ss
+      m <- ncol(cfit_tmp$centers)
+      n <- length(cfit_tmp$cluster)
+      k <- nrow(cfit_tmp$centers)
+      D <- csumsqrs_tmp$tot.within.ss
       aicStore[i - 1] <- D + 2*m*k
       bicStore[i - 1] <- D + log(n)*m*k
       
@@ -109,10 +109,10 @@ MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   tss <- csumsqrs$tss
   bss <- csumsqrs$bss
 
-  m = ncol(cfit$centers)
-  n = length(cfit$cluster)
-  k = nrow(cfit$centers)
-  D = csumsqrs$tot.within.ss
+  m <- ncol(cfit$centers)
+  n <- length(cfit$cluster)
+  k <- nrow(cfit$centers)
+  D <- csumsqrs$tot.within.ss
   aic <- D + 2*m*k
   bic <- D + log(n)*m*k
 

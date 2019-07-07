@@ -11,7 +11,7 @@
 		"icon": 								"analysis-ml-ribbon.svg"
 	},
 
-	"requiredPackages":	[ "kknn",  "Rtsne", "colorspace", "gbm", "dbscan", "ggdendro", "ggplot2", "cluster" ],
+	"requiredPackages":	["kknn",  "Rtsne", "colorspace", "gbm", "dbscan", "ggdendro", "cluster", "e1071"],
 
 	"menu":
 		[

@@ -34,7 +34,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     .clusterInformationTable(options, jaspResults, ready, type = "kmeans")
 
     # Create the cluster plot
-    .tsneClusterPlot(dataset, options, type = "kmeans", jaspResults, ready, position = 3)
+    .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 3)
     
     # Create the within sum of squares plot
     .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
@@ -76,10 +76,10 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
       csumsqrs_tmp <- .sumsqr(dataset[, .v(options[["predictors"]])], v_tmp, clabels_tmp) 
       wssStore[i - 1] <- csumsqrs_tmp$tot.within.ss
 
-      m = ncol(kfit_tmp$centers)
-      n = length(kfit_tmp$cluster)
-      k = nrow(kfit_tmp$centers)
-      D = kfit_tmp$tot.withinss
+      m <- ncol(kfit_tmp$centers)
+      n <- length(kfit_tmp$cluster)
+      k <- nrow(kfit_tmp$centers)
+      D <- kfit_tmp$tot.withinss
       aicStore[i - 1] <- D + 2*m*k
       bicStore[i - 1] <- D + log(n)*m*k
       
@@ -107,10 +107,10 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
   tss <- kfit$totss
   bss <- kfit$betweenss
 
-  m = ncol(kfit$centers)
-  n = length(kfit$cluster)
-  k = nrow(kfit$centers)
-  D = kfit$tot.withinss
+  m <- ncol(kfit$centers)
+  n <- length(kfit$cluster)
+  k <- nrow(kfit$centers)
+  D <- kfit$tot.withinss
   aic <- D + 2*m*k
   bic <- D + log(n)*m*k
 
