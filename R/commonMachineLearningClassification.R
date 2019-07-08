@@ -224,3 +224,121 @@
 
   plotErrorVsK$plotObject <- p
 }
+
+.classificationDecisionBoundaries <- function(dataset, options, jaspResults, ready, position, type){
+
+  if (!is.null(jaspResults[["decisionBoundary"]]) || !options[["decisionBoundary"]] || length(options[["predictors"]]) < 2) return()
+  
+  decisionBoundary <- createJaspPlot(title = "Decision Boundary Plots", height = 400, width = 300)
+  decisionBoundary$position <- position
+  decisionBoundary$dependOn(options = c("decisionBoundary", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+  jaspResults[["decisionBoundary"]] <- decisionBoundary 
+
+  if(!ready)  return()
+  
+  .classificationFillDecisionBoundary(dataset, options, jaspResults, decisionBoundary, type)
+}
+
+.classificationFillDecisionBoundary <- function(dataset, options, jaspResults, decisionBoundary, type){
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
+
+  variables <- options[["predictors"]]
+  l <- length(variables)
+
+  if (l <= 2) {
+    width <- 580
+    height <- 580
+  } else {
+    width <- 250 * l
+    height <- 250 * l
+  }
+
+  decisionBoundary[["width"]]  <- width
+  decisionBoundary[["height"]] <- height
+  
+  cexText <- 1.6
+  
+  plotMat <- matrix(list(), l - 1, l - 1)
+  adjMargin <- ggplot2::theme(plot.margin = ggplot2::unit(c(.25, .40, .25, .25), "cm")) 
+  oldFontSize <- JASPgraphs::getGraphOption("fontsize")
+  JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
+  
+  target <- dataset[, .v(options[["target"]])]
+  for (row in 2:l) {
+    for (col in 1:(l-1)) {
+      if (row == col) {     
+          p <- JASPgraphs::drawAxis(xName = "", yName = "", force = TRUE) + adjMargin
+          p <- p + ggplot2::xlab("")
+          p <- p + ggplot2::ylab("")
+          p <- JASPgraphs::themeJasp(p)
+          
+          plotMat[[row, col]] <- p
+      }  
+      if (col < row) {
+          predictors <- dataset[, .v(options[["predictors"]])]
+          predictors <- predictors[, c(col, row)]
+          formula <- formula(paste(.v(options[["target"]]), "~", paste(colnames(predictors), collapse=" + ")))
+          plotMat[[row-1, col]] <- .decisionBoundaryPlot(dataset, options, jaspResults, predictors, target, formula, l, type = type)
+      } 
+      if (col > row) {
+          p <- JASPgraphs::drawAxis(xName = "", yName = "", force = TRUE) + adjMargin
+          p <- p + ggplot2::xlab("")
+          p <- p + ggplot2::ylab("")
+          p <- JASPgraphs::themeJasp(p)
+          
+          plotMat[[row, col]] <- p
+      }
+      if(l > 2)
+        plotMat[[1, 2]] <- .ldaLegend(classificationResult, options, col)
+    }
+  }
+  
+  JASPgraphs::setGraphOption("fontsize", oldFontSize)
+  # slightly adjust the positions of the labels left and above the plots.
+  labelPos <- matrix(.5, 4, 2)
+  labelPos[1, 1] <- .55
+  labelPos[4, 2] <- .65
+  p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables[-1], topLabels = variables[-length(variables)],
+                                scaleXYlabels = NULL, labelPos = labelPos)
+  
+  decisionBoundary$plotObject <- p
+}
+
+.decisionBoundaryPlot <- function(dataset, options, jaspResults, predictors, target, formula, l, type = "lda"){ 
+
+    x_min <- min(predictors[,1])-0.05; x_max <- max(predictors[,1])+0.05
+    y_min <- min(predictors[,2])-0.05; y_max <- max(predictors[,2])+0.05
+
+    # plot the resulting classifier
+    hs <- 0.1
+    grid <- as.data.frame(expand.grid(seq(x_min, x_max, by = hs), seq(y_min, y_max, by =hs)))
+    colnames(grid) <- colnames(predictors)
+
+    if(type == "lda"){
+      ldafit <- MASS::lda(formula, data = dataset)
+      preds <- predict(ldafit, newdata = grid)$class
+    } else if(type == "knn"){
+      
+    }
+
+    gridData <- data.frame(x = grid[, 1], y = grid[, 2])
+    pointData <- data.frame(x=predictors[, 1], y=predictors[, 2])
+
+    xBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 1], min.n = 4)
+    yBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 2], min.n = 4)
+
+    p <- ggplot2::ggplot(data = gridData, mapping = ggplot2::aes(x = x, y = y)) +
+          ggplot2::geom_tile(ggplot2::aes(fill=as.character(preds)), alpha = 0.3, show.legend = FALSE) +
+          ggplot2::labs(fill = options[["target"]])
+    p <- p + ggplot2::scale_x_continuous(name = "", breaks = xBreaks, limits = range(xBreaks))
+    p <- p + ggplot2::scale_y_continuous(name = "", breaks = yBreaks, limits = range(yBreaks))
+    p <- p + JASPgraphs::geom_point(data = pointData, ggplot2::aes(x = x, y = y, fill = as.character(target)))
+    if(l <= 2){
+      p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE, legend.position = "right")
+    } else {
+      p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE)
+    }
+    return(p)
+}
