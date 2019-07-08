@@ -33,6 +33,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
 
+  # Create the MANOVA table
+  .ldaClassificationManova(options, jaspResults, ready)
+
   # Create the coefficients table
   .ldaClassificationCoefficients(options, jaspResults, ready)
 
@@ -43,10 +46,10 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .ldaClassificationMeans(options, jaspResults, ready)
 
   # Create the ROC curve
-  .ldaRocCurve(options, jaspResults, ready, position = 6)
+  .ldaRocCurve(options, jaspResults, ready, position = 7)
   
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 7)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 8)
 }
 
 # Error handling 
@@ -103,12 +106,52 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   return(classificationResult)
 }
 
+.ldaClassificationManova <- function(options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
+  
+  manovaTable <- createJaspTable(title = "MANOVA")
+  manovaTable$position <- 4
+  manovaTable$dependOn(options = c("manovaTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+  manovaTable$addColumnInfo(name = "model", title = "", type = "string")
+  manovaTable$addColumnInfo(name = "df", title = "df", type = "integer")
+  manovaTable$addColumnInfo(name = "f", title = "F", type = "number")
+  manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
+  
+  jaspResults[["manovaTable"]] <- manovaTable
+
+  if(!ready)  return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
+  target <- as.numeric(classificationResult[["train"]][,.v(options[["target"]])])
+  predictors <- as.matrix(classificationResult[["train"]][,.v(options[["predictors"]])])
+
+  manovaResult <- manova(predictors ~ target)
+  manovaSummary <- summary(manovaResult, test="Wilks")
+  stats <- as.numeric(manovaSummary$stats[1, c(1, 3, 6)])
+
+  # Full model
+  row <- data.frame(model = "Full model", df = stats[1], f = stats[2], p = stats[3])
+  manovaTable$addRows(row)
+
+  # Individual models
+  anovaSummary <- summary.aov(manovaResult)
+  for(i in 1:length(anovaSummary)){
+    sumTmp <- anovaSummary[[i]]
+    stats <- as.numeric(as.matrix(sumTmp)[1, c(1, 4, 5)])
+    row <- data.frame(model = options[["predictors"]][i], df = stats[1], f = stats[2], p = stats[3])
+    manovaTable$addRows(row)
+  }
+
+}
+
 .ldaClassificationCoefficients <- function(options, jaspResults, ready){
 
   if(!is.null(jaspResults[["coefficientsTable"]]) || !options[["coefficientsTable"]]) return()
   
   coefficientsTable <- createJaspTable(title = "Linear Discriminant Coefficients")
-  coefficientsTable$position <- 3
+  coefficientsTable$position <- 4
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
@@ -134,7 +177,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["priorTable"]]) || !options[["priorTable"]]) return()
   
   priorTable <- createJaspTable(title = "Prior and Posterior Group Probabilities")
-  priorTable$position <- 4
+  priorTable$position <- 5
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -160,7 +203,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["meanTable"]]) || !options[["meanTable"]]) return()
   
   meanTable <- createJaspTable(title = "Group Means in Training Data")
-  meanTable$position <- 5
+  meanTable$position <- 7
   meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -310,6 +353,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
                                     ggplot2::labs(color = options[["target"]]) + 
                                     ggplot2::scale_color_manual(values = colorspace::qualitative_hcl(n = length(unique(target))))
     p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE, legend.position = "right")
+    p <- p + ggplot2::theme(axis.ticks.y = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
     
   } else {
 
@@ -324,6 +368,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
           ggplot2::xlab("") + 
           ggplot2::scale_color_manual(values = colorspace::qualitative_hcl(n = length(unique(target))))
     p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE)
+    p <- p + ggplot2::theme(axis.ticks.y = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
 
   }
   return(p)

@@ -36,6 +36,7 @@ Form
 
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
           CheckBox { text: qsTr("Proportions"); name: "confusionProportions"} } 
+        CheckBox { name: "manovaTable";       text: qsTr("MANOVA")             }
         CheckBox { name: "coefficientsTable";   text: qsTr("Coefficients")       }
         CheckBox { name: "priorTable";	    text: qsTr("Prior and posterior probabilities")            }
         CheckBox { name: "meanTable";       text: qsTr("Group means training data")             }
@@ -53,10 +54,6 @@ Form
                 CheckBox { name: "plotStatistics"; text: qsTr("Scatter plots"); checked: true}
             }
         }
-            //CheckBox { name: "linearDiscr"; text: qsTr("Data on linear discriminants") }
-            //CheckBox { name: "errorRate"; text: qsTr("Error trade-off") }
-            //CheckBox { name: "territorial"; text: qsTr("Territorial map") }
-            //CheckBox { name: "partialPlot"; text: qsTr("Partial plots") }
     }
 
     Section
