@@ -25,66 +25,77 @@ Form {
     VariablesForm {
         AvailableVariablesList { name: "variables" }
         AssignedVariablesList {
+            id: target
             name: "target"
             title: qsTr("Target")
             singleVariable: true
-            allowedColumns: ["nominal", "nominalText"]
+            allowedColumns: ["ordinal", "nominal", "nominalText"]
         }
         AssignedVariablesList {
-                    name: "predictors"
-                    title: qsTr("Predictors")
-                    singleVariable: false
-                    allowedColumns: ["scale", "ordinal"]
-                }
+            id: predictors
+            name: "predictors"
+            title: qsTr("Predictors")
+            singleVariable: false
+            allowedColumns: ["scale", "ordinal"]
+        }
     }
     
     GroupBox {
         title: qsTr("Tables")
         
-        CheckBox { text: qsTr("Training error") ; name: "trainingAccuracy"}
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
-          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} }
-        
+          CheckBox { text: qsTr("Proportions"); name: "confusionProportions"} }  
     }
     
     GroupBox {
         title: qsTr("Plots")
         
-        CheckBox { text: qsTr("Classification error") ; name: "plotErrorVsK"; enabled: validationManual.checked ? false : true }
-        CheckBox { text: qsTr("Predicted performance (training)") ; name: "predictedPerformanceTraining" }
-        CheckBox { text: qsTr("Predicted performance (test)") ; name: "predictedPerformanceTest" }
+        CheckBox { text: qsTr("Classification error") ; name: "plotErrorVsK"; enabled: !optimizationManual.checked }
     }
     
     Section {
-        title: qsTr("Training parameters")
+        title: qsTr("Training Parameters")
 
-        GridLayout {      
-          RadioButtonGroup {
-              title: qsTr("Model optimization")
-              name: "modelOpt"
+        GridLayout {   
+            ColumnLayout{
+
+            RadioButtonGroup {
+                title: qsTr("Model Optimization")
+                name: "modelOpt"
+              
+              RadioButton { text: qsTr("Classification error")          ; name: "optimizationError"; checked: true }
+              RadioButton { text: qsTr("Manual")                        ; name: "optimizationManual"; id: optimizationManual }
+            }
+
+            RadioButtonGroup {
+                title: qsTr("Cross Validation")
+                name: "modelValid"
               
               RadioButton { text: qsTr("Leave-one-out")                 ; name: "validationLeaveOneOut"; checked: true; id: validationLeaveOneOut }
               RadioButton { name: "validationKFold"; childrenOnSameRow: true
                   IntegerField {
                       name: "noOfFolds"
-                      afterLabel: qsTr("-fold cross-validation")
+                      afterLabel: qsTr("-fold")
                       defaultValue: 3
                       min: 2
                       max: 15
                       fieldWidth: 25
                  }
-              }
-              RadioButton { text: qsTr("Manual")                        ; name: "validationManual"; id: validationManual }
+                }
+            RadioButton { text: qsTr("None")                        ; name: "validationManual"; id: validationManual }
+            }
+
+
           }
         
           GroupBox {
-              IntegerField { name: "noOfNearestNeighbours"; text: qsTr("No. of nearest neighbors:") ; defaultValue: 1 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
-              IntegerField { name: "maxK"; text: qsTr("Max. nearest neighbors:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
+              IntegerField { name: "noOfNearestNeighbours"; text: qsTr("No. of nearest neighbors:") ; defaultValue: 3 ; min: 1; max: 999999; fieldWidth: 60; enabled: optimizationManual.checked }
+              IntegerField { name: "maxK"; text: qsTr("Max. nearest neighbors:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: !optimizationManual.checked }
               PercentField { name: "trainingDataManual"; text: qsTr("Data used for training:")       ; defaultValue: 80; enabled: validationManual.checked }
               ComboBox {
                   name: "distanceParameterManual"
                   label: qsTr("Distance:")
-                  enabled: validationManual.checked
+                  enabled: !validationLeaveOneOut.checked
                   model: ListModel {
                       ListElement { key: 1                ; value: "1"; name: "Manhattan" }
                       ListElement { key: 2                ; value: "2"; name: "Euclidian" }
@@ -93,7 +104,7 @@ Form {
               ComboBox {
                   name: "weights"
                   label: qsTr("Weights:")
-                  enabled: validationManual.checked
+                  enabled: !validationLeaveOneOut.checked
                   model: ListModel {
                       ListElement { key: "Rectangular"                ; value: "rectangular" }
                       ListElement { key: "Epanechnikov"               ; value: "epanechnikov" }
@@ -107,35 +118,51 @@ Form {
                   }
               }
             CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                 DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
             }
           }
         }
     }
     
-    Section {
-      text: qsTr("Predictions")
-      debug: true
+    // Section {
+    //   text: qsTr("Predictions")
+    //   debug: true
       
-          RadioButtonGroup
-          {
-              name: "applyModel"
-              RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-              RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-              RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-          }
+    //       RadioButtonGroup
+    //       {
+    //           name: "applyModel"
+    //           RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //           RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //           RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //       }
       
-          VariablesForm {
-          visible: applyIndicator.checked
-              height: 150
-              AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-              AssignedVariablesList {
-                          name: "indicator"
-                          title: qsTr("Apply indicator")
-                          singleVariable: true
-                          allowedColumns: ["nominal"]
-                      }
-          }  
+    //       VariablesForm {
+    //       visible: applyIndicator.checked
+    //           height: 150
+    //           AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //           AssignedVariablesList {
+    //                       name: "indicator"
+    //                       title: qsTr("Apply indicator")
+    //                       singleVariable: true
+    //                       allowedColumns: ["nominal"]
+    //                   }
+    //       }  
+    // }
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 0 && target.count > 0
+            onClicked:      { }
+            debug: true	
+        }
     }
 }
