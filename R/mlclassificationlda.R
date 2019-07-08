@@ -41,9 +41,12 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   # Create the group means table
   .ldaClassificationMeans(options, jaspResults, ready)
+
+  # Create the ROC curve
+  .ldaRocCurve(options, jaspResults, ready, position = 6)
   
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 6)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 7)
 }
 
 # Error handling 
@@ -363,4 +366,38 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- p + ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(alpha = 1)))
   
   return(p)
+}
+
+.ldaRocCurve <- function(options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["rocCurve"]]) || !options[["rocCurve"]]) return()
+
+    rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curve", width = 500, height = 300)
+    rocCurve$position <- position
+    rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+    jaspResults[["rocCurve"]] <- rocCurve
+
+    if(!ready) return()
+
+    classificationResult <- jaspResults[["classificationResult"]]$object  
+
+    labels <- as.factor(classificationResult[["x"]])
+    predictions <- as.factor(classificationResult[["y"]])
+    rocValues <- AUC::roc(predictions, labels)
+
+    fpr <- rocValues$fpr
+    tpr <- rocValues$tpr
+    d <- data.frame(fpr = fpr, tpr = tpr)
+    
+    p <- ggplot2::ggplot(ggplot2::aes(x = fpr, y = tpr), data = d) +
+          JASPgraphs::geom_line(data = data.frame(x = c(0,1), y = c(0,1)), ggplot2::aes(x = x, y = y), color = "darkred") +
+          JASPgraphs::geom_line() +
+          ggplot2::xlab("1- specificity") +
+          ggplot2::ylab("sensitivity") +
+          ggplot2::xlim(0, 1) + 
+          ggplot2::ylim(0, 1)
+    p <- JASPgraphs::themeJasp(p)
+
+    rocCurve$plotObject <- p
 }

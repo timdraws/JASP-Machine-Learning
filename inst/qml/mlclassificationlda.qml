@@ -44,12 +44,15 @@ Form
     GroupBox {
         title: qsTr("Plots")
 
+        CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
         CheckBox { name: "matrixplot"
             text: qsTr("Discriminant matrix")
 
-            CheckBox { name: "plotDensities"; text:qsTr("Densities"); checked: true}
-            CheckBox { name: "plotStatistics"; text: qsTr("Scatter plots"); checked: true}}
-            //CheckBox { name: "roc"; text: qsTr("ROC") }
+            RowLayout {
+                CheckBox { name: "plotDensities"; text:qsTr("Densities"); checked: true}
+                CheckBox { name: "plotStatistics"; text: qsTr("Scatter plots"); checked: true}
+            }
+        }
             //CheckBox { name: "linearDiscr"; text: qsTr("Data on linear discriminants") }
             //CheckBox { name: "errorRate"; text: qsTr("Error trade-off") }
             //CheckBox { name: "territorial"; text: qsTr("Territorial map") }
