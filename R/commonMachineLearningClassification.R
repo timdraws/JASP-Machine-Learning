@@ -51,7 +51,7 @@
 .classificationFormula <- function(options, jaspResults){
   predictors <- .v(options[["predictors"]])
   target <- .v(options[["target"]])
-  formula <- paste(target, "~", paste(predictors, collapse=" + "))
+  formula <- formula(paste(target, "~", paste(predictors, collapse=" + ")))
   jaspResults[["formula"]] <- createJaspState(formula)
   jaspResults[["formula"]]$dependOn(options = c("predictors", "target"))
 }
@@ -68,10 +68,13 @@
     
     if(type == "knn"){
       classificationResult <- .knnClassification(dataset, options, jaspResults)
-    } 
+    } else if(type == "lda"){
+      classificationResult <- .ldaClassification(dataset, options, jaspResults)
+    }
     jaspResults[["classificationResult"]] <- createJaspState(classificationResult)
     jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid"))
+                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
+                                                              "estimationMethod"))
   }
 
 }
@@ -81,17 +84,22 @@
   if(!is.null(jaspResults[["classificationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
   title <- base::switch(type,
-                      "knn" = "K-Nearest Neighbors Classification")
+                      "knn" = "K-Nearest Neighbors Classification",
+                      "lda" = "Linear Discriminant Classification")
 
   classificationTable <- createJaspTable(title)
   classificationTable$position <- 1
   classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid"))
+                                          "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
+                                          "estimationMethod"))
 
   if(type == "knn"){
     classificationTable$addColumnInfo(name = 'nn', title = 'Nearest neighbors', type = 'integer')
     classificationTable$addColumnInfo(name = 'weights', title = 'Weights', type = 'string')
     classificationTable$addColumnInfo(name = 'distance', title = 'Distance', type = 'string')
+  } else if(type =="lda"){
+    classificationTable$addColumnInfo(name = 'lda', title = 'Linear Discriminants', type = 'integer')
+    classificationTable$addColumnInfo(name = 'method', title = 'Method', type = 'string')
   }
   classificationTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   classificationTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
@@ -113,6 +121,12 @@
     row <- data.frame(nn = classificationResult[["nn"]], weights = classificationResult[["weights"]], distance = distance, ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
     classificationTable$addRows(row)
 
+  } else if(type =="lda"){
+
+    method <- base::switch(options[["estimationMethod"]], "moment" = "Moment", "mle" = "MLE", "covMve" = "MVE","t" = "t")
+    row <- data.frame(lda = ncol(classificationResult[["scaling"]]), method = method, ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
+    classificationTable$addRows(row)
+
   }
 }
 
@@ -123,7 +137,8 @@
   confusionTable <- createJaspTable(title = "Confusion Matrix")
   confusionTable$position <- 2
   confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid"))
+                                          "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
+                                          "estimationMethod"))
   
   jaspResults[["confusionTable"]] <- confusionTable
   
@@ -186,7 +201,8 @@
   plotErrorVsK <- createJaspPlot(plot = NULL, title = "Classification Error Plot", width = 500, height = 300)
   plotErrorVsK$position <- position
   plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid"))
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
+                                                            "estimationMethod"))
   jaspResults[["plotErrorVsK"]] <- plotErrorVsK
 
   if(!ready) return()
