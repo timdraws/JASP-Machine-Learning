@@ -27,13 +27,13 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     # Run the analysis
     .classification(dataset, options, jaspResults, ready, type = "knn")
     
-    # create the evaluation table
+    # create the results table
     .classificationTable(options, jaspResults, ready, type = "knn")
     
     # Create the confusion table
     .classificationConfusionTable(dataset, options, jaspResults, ready)
     
-    # Create the Error vs K plot ##
+    # Create the classification error plot
     .classificationErrorPlot(dataset, options, jaspResults, ready, position = 3)
 }
 
@@ -85,13 +85,9 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     weights <- optimkfit$best.parameters$kernel
     distance <- optimkfit$distance
 
-    dataset                 <- na.omit(dataset)
-    train.index             <- sample(c(TRUE,FALSE),nrow(dataset), replace = TRUE, prob = c(options[['trainingDataManual']], 1-options[['trainingDataManual']]))
-    train                   <- dataset[train.index, ]
-    test                    <- dataset[!train.index, ]
-
-    kfit <- kknn::kknn(formula = formula, train = train, test = test, k = nn, 
-                      distance = distance, kernel = weights, scale = FALSE)
+		kfit <- list(fitted.values = as.numeric(optimkfit[["fitted.values"]][[1]]))
+		train <- dataset
+		test <- dataset
 
   } else if(options[["modelValid"]] == "validationKFold"){
 
