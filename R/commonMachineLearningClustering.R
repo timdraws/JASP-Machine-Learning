@@ -232,6 +232,9 @@
   clusterResult <- jaspResults[["clusterResult"]]$object
  
   if(options[["seedBox"]]) set.seed(options[["seed"]])
+
+  jaspResults$startProgressbar(2)
+  jaspResults$progressbarTick()
       
   unique.rows <- which(!duplicated(dataset[, .v(options[["predictors"]])]))
   if(is.null(jaspResults[["tsneOutput"]])){
@@ -290,6 +293,7 @@
   if(options[["labels"]])
     p <- p + ggrepel::geom_text_repel(ggplot2::aes(label=rownames(dataset), x = x, y = y), hjust=-1, vjust=1, data = tsne_plot) # of (rownames(data))
   
+  jaspResults$progressbarTick()
   clusterPlot$plotObject <- p
   
 }

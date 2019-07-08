@@ -46,9 +46,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .ldaClassificationMeans(options, jaspResults, ready)
 
   # Create the ROC curve
-  .ldaRocCurve(options, jaspResults, ready, position = 7)
+  .rocCurve(options, jaspResults, ready, position = 7)
 
-    # Decision boundaries
+  # Decision boundaries
   .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "lda")
   
   # Create the LDA matrix plot 
@@ -114,7 +114,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
   
   manovaTable <- createJaspTable(title = "MANOVA")
-  manovaTable$position <- 4
+  manovaTable$position <- 3
   manovaTable$dependOn(options = c("manovaTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   manovaTable$addColumnInfo(name = "model", title = "", type = "string")
@@ -206,7 +206,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["meanTable"]]) || !options[["meanTable"]]) return()
   
   meanTable <- createJaspTable(title = "Group Means in Training Data")
-  meanTable$position <- 7
+  meanTable$position <- 6
   meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -241,10 +241,10 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   classificationResult <- jaspResults[["classificationResult"]]$object
   
-  .ldaFillMatrixPlot(dataset, options, classificationResult, matrixplot)
+  .ldaFillMatrixPlot(dataset, options, jaspResults, classificationResult, matrixplot)
 }
 
-.ldaFillMatrixPlot <- function(dataset, options, classificationResult, matrixplot) {
+.ldaFillMatrixPlot <- function(dataset, options, jaspResults, classificationResult, matrixplot) {
 
   variables <- colnames(classificationResult[["scaling"]])
   l <- length(variables)
@@ -270,6 +270,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   oldFontSize <- JASPgraphs::getGraphOption("fontsize")
   JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
   
+  jaspResults$startProgressbar(length(plotMat)+1)
   for (row in seq_len(l)) {
     for (col in seq_len(l)) {
       if (row == col) {
@@ -323,8 +324,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
         }
         
         if (col == 1 && row == 2){
-          plotMat[[2, 1]] <- .ldaLegend(classificationResult, options, col) 
+          plotMat[[2, 1]] <- .legendPlot(dataset, options, col) 
         }
+        jaspResults$progressbarTick()
       }
     }
   }  
@@ -336,6 +338,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables, topLabels = variables,
                                 scaleXYlabels = NULL, labelPos = labelPos)
   
+  jaspResults$progressbarTick()
   matrixplot$plotObject <- p
 }
   
@@ -395,59 +398,4 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- JASPgraphs::themeJasp(p)    
   
   return(p)
-}
-
-.ldaLegend <- function(classificationResult, options, col){
-
-  target <- classificationResult[["train"]][, .v(options[["target"]])]
-  predictors <- classificationResult[["train"]][, .v(options[["predictors"]])]
-  predictors <- predictors[, 1]
-  lda.data <- data.frame(target = target, predictors = predictors)
-  
-  p <- ggplot2::ggplot(lda.data, ggplot2::aes(y = target, x = target, show.legend = TRUE)) +
-        JASPgraphs::geom_point(ggplot2::aes(fill = target), alpha = 0) +
-        ggplot2::xlab("") +
-        ggplot2::ylab("") +
-        ggplot2::theme(legend.key = ggplot2::element_blank()) +
-        ggplot2::labs(fill = options[["target"]]) + 
-        ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = length(unique(target))))
-  p <- JASPgraphs::themeJasp(p, yAxis = FALSE, xAxis = FALSE, legend.position = "left")
-  p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
-  p <- p + ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(alpha = 1)))
-  
-  return(p)
-}
-
-.ldaRocCurve <- function(options, jaspResults, ready, position){
-
-  if(!is.null(jaspResults[["rocCurve"]]) || !options[["rocCurve"]]) return()
-
-    rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curve", width = 500, height = 300)
-    rocCurve$position <- position
-    rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
-    jaspResults[["rocCurve"]] <- rocCurve
-
-    if(!ready) return()
-
-    classificationResult <- jaspResults[["classificationResult"]]$object  
-
-    labels <- as.factor(classificationResult[["x"]])
-    predictions <- as.factor(classificationResult[["y"]])
-    rocValues <- AUC::roc(predictions, labels)
-
-    fpr <- rocValues$fpr
-    tpr <- rocValues$tpr
-    d <- data.frame(fpr = fpr, tpr = tpr)
-    
-    p <- ggplot2::ggplot(ggplot2::aes(x = fpr, y = tpr), data = d) +
-          JASPgraphs::geom_line(data = data.frame(x = c(0,1), y = c(0,1)), ggplot2::aes(x = x, y = y), color = "darkred") +
-          JASPgraphs::geom_line() +
-          ggplot2::xlab("1- specificity") +
-          ggplot2::ylab("sensitivity") +
-          ggplot2::xlim(0, 1) + 
-          ggplot2::ylim(0, 1)
-    p <- JASPgraphs::themeJasp(p)
-
-    rocCurve$plotObject <- p
 }

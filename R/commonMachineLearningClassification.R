@@ -232,7 +232,8 @@
   decisionBoundary <- createJaspPlot(title = "Decision Boundary Plots", height = 400, width = 300)
   decisionBoundary$position <- position
   decisionBoundary$dependOn(options = c("decisionBoundary", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
+                                          "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
   if(!ready)  return()
@@ -266,6 +267,8 @@
   JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
   
   target <- dataset[, .v(options[["target"]])]
+  jaspResults$startProgressbar(length(plotMat)+1)
+
   for (row in 2:l) {
     for (col in 1:(l-1)) {
       if (row == col) {     
@@ -291,7 +294,8 @@
           plotMat[[row, col]] <- p
       }
       if(l > 2)
-        plotMat[[1, 2]] <- .ldaLegend(classificationResult, options, col)
+        plotMat[[1, 2]] <- .legendPlot(dataset, options, col)
+      jaspResults$progressbarTick()
     }
   }
   
@@ -303,16 +307,26 @@
   p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables[-1], topLabels = variables[-length(variables)],
                                 scaleXYlabels = NULL, labelPos = labelPos)
   
+  jaspResults$progressbarTick()
   decisionBoundary$plotObject <- p
 }
 
-.decisionBoundaryPlot <- function(dataset, options, jaspResults, predictors, target, formula, l, type = "lda"){ 
+.decisionBoundaryPlot <- function(dataset, options, jaspResults, predictors, target, formula, l, type){ 
 
-    x_min <- min(predictors[,1])-0.05; x_max <- max(predictors[,1])+0.05
-    y_min <- min(predictors[,2])-0.05; y_max <- max(predictors[,2])+0.05
+    x_min <- min(predictors[,1])-0.5; x_max <- max(predictors[,1])+0.5
+    y_min <- min(predictors[,2])-0.5; y_max <- max(predictors[,2])+0.5
 
-    # plot the resulting classifier
-    hs <- 0.1
+    xBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 1], min.n = 4)
+    yBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 2], min.n = 4)
+
+    x_min <- xBreaks[1]; x_max <- xBreaks[length(xBreaks)]
+    y_min <- yBreaks[1]; y_max <- yBreaks[length(yBreaks)]
+
+    # Adjust the graining
+    hs <- 0.1 * l
+    if(diff(range(xBreaks)) <= hs || diff(range(yBreaks)) <= hs)
+      hs <- min(c(diff(range(xBreaks)), diff(range(yBreaks)))) - 0.05
+
     grid <- as.data.frame(expand.grid(seq(x_min, x_max, by = hs), seq(y_min, y_max, by =hs)))
     colnames(grid) <- colnames(predictors)
 
@@ -320,25 +334,82 @@
       ldafit <- MASS::lda(formula, data = dataset)
       preds <- predict(ldafit, newdata = grid)$class
     } else if(type == "knn"){
-      
+      classificationResult <- jaspResults[["classificationResult"]]$object
+      kfit <- kknn::train.kknn(formula = formula, data = dataset, ks = classificationResult[["nn"]], 
+                  distance = classificationResult[['distance']], kernel = classificationResult[['weights']], scale = FALSE)
+      preds <- predict(kfit, newdata = grid)
     }
 
     gridData <- data.frame(x = grid[, 1], y = grid[, 2])
     pointData <- data.frame(x=predictors[, 1], y=predictors[, 2])
 
-    xBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 1], min.n = 4)
-    yBreaks <- JASPgraphs::getPrettyAxisBreaks(predictors[, 2], min.n = 4)
-
     p <- ggplot2::ggplot(data = gridData, mapping = ggplot2::aes(x = x, y = y)) +
-          ggplot2::geom_tile(ggplot2::aes(fill=as.character(preds)), alpha = 0.3, show.legend = FALSE) +
-          ggplot2::labs(fill = options[["target"]])
+          ggplot2::geom_tile(ggplot2::aes(fill = preds), alpha = 0.3, show.legend = FALSE) +
+          ggplot2::labs(fill = options[["target"]]) + 
+          ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = length(unique(target))))
     p <- p + ggplot2::scale_x_continuous(name = "", breaks = xBreaks, limits = range(xBreaks))
     p <- p + ggplot2::scale_y_continuous(name = "", breaks = yBreaks, limits = range(yBreaks))
-    p <- p + JASPgraphs::geom_point(data = pointData, ggplot2::aes(x = x, y = y, fill = as.character(target)))
+    p <- p + JASPgraphs::geom_point(data = pointData, ggplot2::aes(x = x, y = y, fill = target))
     if(l <= 2){
       p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE, legend.position = "right")
     } else {
       p <- JASPgraphs::themeJasp(p, xAxis = TRUE, yAxis = TRUE)
     }
     return(p)
+}
+
+.legendPlot <- function(dataset, options, col){
+
+  target <- dataset[, .v(options[["target"]])]
+  predictors <- dataset[, .v(options[["predictors"]])]
+  predictors <- predictors[, 1]
+  lda.data <- data.frame(target = target, predictors = predictors)
+  
+  p <- ggplot2::ggplot(lda.data, ggplot2::aes(y = target, x = target, show.legend = TRUE)) +
+        JASPgraphs::geom_point(ggplot2::aes(fill = target), alpha = 0) +
+        ggplot2::xlab("") +
+        ggplot2::ylab("") +
+        ggplot2::theme(legend.key = ggplot2::element_blank()) +
+        ggplot2::labs(fill = options[["target"]]) + 
+        ggplot2::scale_fill_manual(values = colorspace::qualitative_hcl(n = length(unique(target))))
+  p <- JASPgraphs::themeJasp(p, yAxis = FALSE, xAxis = FALSE, legend.position = "left")
+  p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank())
+  p <- p + ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(alpha = 1)))
+  
+  return(p)
+}
+
+.rocCurve <- function(options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["rocCurve"]]) || !options[["rocCurve"]]) return()
+
+    rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curve", width = 500, height = 300)
+    rocCurve$position <- position
+    rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                    "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
+                                    "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights"))
+    jaspResults[["rocCurve"]] <- rocCurve
+
+    if(!ready) return()
+
+    classificationResult <- jaspResults[["classificationResult"]]$object  
+
+    labels <- as.factor(classificationResult[["x"]])
+    predictions <- as.factor(classificationResult[["y"]])
+    rocValues <- AUC::roc(predictions, labels)
+
+    fpr <- rocValues$fpr
+    tpr <- rocValues$tpr
+    d <- data.frame(fpr = fpr, tpr = tpr)
+    
+    p <- ggplot2::ggplot(ggplot2::aes(x = fpr, y = tpr), data = d) +
+          JASPgraphs::geom_line(data = data.frame(x = c(0,1), y = c(0,1)), ggplot2::aes(x = x, y = y), color = "darkred") +
+          JASPgraphs::geom_line() +
+          ggplot2::xlab("1- specificity") +
+          ggplot2::ylab("sensitivity") +
+          ggplot2::xlim(0, 1) + 
+          ggplot2::ylim(0, 1)
+    p <- JASPgraphs::themeJasp(p)
+
+    rocCurve$plotObject <- p
 }

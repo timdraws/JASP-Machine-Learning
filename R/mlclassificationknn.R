@@ -35,6 +35,12 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     
     # Create the classification error plot
     .classificationErrorPlot(dataset, options, jaspResults, ready, position = 3)
+
+    # Create the ROC curve
+    .rocCurve(options, jaspResults, ready, position = 4)
+
+    # Decision boundaries
+    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 5, type = "knn")
 }
 
 .knnClassification <- function(dataset, options, jaspResults){
@@ -132,6 +138,8 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
   classificationResult[["distance"]]    <- distance
   classificationResult[["ntrain"]]      <- nrow(train)
   classificationResult[["ntest"]]       <- nrow(test)
+  classificationResult[["x"]]           <- test[,.v(options[["target"]])]
+  classificationResult[["y"]]           <- kfit$fitted.values
 
   if(options[["modelOpt"]] == "optimizationError")
     classificationResult[["errorStore"]] <- errorStore

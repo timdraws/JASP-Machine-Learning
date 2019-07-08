@@ -46,7 +46,7 @@ Form
         title: qsTr("Plots")
 
         CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision Boundaries") }
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") }
         CheckBox { name: "matrixplot"
             text: qsTr("Discriminant matrix")
 

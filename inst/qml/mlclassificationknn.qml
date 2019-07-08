@@ -51,6 +51,8 @@ Form {
         title: qsTr("Plots")
         
         CheckBox { text: qsTr("Classification error") ; name: "plotErrorVsK"; enabled: !optimizationManual.checked }
+        CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") }
     }
     
     Section {
