@@ -113,14 +113,17 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
   
-  manovaTable <- createJaspTable(title = "MANOVA")
+  manovaTable <- createJaspTable(title = "Tests of Equality of Group Means")
   manovaTable$position <- 3
   manovaTable$dependOn(options = c("manovaTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   manovaTable$addColumnInfo(name = "model", title = "", type = "string")
-  manovaTable$addColumnInfo(name = "df", title = "df", type = "integer")
   manovaTable$addColumnInfo(name = "f", title = "F", type = "number")
+  manovaTable$addColumnInfo(name = "df1", title = "df1", type = "integer")
+  manovaTable$addColumnInfo(name = "df2", title = "df2", type = "integer")
   manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
+
+  manovaTable$addFootnote(message= "The null hypothesis specifies equal group means." , symbol="<i>Note.</i>")
   
   jaspResults[["manovaTable"]] <- manovaTable
 
@@ -132,18 +135,16 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   manovaResult <- manova(predictors ~ target)
   manovaSummary <- summary(manovaResult, test="Wilks")
-  stats <- as.numeric(manovaSummary$stats[1, c(1, 3, 6)])
-
-  # Full model
-  row <- data.frame(model = "Full model", df = stats[1], f = stats[2], p = stats[3])
-  manovaTable$addRows(row)
 
   # Individual models
   anovaSummary <- summary.aov(manovaResult)
   for(i in 1:length(anovaSummary)){
-    sumTmp <- anovaSummary[[i]]
-    stats <- as.numeric(as.matrix(sumTmp)[1, c(1, 4, 5)])
-    row <- data.frame(model = options[["predictors"]][i], df = stats[1], f = stats[2], p = stats[3])
+    sumTmp <- as.matrix(anovaSummary[[i]])
+    F <- sumTmp[1, 4]
+    df1 <- sumTmp[1, 1]
+    df2 <- sumTmp[2, 1]
+    p <- sumTmp[1, 5]
+    row <- data.frame(model = options[["predictors"]][i], f = F, df1 = df1, df2 = df2, p = p)
     manovaTable$addRows(row)
   }
 

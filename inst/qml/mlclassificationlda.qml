@@ -31,16 +31,27 @@ Form
         AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "ordinal"]; id: predictors                                        }
     }
 
-    GroupBox {
+    ColumnLayout {
+
+        GroupBox {
         title: qsTr("Tables")
 
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
           CheckBox { text: qsTr("Proportions"); name: "confusionProportions"} } 
-        CheckBox { name: "manovaTable";       text: qsTr("MANOVA")             }
         CheckBox { name: "coefficientsTable";   text: qsTr("Coefficients")       }
         CheckBox { name: "priorTable";	    text: qsTr("Prior and posterior probabilities")            }
         CheckBox { name: "meanTable";       text: qsTr("Group means training data")             }
         }
+
+        GroupBox {
+            title: qsTr("Assumption Checks")
+
+            CheckBox { name: "manovaTable";       text: qsTr("Equality of group means")             }
+            CheckBox { name: "boxTest";           text: qsTr("Equality of covariance matrices")     }
+            CheckBox { name: "collinearity";      text: qsTr("Multicollinearity")                   }
+        }
+
+    }
 
     GroupBox {
         title: qsTr("Plots")

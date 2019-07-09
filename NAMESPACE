@@ -11,13 +11,3 @@ export(MLFuzzyCMeans)
 export(MLClusteringHier)
 export(MLClusteringKMeans)
 export(MLClusteringRandomForest)
-  import('kknn');
-  import('Rtsne');
-  import('colorspace');
-  import('gbm');
-  import('dbscan');
-  import('ggdendro');
-  import('cluster');
-  import('e1071');
-  import('AUC');
-  import('randomForest');
