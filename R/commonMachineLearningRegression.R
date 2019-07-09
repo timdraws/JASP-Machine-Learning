@@ -22,8 +22,8 @@
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
   variables.to.read         <- c(target, predictors)
-  if (is.null(dataset)) {
-          dataset <- .readDataSetToEnd(columns.as.numeric=variables.to.read, exclude.na.listwise=variables.to.read)
+  if (is.null(dataset)){
+    dataset <- .readDataSetToEnd(columns.as.numeric=variables.to.read, exclude.na.listwise=variables.to.read)
   }
   return(dataset)
 }

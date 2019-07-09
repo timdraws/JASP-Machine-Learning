@@ -44,7 +44,7 @@ Form {
         title: qsTr("Tables")
         
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
-          CheckBox { text: qsTr("Proportions"); name: "confusionProportions"} }  
+          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} }  
     }
     
     GroupBox {
@@ -52,7 +52,12 @@ Form {
         
         CheckBox { text: qsTr("Classification error") ; name: "plotErrorVsK"; enabled: !optimizationManual.checked }
         CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") }
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") 
+            RowLayout {
+                CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
+                CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }
+            }
+        }
     }
     
     Section {
@@ -119,7 +124,6 @@ Form {
                       ListElement { key: "Optimal"                    ; value: "optimal" }
                   }
               }
-            CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
             CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                 DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
             }

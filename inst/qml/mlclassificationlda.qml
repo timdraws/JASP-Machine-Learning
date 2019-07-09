@@ -37,7 +37,7 @@ Form
         title: qsTr("Tables")
 
         CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
-          CheckBox { text: qsTr("Proportions"); name: "confusionProportions"} } 
+          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} } 
         CheckBox { name: "coefficientsTable";   text: qsTr("Coefficients")       }
         CheckBox { name: "priorTable";	    text: qsTr("Prior and posterior probabilities")            }
         CheckBox { name: "meanTable";       text: qsTr("Group means training data")             }
@@ -48,7 +48,7 @@ Form
 
             CheckBox { name: "manovaTable";       text: qsTr("Equality of group means")             }
             CheckBox { name: "boxTest";           text: qsTr("Equality of covariance matrices")     }
-            CheckBox { name: "collinearity";      text: qsTr("Multicollinearity")                   }
+            CheckBox { name: "multicolTable";      text: qsTr("Multicollinearity")                   }
         }
 
     }
@@ -57,7 +57,12 @@ Form
         title: qsTr("Plots")
 
         CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") }
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") 
+            RowLayout {
+                CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
+                CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }
+            }
+        }
         CheckBox { name: "matrixplot"
             text: qsTr("Discriminant matrix")
 

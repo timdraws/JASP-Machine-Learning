@@ -110,7 +110,6 @@ Form {
                       ListElement { key: "Optimal"                    ; value: "optimal" }
                   }
               }
-              CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
               CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                   DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }}
           }

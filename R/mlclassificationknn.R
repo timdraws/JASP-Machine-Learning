@@ -22,7 +22,7 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     .errorHandlingClassificationAnalyses(dataset, options)
     
     # Check if analysis is ready to run
-    ready <- .classificationAnalysesReady(options)
+    ready <- .classificationAnalysesReady(options, type = "knn")
     
     # Run the analysis
     .classification(dataset, options, jaspResults, ready, type = "knn")

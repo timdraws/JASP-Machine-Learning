@@ -22,7 +22,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .errorHandlingClassificationAnalyses(dataset, options)
   
   # Check if analysis is ready to run
-  ready <- .classificationAnalysesReady(options)
+  ready <- .classificationAnalysesReady(options, type = "lda")
 
   # Run the analysis 
   .classification(dataset, options, jaspResults, ready, type = "lda")
@@ -33,9 +33,6 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
 
-  # Create the MANOVA table
-  .ldaClassificationManova(options, jaspResults, ready)
-
   # Create the coefficients table
   .ldaClassificationCoefficients(options, jaspResults, ready)
 
@@ -45,14 +42,20 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the group means table
   .ldaClassificationMeans(options, jaspResults, ready)
 
-  # Create the ROC curve
-  .rocCurve(options, jaspResults, ready, position = 7)
+  # Create the test of equality of means table
+  .ldaEqualityOfGroupMeans(dataset, options, jaspResults, ready)
 
-  # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "lda")
-  
+  # Create the test of equality of movariance matrices table
+  .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready)
+
+  # Create the ROC curve
+  .rocCurve(options, jaspResults, ready, position = 8)
+
   # Create the LDA matrix plot 
   .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 9)
+
+  # Decision boundaries
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "lda")
 }
 
 # Error handling 
@@ -109,53 +112,12 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   return(classificationResult)
 }
 
-.ldaClassificationManova <- function(options, jaspResults, ready){
-
-  if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
-  
-  manovaTable <- createJaspTable(title = "Tests of Equality of Group Means")
-  manovaTable$position <- 3
-  manovaTable$dependOn(options = c("manovaTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
-  manovaTable$addColumnInfo(name = "model", title = "", type = "string")
-  manovaTable$addColumnInfo(name = "f", title = "F", type = "number")
-  manovaTable$addColumnInfo(name = "df1", title = "df1", type = "integer")
-  manovaTable$addColumnInfo(name = "df2", title = "df2", type = "integer")
-  manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
-
-  manovaTable$addFootnote(message= "The null hypothesis specifies equal group means." , symbol="<i>Note.</i>")
-  
-  jaspResults[["manovaTable"]] <- manovaTable
-
-  if(!ready)  return()
-
-  classificationResult <- jaspResults[["classificationResult"]]$object
-  target <- as.numeric(classificationResult[["train"]][,.v(options[["target"]])])
-  predictors <- as.matrix(classificationResult[["train"]][,.v(options[["predictors"]])])
-
-  manovaResult <- manova(predictors ~ target)
-  manovaSummary <- summary(manovaResult, test="Wilks")
-
-  # Individual models
-  anovaSummary <- summary.aov(manovaResult)
-  for(i in 1:length(anovaSummary)){
-    sumTmp <- as.matrix(anovaSummary[[i]])
-    F <- sumTmp[1, 4]
-    df1 <- sumTmp[1, 1]
-    df2 <- sumTmp[2, 1]
-    p <- sumTmp[1, 5]
-    row <- data.frame(model = options[["predictors"]][i], f = F, df1 = df1, df2 = df2, p = p)
-    manovaTable$addRows(row)
-  }
-
-}
-
 .ldaClassificationCoefficients <- function(options, jaspResults, ready){
 
   if(!is.null(jaspResults[["coefficientsTable"]]) || !options[["coefficientsTable"]]) return()
   
   coefficientsTable <- createJaspTable(title = "Linear Discriminant Coefficients")
-  coefficientsTable$position <- 4
+  coefficientsTable$position <- 3
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
@@ -181,7 +143,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["priorTable"]]) || !options[["priorTable"]]) return()
   
   priorTable <- createJaspTable(title = "Prior and Posterior Group Probabilities")
-  priorTable$position <- 5
+  priorTable$position <- 4
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -207,7 +169,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["meanTable"]]) || !options[["meanTable"]]) return()
   
   meanTable <- createJaspTable(title = "Group Means in Training Data")
-  meanTable$position <- 6
+  meanTable$position <- 5
   meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -399,4 +361,99 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- JASPgraphs::themeJasp(p)    
   
   return(p)
+}
+
+.ldaEqualityOfGroupMeans <- function(dataset, options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
+  
+  manovaTable <- createJaspTable(title = "Tests of Equality of Group Means")
+  manovaTable$position <- 6
+  manovaTable$dependOn(options = c("manovaTable", "scaleEqualSD", "target", "predictors"))
+  manovaTable$addColumnInfo(name = "model", title = "", type = "string")
+  manovaTable$addColumnInfo(name = "f", title = "F", type = "number")
+  manovaTable$addColumnInfo(name = "df1", title = "df1", type = "integer")
+  manovaTable$addColumnInfo(name = "df2", title = "df2", type = "integer")
+  manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
+
+  manovaTable$addFootnote(message= "The null hypothesis specifies equal group means." , symbol="<i>Note.</i>")
+  
+  jaspResults[["manovaTable"]] <- manovaTable
+
+  if(!ready)  return()
+
+  target <- as.numeric(dataset[, .v(options[["target"]])])
+  predictors <- as.matrix(dataset[, .v(options[["predictors"]])])
+
+  manovaResult <- manova(predictors ~ target)
+  manovaSummary <- summary(manovaResult, test="Wilks")
+
+  # Individual models
+  anovaSummary <- summary.aov(manovaResult)
+  for(i in 1:length(anovaSummary)){
+    sumTmp <- as.matrix(anovaSummary[[i]])
+    F <- sumTmp[1, 4]
+    df1 <- sumTmp[1, 1]
+    df2 <- sumTmp[2, 1]
+    p <- sumTmp[1, 5]
+    row <- data.frame(model = options[["predictors"]][i], f = F, df1 = df1, df2 = df2, p = p)
+    manovaTable$addRows(row)
+  }
+
+}
+
+.ldaEqualityOfCovarianceMatrices <- function(dataset, options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["boxTest"]]) || !options[["boxTest"]]) return()
+  
+  boxTest <- createJaspTable(title = "Tests of Equality of Covariance Matrices")
+  boxTest$position <- 7
+  boxTest$dependOn(options = c("boxTest", "scaleEqualSD", "target", "predictors"))
+
+  boxTest$addColumnInfo(name = "test", title = "Test", type = "string")
+  boxTest$addColumnInfo(name = "x", title = "X\u00B2", type = "number")
+  boxTest$addColumnInfo(name = "df", title = "df", type = "integer")
+  boxTest$addColumnInfo(name = "p", title = "p", type = "pvalue")
+
+  boxTest$addFootnote(message= "The null hypothesis specifies equal covariance matrices." , symbol="<i>Note.</i>")
+  
+  jaspResults[["boxTest"]] <- boxTest
+
+  if(!ready)  return()
+
+  target <- dataset[, .v(options[["target"]])]
+  predictors <- dataset[, .v(options[["predictors"]])]
+
+  testLabel <- "Box's M"
+  boxSum <- .boxM(predictors, target)
+  chi <- as.numeric(boxSum[["statistic"]])
+  df <- as.numeric(boxSum[["parameter"]])
+  p <- as.numeric(boxSum[["p.value"]])
+
+  row <- data.frame(test = testLabel, x = chi, df = df, p = p)
+  boxTest$addRows(row)
+}
+
+.ldaMulticollinearity <- function(dataset, options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
+  
+  multicolTable <- createJaspTable(title = "Tests of Equality of Covariance Matrices")
+  multicolTable$position <- 7
+  multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
+
+  multicolTable$addColumnInfo(name = "test", title = "Test", type = "string")
+  boxTest$addColumnInfo(name = "x", title = "X\u00B2", type = "number")
+  boxTest$addColumnInfo(name = "df", title = "df", type = "integer")
+  boxTest$addColumnInfo(name = "p", title = "p", type = "pvalue")
+
+  boxTest$addFootnote(message= "The null hypothesis specifies equal covariance matrices." , symbol="<i>Note.</i>")
+  
+  jaspResults[["boxTest"]] <- boxTest
+
+  if(!ready)  return()
+
+  target <- dataset[, .v(options[["target"]])]
+  predictors <- dataset[, .v(options[["predictors"]])]
+
 }
