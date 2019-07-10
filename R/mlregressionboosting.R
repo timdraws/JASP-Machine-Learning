@@ -154,9 +154,13 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
     results[["optTrees"]] <- options$noOfTrees
   }
   
-  # Derive test set predictions and calculate test error rate
-  results[["preds"]] <- gbm::predict.gbm(results$res, testData, n.trees = results$optTrees, type = "response")
-  results[["testError"]] <- mean((testTarget - results$preds)^2)
+  # Derive test set predictions
+  modPred <- gbm::predict.gbm(results$res, testData, n.trees = results$optTrees, type = "response")
+  
+  # Predictive performance
+  results[["predPerf"]] <- data.frame(pred = as.numeric(modPred), obs = as.numeric(testTarget))
+  results[["testMSE"]]  <- mean((modPred - testTarget)^2)
+  results[["testR2"]]   <- round(cor(modPred, testTarget)^2, 2)
   
   # Apply model to new data if requested
   if(options$applyModel == "applyIndicator" && options$indicator != "") {
@@ -174,7 +178,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Save results to state
   jaspResults[["stateClassBoostResults"]] <- createJaspState(results)
   jaspResults[["stateClassBoostResults"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
-                                                               "noOfTrees", "shrinkage", "int.depth",
+                                                               "noOfTrees", "shrinkage", "int.depth", "dist", 
                                                                "modelOptimization", "cvFolds", "nNode", "dataTrain",
                                                                "dataTrain", "bag.fraction", "dist", "seedBox", "seed"))
   
@@ -215,30 +219,33 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table and bind to jaspResults
   regBoostTable <- createJaspTable(title = "Boosting Regression Model Summary")
   jaspResults[["regBoostTable"]] <- regBoostTable
-  jaspResults[["regBoostTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
+  jaspResults[["regBoostTable"]]$position <- 1
+  jaspResults[["regBoostTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel", "dist",
                                                       "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
                                                       "cvFolds", "nNode", "dataTrain", "dataTrain", "bag.fraction",
                                                       "dist", "seedBox", "seed"))
   
   # Add column info
   if(options$dataTrain < 1){
-    regBoostTable$addColumnInfo(name = "testError" ,  title = "Test Set MSE"  , type = "number", format = "sf:4")
+    regBoostTable$addColumnInfo(name = "testMSE" ,  title = "Test Set MSE"  , type = "number", format = "sf:4")
+  }
+  if (options$dataTrain < 1) {
+    regBoostTable$addColumnInfo(name = "testR2",  title = "Test Set R\u00B2", type = "number", format = "sf:4")
   }
   regBoostTable$addColumnInfo(name = "ntrees"      ,  title = "Trees"         , type = "integer"                )
   regBoostTable$addColumnInfo(name = "shrinkage"   ,  title = "Shrinkage"     , type = "number", format = "sf:4")
   regBoostTable$addColumnInfo(name = "intDepth"    ,  title = "Int. Depth"    , type = "integer"                )
   regBoostTable$addColumnInfo(name = "minObsInNode",  title = "Min. Obs. Node", type = "integer"                )
-  regBoostTable$addColumnInfo(name = "ntrain"      ,  title = "n (Train)"     , type = "integer"                )
-  regBoostTable$addColumnInfo(name = "ntest"       ,  title = "n (Test)"      , type = "integer"                )
+  regBoostTable$addColumnInfo(name = "ntrain"      ,  title = "n(Train)"     , type = "integer"                 )
+  regBoostTable$addColumnInfo(name = "ntest"       ,  title = "n(Test)"      , type = "integer"                 )
   
   # Add data per column
-  if(options$dataTrain < 1){
-    regBoostTable[["testError"]]  <- if (ready) regBoostResults$testError else "."
-  }
+  if (options$dataTrain < 1){ regBoostTable[["testMSE"]] <- if (ready) regBoostResults$testMSE else "." }
+  if (options$dataTrain < 1){ regBoostTable[["testR2"]]    <- if (ready) regBoostResults$testR2    else "." }
   regBoostTable[["ntrees"]]       <- if (ready) regBoostResults$optTrees                else "."
   regBoostTable[["shrinkage"]]    <- if (ready) regBoostResults$res$shrinkage           else "."
   regBoostTable[["intDepth"]]     <- if (ready) regBoostResults$res$interaction.depth   else "."
-  regBoostTable[["minObsInNode"]] <- if (ready) options$nNode              else "."
+  regBoostTable[["minObsInNode"]] <- if (ready) options$nNode                           else "."
   regBoostTable[["ntrain"]]       <- if (ready) regBoostResults$res$nTrain              else "."
   regBoostTable[["ntest"]]        <- if (ready) length(regBoostResults$data$testTarget) else "."
   
@@ -250,8 +257,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table
   regBoostRelInfTable <- createJaspTable(title = "Relative Influence")
   jaspResults[["regBoostRelInfTable"]] <- regBoostRelInfTable
+  jaspResults[["regBoostRelInfTable"]]$position <- 2
   jaspResults[["regBoostRelInfTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
-                                                            "noOfTrees", "shrinkage", "int.depth",
+                                                            "noOfTrees", "shrinkage", "int.depth","dist",
                                                             "modelOptimization", "cvFolds", "nNode", "dataTrain",
                                                             "dataTrain", "bag.fraction", "dist", "seedBox", "seed",
                                                             "regBoostRelInfTable"))
@@ -272,8 +280,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Create table and bind to jaspResults
   regBoostApplyTable <- createJaspTable(title = "Boosting Model Predictions")
   jaspResults[["regBoostApplyTable"]] <- regBoostApplyTable
+  jaspResults[["regBoostApplyTable"]]$position <- 3
   jaspResults[["regBoostApplyTable"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
-                                                           "noOfTrees", "shrinkage", "int.depth",
+                                                           "noOfTrees", "shrinkage", "int.depth", "dist",
                                                            "modelOptimization", "cvFolds", "nNode", "dataTrain",
                                                            "dataTrain", "bag.fraction", "dist", "seedBox", "seed",
                                                            "applyModel"))
@@ -302,9 +311,10 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regBoostRelInfPlot <- createJaspPlot(plot = relInfPlot, title = "Relative Influence Plot",
                                          width = 500, height = 20 * nrow(regBoostResults$relInf) + 60)
   jaspResults[["regBoostRelInfPlot"]] <- regBoostRelInfPlot
+  jaspResults[["regBoostRelInfPlot"]]$position <- 4
   jaspResults[["regBoostRelInfPlot"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
                                                            "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
-                                                           "cvFolds", "nNode", "dataTrain", "dataTrain", 
+                                                           "cvFolds", "nNode", "dataTrain", "dataTrain", "dist",
                                                            "bag.fraction", "dist", "seedBox", "seed", "plotRelInf"))
 }
 
@@ -321,18 +331,19 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
     ggplot2::ggplot(data = deviance, mapping = ggplot2::aes(x = trees, y = trainError, group = what, color = what)) +
       ggplot2::geom_line(size = 1, show.legend = regBoostResults$method != "OOB") +
       ggplot2::scale_x_continuous(name = "Trees", labels = scales::comma) +
-      ggplot2::ylab("Gaussian Deviance") +
+      ggplot2::ylab(paste(regBoostResults$spec$distribution, " Deviance")) +
       ggplot2::scale_color_manual(name = "", values = c("OOB" = "gray20", "CV" = "#99c454")) +
-      ggplot2::geom_vline(xintercept = regBoostResults$optTrees, color = "lightgray", linetype = "dashed"),
+      ggplot2::geom_vline(xintercept = regBoostResults$optTrees, color = "gray20", linetype = "dashed"),
     legend.position = "right"
   )
 
   # Create plot and bind to jaspResults
   plotDeviance <- createJaspPlot(plot = plotDeviance, title = "Deviance Plot", width = 500, height = 400)
   jaspResults[["plotDeviance"]] <- plotDeviance
+  jaspResults[["plotDeviance"]]$position <- 5
   jaspResults[["plotDeviance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
                                                      "noOfTrees", "shrinkage", "int.depth", "modelOptimization",
-                                                     "cvFolds", "nNode", "dataTrain", "dataTrain", 
+                                                     "cvFolds", "nNode", "dataTrain", "dataTrain", "dist",
                                                      "bag.fraction", "dist", "seedBox", "seed", "plotDeviance"))
   
 }
@@ -355,38 +366,41 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regBoostPlotOOBChangeDev <- createJaspPlot(plot = plotOOBChangeDev,title = "OOB Improvement Plot",
                                                width = 400, height = 400)
   jaspResults[["regBoostPlotOOBChangeDev"]] <- regBoostPlotOOBChangeDev
+  jaspResults[["regBoostPlotOOBChangeDev"]]$position <- 6
   jaspResults[["regBoostPlotOOBChangeDev"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
-                                                                 "noOfTrees", "shrinkage", "int.depth",
+                                                                 "noOfTrees", "shrinkage", "int.depth", "dist",
                                                                  "modelOptimization", "cvFolds", "nNode", "dataTrain",
                                                                  "dataTrain", "bag.fraction", "dist", "seedBox", 
                                                                  "seed", "plotOOBChangeDev"))
 }
 
 .regBoostPlotPredPerformance <- function(jaspResults, options, regBoostResults, ready) {
-  if (!options$plotPredPerformance || !is.null(jaspResults[["plotPredPerformance"]])) return()
+  if (!options$plotPredPerf) return()
   
-  predPerformance <- data.frame(true = regBoostResults$data$testTarget, predicted = regBoostResults$preds)
-  limits <- c(round(min(c(floor(predPerformance$true), floor(predPerformance$predicted)))),
-              round(max(c(ceiling(predPerformance$true), ceiling(predPerformance$predicted)))))
+  limits <- c(round(min(c(min(floor(regBoostResults$predPerf$pred))  , min(floor(regBoostResults$predPerf$obs))))),
+              round(max(c(max(ceiling(regBoostResults$predPerf$pred)), max(ceiling(regBoostResults$predPerf$obs))))))
   
-  plotPredPerformance <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(data = predPerformance, mapping = ggplot2::aes(x = true, y = predicted)) +
-      ggplot2::geom_point(size = 3) +
-      ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y), 
+  regBoostPredPerfPlot <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = regBoostResults$predPerf, mapping = ggplot2::aes(x = obs, y = pred)) +
+      JASPgraphs::geom_point() +
+      ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y),
                          col = "darkred", size = 1) +
-      ggplot2::scale_x_continuous("True", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6)) +
-      ggplot2::scale_y_continuous("Predicted", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6))
+      ggplot2::scale_x_continuous("Observed" , limits = limits, breaks = pretty(limits)) +
+      ggplot2::scale_y_continuous("Predicted", limits = limits, breaks = pretty(limits))
   )
   
-  plotPredPerformance <- createJaspPlot(plot = plotPredPerformance, title = "Predictive Performance",
-                                        width = 400, height = 400)
+  if (options$dataTrain < 1) {
+    title <- "Predictive Performance on Test Set"
+  } else {
+    title <- "Predictive Performance on Training Set"
+  }
   
-  jaspResults[["plotPredPerformance"]] <- plotPredPerformance
+  regBoostPredPerfPlot <- createJaspPlot(plot = regBoostPredPerfPlot, title = title, width = 400, height = 400)
+  
+  jaspResults[["plotPredPerformance"]] <- regBoostPredPerfPlot
   jaspResults[["plotPredPerformance"]]$position <- 7
   jaspResults[["plotPredPerformance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
-                                                            "noOfTrees", "shrinkage", "int.depth",
+                                                            "noOfTrees", "shrinkage", "int.depth", "dist",
                                                             "modelOptimization", "cvFolds", "nNode", "dataTrain",
                                                             "dataTrain", "bag.fraction", "dist", "seedBox", 
                                                             "seed", "plotPredPerformance"))

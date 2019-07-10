@@ -28,10 +28,9 @@ Form
 
     VariablesForm
     {
-        AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "ordinal"]                  }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")                                                                                     }
-        AssignedVariablesList  { name: "indicator" ; title: qsTr("Apply indicator"); singleVariable: true; allowedColumns: ["nominal"]; enabled: indicator.checked }
+        AvailableVariablesList { name: "allVariablesList"                                                                                                   }
+        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")    ; singleVariable: true; allowedColumns: ["nominal", "ordinal", "nominalText"] }
+        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]              }
     }
 
     GroupBox {
@@ -49,33 +48,12 @@ Form
         CheckBox { name: "plotOOBChangeDev"; text: qsTr("OOB improvement")      }
     }
 
-    GroupBox {
-        title: qsTr("Model application")
-
-        RadioButtonGroup
-        {
-            name: "applyModel"
-            RadioButton { value: "noApp"         ; text: qsTr("Do not apply model")                     ; checked: true }
-            RadioButton { value: "applyIndicator"; text: qsTr("Apply model according to indicator")     ; id: indicator }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Apply model to missing values in target")                }
-        }
-    }
-
     ExpanderButton
     {
-        title: qsTr("Model Specifications")
+        title: qsTr("Training Parameters")
 
         GridLayout
         {
-
-            GroupBox {
-                IntegerField { name: "noOfTrees"; text: qsTr("Number of trees in training:")  ; defaultValue: 100 ; min: 1; max: 999999; fieldWidth: 60 }
-                DoubleField  { name: "shrinkage"; text: qsTr("Shrinkage:")                    ; defaultValue: 0.1 ; min: 0; max: 1     ; fieldWidth: 60 }
-                IntegerField { name: "intDepth" ; text: qsTr("Interaction depth:")            ; defaultValue: 1   ; min: 1; max: 99    ; fieldWidth: 60 }
-                IntegerField { name: "nNode"    ; text: qsTr("Min. no. observations in node:"); defaultValue: 10  ; min: 1; max: 999999; fieldWidth: 60 }
-                PercentField { name: "dataTrain"; text: qsTr("Data used for training:")       ; defaultValue: 80                                        }
-                PercentField { name: "bagFrac"  ; text: qsTr("Training data used per tree:")  ; defaultValue: 50                                        }
-            }
 
             RadioButtonGroup {
                 title: qsTr("Model optimization")
@@ -84,7 +62,7 @@ Form
                     IntegerField {
                         name: "cvFolds"
                         afterLabel: qsTr("-fold cross-validation")
-                        defaultValue: 10
+                        defaultValue: 3
                         min: 2
                         max: 30
                         fieldWidth: 25
@@ -93,18 +71,45 @@ Form
                 RadioButton { text: qsTr("Out-of-bag")              ; name: "oob"                  }
                 RadioButton { text: qsTr("None")                    ; name: "noOpt"; checked: true }
             }
-        }
-    }
 
-    ExpanderButton
-    {
-        title: qsTr("Advanced")
-
-        GroupBox {
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+            GroupBox {
+                IntegerField { name: "noOfTrees"; text: qsTr("Number of trees in training:")  ; defaultValue: 100 ; min: 1; max: 999999; fieldWidth: 60 }
+                DoubleField  { name: "shrinkage"; text: qsTr("Shrinkage:")                    ; defaultValue: 0.1 ; min: 0; max: 1     ; fieldWidth: 60 }
+                IntegerField { name: "intDepth" ; text: qsTr("Interaction depth:")            ; defaultValue: 1   ; min: 1; max: 99    ; fieldWidth: 60 }
+                IntegerField { name: "nNode"    ; text: qsTr("Min. no. observations in node:"); defaultValue: 10  ; min: 1; max: 999999; fieldWidth: 60 }
+                PercentField { name: "dataTrain"; text: qsTr("Data used for training:")       ; defaultValue: 80                                        }
+                PercentField { name: "bagFrac"  ; text: qsTr("Training data used per tree:")  ; defaultValue: 50                                        }
+                CheckBox     { name: "seedBox"     ; text: qsTr("Set seed:")                     ; childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+                }
             }
+
         }
     }
+
+    Section {
+          text: qsTr("Predictions")
+          debug: true
+
+              RadioButtonGroup
+              {
+                  name: "applyModel"
+                  RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+                  RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+                  RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+              }
+
+              VariablesForm {
+              visible: applyIndicator.checked
+                  height: 150
+                  AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+                  AssignedVariablesList {
+                              name: "indicator"
+                              title: qsTr("Apply indicator")
+                              singleVariable: true
+                              allowedColumns: ["nominal"]
+                  }
+              }
+        }
 
 }

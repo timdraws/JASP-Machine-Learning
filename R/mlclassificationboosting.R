@@ -57,31 +57,20 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
 # Error checking
 .classBoostErrorHandling <- function(dataset, options) {
   
-  # Error Check 1: There should be at least 5 observations in the target variable
-  .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-             all.target = options$target, observations.amount = '< 5', exitAnalysisIfErrors = TRUE)
-  
-  # Error Check 2: Apply indicator should not have any missing values (consist of 0s and 1s)
-  if (options$indicator != "") {
-    .hasErrors(dataset = dataset, perform = "run", type = c('observations', 'variance', 'infinity'),
-               all.target = options$indicator, observations.amount = nrow(dataset), exitAnalysisIfErrors = TRUE)
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
   }
   
-  # Error Check 3: There should be at least 2 predictors (otherwise gbm() complains)
-  if (options$target != "" && ncol(dataset) < 3L){
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
+  
+  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
+  if (length(.v(options$predictors)) < 2L) {
     JASP:::.quitAnalysis("Please provide at least 2 predictors.")
   }
-  
-  # Error Check 4: The target variable should have at least 2 classes
-  if (nlevels(dataset[, .v(options$target)]) < 2){
-    JASP:::.quitAnalysis("The target variable should have at least 2 classes.")
-  }
-  
-  # Error Check 5: If target values should be imputed, there have to be missing values in the target
-  # if (options$applyModel == "applyImpute" && sum(is.na(dataset[, .v(options$target)])) < 1) {
-  #   JASP:::.quitAnalysis("To apply model to missing values in target, please provide observations that have missing 
-  #   values in the target variable.")
-  # }
   
 }
 
@@ -137,9 +126,9 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   idxTrain <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
   idxTest <- (1:nrow(modelData))[-idxTrain]
   
-  trainData <- modelData[idxTrain, c(preds, target), drop = FALSE]
-  testData <- modelData[idxTest, preds, drop = FALSE]
-  testTarget <- modelData[idxTest, target]
+  trainData   <- modelData[idxTrain, c(preds, target), drop = FALSE]
+  testPreds   <- modelData[idxTest, preds, drop = FALSE]
+  testTarget  <- as.factor(modelData[idxTest, target])
   
   # Prepare Boosting
   formula <- as.formula(paste(.v(options$target), "~", paste(.v(options$predictors), collapse = " + ")))
@@ -162,7 +151,7 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
                                cv.folds = cv.folds, bag.fraction = options$bagFrac, n.minobsinnode = options$nNode,
                                distribution = "multinomial")
 
-  results[["data"]] <- list(trainData = trainData, testData = testData, testTarget = testTarget)
+  results[["data"]] <- list(trainData = trainData, testPreds = testPreds, testTarget = testTarget)
   results[["relInf"]] <- summary(results$res, plot = FALSE)
   
   if (options$modelOpt != "noOpt") {
@@ -171,13 +160,16 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
     results[["optTrees"]] <- options$noOfTrees
   }
   
-  # Derive test set predictions and calculate test error rate
-  prob <- gbm::predict.gbm(results$res, newdata = testData, n.trees = results$optTrees, type = "response")
-  results[["preds"]] <- colnames(prob)[apply(prob, 1, which.max)]
-    
-  results[["testError"]] <- mean(testTarget != as.character(results$preds))
-  results[["confTable"]] <- table("Pred" = factor(results$preds, levels = levels(results$data$testTarget)),
-                                  "True" = factor(results$data$testTarget))
+  # Predictions
+  prob <- gbm::predict.gbm(results$res, newdata = testPreds, n.trees = results$optTrees, type = "response")
+  modPred <- colnames(prob)[apply(prob, 1, which.max)]
+  levels  <- levels(factor(c(as.character(modPred),as.character(testTarget))))
+  
+  # Predictive Performance
+  results[["testError"]] <- mean(testTarget != as.character(modPred))
+  # results[["testAUC"]]   <- roc(...) # In its standard form, ROC can only be calculated for binary outcome variables
+  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels),
+                                  "True" = factor(results$data$testTarget, levels = levels))
 
   # Apply model to new data if requested
   if(options$applyModel == "applyIndicator" && options$indicator != "") {
@@ -215,20 +207,22 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
                                                      "dataTrain", "bagFrac", "seedBox", "seed"))
   
   # Add column info
-  if (options$dataTrain != 1) {
-    classBoostTable$addColumnInfo(name = "testError" ,  title = "Test Set Error", type = "number", format = "sf:4")
+  if(options$dataTrain < 1){
+    classBoostTable$addColumnInfo(name = "testError",  title = "Test Set Error", type = "number", format = "sf:4")
   }
+  # if (options$dataTrain < 1) {
+  #   classBoostTable$addColumnInfo(name = "testAUC"  ,  title = "Test Set AUC"  , type = "number", format = "sf:4")
+  # }
   classBoostTable$addColumnInfo(name = "ntrees"      ,  title = "Trees"         , type = "integer"                )
   classBoostTable$addColumnInfo(name = "shrinkage"   ,  title = "Shrinkage"     , type = "number", format = "sf:4")
   classBoostTable$addColumnInfo(name = "intDepth"    ,  title = "Int. Depth"    , type = "integer"                )
   classBoostTable$addColumnInfo(name = "minObsInNode",  title = "Min. Obs. Node", type = "integer"                )
-  classBoostTable$addColumnInfo(name = "ntrain"      ,  title = "n (Train)"     , type = "integer"                )
-  classBoostTable$addColumnInfo(name = "ntest"       ,  title = "n (Test)"      , type = "integer"                )
+  classBoostTable$addColumnInfo(name = "ntrain"      ,  title = "n(Train)"     , type = "integer"                )
+  classBoostTable$addColumnInfo(name = "ntest"       ,  title = "n(Test)"      , type = "integer"                )
   
   # Add data per column
-  if (options$dataTrain != 1) {
-    classBoostTable[["testError"]]  <- if (ready) classBoostResults$testError               else "."
-  }
+  if (options$dataTrain < 1){ classBoostTable[["testError"]] <- if (ready) classBoostResults$testError else "." }
+  # if (options$dataTrain < 1){ classBoostTable[["testAUC"]]   <- if (ready) classBoostResults$testAUC   else "." }
   classBoostTable[["ntrees"]]       <- if (ready) classBoostResults$optTrees                else "."
   classBoostTable[["shrinkage"]]    <- if (ready) classBoostResults$res$shrinkage           else "."
   classBoostTable[["intDepth"]]     <- if (ready) classBoostResults$res$interaction.depth   else "."

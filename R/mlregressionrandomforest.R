@@ -123,23 +123,25 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
     
   }
   
-  idxTrain <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
-  idxTest <- (1:nrow(modelData))[-idxTrain]
+  idtrainPreds <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
+  idtestPreds <- (1:nrow(modelData))[-idtrainPreds]
   
-  xTrain <- modelData[idxTrain, preds, drop = FALSE]
-  yTrain <- modelData[idxTrain, target]
-  xTest  <- modelData[idxTest, preds, drop = FALSE]
-  yTest  <- modelData[idxTest, target]
+  trainPreds <- modelData[idtrainPreds, preds, drop = FALSE]
+  trainTarget <- modelData[idtrainPreds, target]
+  testPreds  <- modelData[idtestPreds, preds, drop = FALSE]
+  testTarget  <- modelData[idtestPreds, target]
   
   # Run Random Forest
-  results[["res"]] <- randomForest::randomForest(x = xTrain, y = yTrain, xtest = xTest, ytest = yTest,
+  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, xtest = testPreds, ytest = testTarget,
                                                  ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
                                                  sampsize = ceiling(options$bagFrac * nrow(dataset)),
                                                  importance = TRUE, keep.forest = TRUE)
   
-  results[["data"]] <- list(xTrain = xTrain, yTrain = yTrain, xTest = xTest, yTest = yTest)
+  results[["data"]]       <- list(trainPreds = trainPreds, trainTarget = trainTarget,
+                                  testPreds = testPreds, testTarget = testTarget)
   
   results[["importance"]] <- results$res$importance
+  modPred                 <- results$res$test$predicted
   
   # Making a variable importance table
   results[["varImp"]] <- plyr::arrange(data.frame(
@@ -147,6 +149,11 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
     MeanIncrMSE = results$res$importance[, 1],
     TotalDecrNodeImp = results$res$importance[, 2]
   ), -MeanIncrMSE)
+  
+  # Predictive performance
+  results[["predPerf"]] <- data.frame(pred = as.numeric(modPred), obs = as.numeric(testTarget))
+  results[["testMSE"]]  <- mean((modPred - testTarget)^2)
+  results[["testR2"]]   <- round(cor(modPred, testTarget)^2, 2)
   
   # Applying the model
   if(options$indicator != "") {
@@ -193,20 +200,23 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   if(options$dataTrain < 1){
     regRanForTable$addColumnInfo(name = "testMSE",  title = "Test Set MSE", type = "number", format = "sf:4")
   }
-  regRanForTable$addColumnInfo(name = "oobMSE",  title = "OOB MSE"  , type = "number", format = "sf:4")
-  regRanForTable$addColumnInfo(name = "ntrees",  title = "Trees"    , type = "integer")
-  regRanForTable$addColumnInfo(name = "mtry"  ,  title = "m"        , type = "integer")
-  regRanForTable$addColumnInfo(name = "nTrain",  title = "n(Train)", type = "integer")
-  regRanForTable$addColumnInfo(name = "nTest" ,  title = "n(Test)" , type = "integer")
+  if (options$dataTrain < 1) {
+    regRanForTable$addColumnInfo(name = "testR2",  title = "Test Set R\u00B2", type = "number", format = "sf:4")
+  }
+  regRanForTable$addColumnInfo(name = "oobMSE",  title = "OOB MSE"             , type = "number", format = "sf:4")
+  regRanForTable$addColumnInfo(name = "ntrees",  title = "Trees"               , type = "integer")
+  regRanForTable$addColumnInfo(name = "mtry"  ,  title = "Predictors per split", type = "integer")
+  regRanForTable$addColumnInfo(name = "nTrain",  title = "n(Train)"            , type = "integer")
+  regRanForTable$addColumnInfo(name = "nTest" ,  title = "n(Test)"             , type = "integer")
   
   # Add data per column
-  regRanForTable[["testMSE"]] <- if (ready) 
-    mean((regRanForResults$res$test$predicted - regRanForResults$data$yTest)^2) else "."
+  if (options$dataTrain < 1){ regRanForTable[["testMSE"]] <- if (ready) regRanForResults$testMSE       else "." }
+  if (options$dataTrain < 1){ regRanForTable[["testR2"]]    <- if (ready) regRanForResults$testR2      else "." }
   regRanForTable[["oobMSE"]]  <- if (ready) regRanForResults$res$mse[length(regRanForResults$res$mse)] else "."
   regRanForTable[["ntrees"]]  <- if (ready) regRanForResults$res$ntree else "."
   regRanForTable[["mtry"]]    <- if (ready) regRanForResults$res$mtry else "."
-  regRanForTable[["nTrain"]]  <- if (ready) nrow(regRanForResults$data$xTrain) else "."
-  regRanForTable[["nTest"]]   <- if (ready) nrow(regRanForResults$data$xTest) else "."
+  regRanForTable[["nTrain"]]  <- if (ready) nrow(regRanForResults$data$trainPreds) else "."
+  regRanForTable[["nTest"]]   <- if (ready) nrow(regRanForResults$data$testPreds) else "."
   
 }
 
@@ -331,33 +341,29 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 }
 
 .regRanForPlotPredPerformance <- function(jaspResults, options, regRanForResults, ready) {
-  if (!options$plotPredPerformance) return()
+  if (!options$plotPredPerf) return()
   
-  if(options$dataTrain == 1){
-    predPerformance <- data.frame(true = regRanForResults$data$yTrain, predicted = regRanForResults$res$predicted)
-    title <- "Predictive Performance on Training Data"
-  } else {
-    predPerformance <- data.frame(true = regRanForResults$data$yTest, predicted = regRanForResults$res$test$predicted)
-    title <- "Predictive Performance on Test Data"
-  }
+  limits <- c(round(min(c(min(floor(regRanForResults$predPerf$pred))  , min(floor(regRanForResults$predPerf$obs))))),
+              round(max(c(max(ceiling(regRanForResults$predPerf$pred)), max(ceiling(regRanForResults$predPerf$obs))))))
   
-  limits <- c(round(min(c(floor(predPerformance$true), floor(predPerformance$predicted)))),
-              round(max(c(ceiling(predPerformance$true), ceiling(predPerformance$predicted)))))
-  
-  plotPredPerformance <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(data = predPerformance, mapping = ggplot2::aes(x = true, y = predicted)) +
-      ggplot2::geom_point(size = 3) +
+  regRanForPredPerfPlot <- JASPgraphs::themeJasp(
+    ggplot2::ggplot(data = regRanForResults$predPerf, mapping = ggplot2::aes(x = obs, y = pred)) +
+      JASPgraphs::geom_point() +
       ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y),
                          col = "darkred", size = 1) +
-      ggplot2::scale_x_continuous("Observed" , limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6)) +
-      ggplot2::scale_y_continuous("Predicted", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6))
+      ggplot2::scale_x_continuous("Observed" , limits = limits, breaks = pretty(limits)) +
+      ggplot2::scale_y_continuous("Predicted", limits = limits, breaks = pretty(limits))
   )
   
-  plotPredPerformance <- createJaspPlot(plot = plotPredPerformance, title = title, width = 400, height = 400)
+  if (options$dataTrain < 1) {
+    title <- "Predictive Performance on Test Set"
+  } else {
+    title <- "Predictive Performance on Training Set"
+  }
   
-  jaspResults[["plotPredPerformance"]] <- plotPredPerformance
+  regRanForPredPerfPlot <- createJaspPlot(plot = regRanForPredPerfPlot, title = title, width = 400, height = 400)
+  
+  jaspResults[["plotPredPerformance"]] <- regRanForPredPerfPlot
   jaspResults[["plotPredPerformance"]]$position <- 7
   jaspResults[["plotPredPerformance"]]$dependOn(options = c("target", "predictors", "indicator", "applyModel",
                                                             "noOfTrees", "noOfPredictors", "numberOfPredictors",

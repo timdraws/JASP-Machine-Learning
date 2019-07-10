@@ -45,24 +45,15 @@ Form
         CheckBox { name: "plotVarImpAcc"        ; text: qsTr("Mean decrease in accuracy")     }
         CheckBox { name: "plotVarImpPur"        ; text: qsTr("Total increase in node purity") }
         CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
-        CheckBox { name: "plotPredPerformance"  ; text: qsTr("Predictive performance")	      }
+        CheckBox { name: "plotPredPerf"         ; text: qsTr("Predictive performance")	      }
 
     }
 
     Section
     {
-        title: qsTr("Model Specifications")
+        title: qsTr("Training Parameters")
 
         GridLayout {
-
-            GroupBox {
-                IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
-                PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
-                PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
-                CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-                }
-            }
 
             RadioButtonGroup {
                 title: qsTr("Predictors considered per split")
@@ -70,6 +61,15 @@ Form
                 RadioButton { name: "auto"  ; text: qsTr("Auto")   ; checked: true}
                 RadioButton { name: "manual"; text: qsTr("Manual") ; childrenOnSameRow: true
                     IntegerField { name: "numberOfPredictors"; min: 1; max: 999999; defaultValue: 1; fieldWidth: 60 }
+                }
+            }
+
+            GroupBox {
+                IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
+                PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
+                PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
+                CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
                 }
             }
 

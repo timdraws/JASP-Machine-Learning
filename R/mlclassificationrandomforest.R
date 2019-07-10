@@ -48,23 +48,20 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 # Check for errors
 .classRanForErrorHandling <- function(dataset, options) {
   
-  # Error Check 1: 0 observations for the target variable
-  .hasErrors(
-    dataset = dataset, 
-    perform = "run", 
-    type = c('observations', 'variance', 'infinity'),
-    all.target = options$target,
-    observations.amount = '< 1',
-    exitAnalysisIfErrors = TRUE)
+  # Error Check 1: Provide a test set
+  if (options$dataTrain == 1) {
+    JASP:::.quitAnalysis("Please provide a test set.")
+  }
   
-  # Error Check 2: Apply indicator should not have any missing values (consist of 0s and 1s)
-  .hasErrors(
-    dataset = dataset, 
-    perform = "run", 
-    type = c('observations', 'variance', 'infinity'),
-    all.target = options$indicator,
-    observations.amount = nrow(dataset),
-    exitAnalysisIfErrors = TRUE)
+  # Error Check 2: Provide at least 10 training observations
+  if ((nrow(dataset) * options$dataTrain) < 10) {
+    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
+  }
+  
+  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
+  if (length(.v(options$predictors)) < 2L) {
+    JASP:::.quitAnalysis("Please provide at least 2 predictors.")
+  }
   
 }
 
@@ -103,27 +100,33 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
     
   }
   
-  idxTrain <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
-  idxTest <- (1:nrow(modelData))[-idxTrain]
+  idtrainPreds <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
+  idtestPreds <- (1:nrow(modelData))[-idtrainPreds]
   
-  xTrain <- modelData[idxTrain, preds, drop = FALSE]
-  yTrain <- modelData[idxTrain, target]
-  xTest <- modelData[idxTest, preds, drop = FALSE]
-  yTest <- modelData[idxTest, target]
+  trainPreds <- modelData[idtrainPreds, preds, drop = FALSE]
+  trainTarget <- modelData[idtrainPreds, target]
+  testPreds <- modelData[idtestPreds, preds, drop = FALSE]
+  testTarget <- modelData[idtestPreds, target]
   
   # Run Random Forest
-  results[["res"]] <- randomForest::randomForest(x = xTrain, y = yTrain, xtest = xTest, ytest = yTest,
+  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, xtest = testPreds, ytest = testTarget,
                                                  ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
                                                  sampsize = ceiling(options$bagFrac*nrow(dataset)),
                                                  importance = TRUE, keep.forest = TRUE)
   
-  results[["data"]] <- list(xTrain = xTrain, yTrain = yTrain, xTest = xTest, yTest = yTest)
+  results[["data"]] <- list(trainPreds = trainPreds, trainTarget = trainTarget, 
+                            testPreds = testPreds, testTarget = testTarget)
   
-  # Calculating test error and making confusion table
-  results[["preds"]]     <- results$res$test$predicted
-  results[["testError"]] <- mean(yTest != as.character(results$preds))
-  results[["confTable"]] <- table("Pred" = factor(results$preds, levels = levels(results$data$yTest)),
-                                  "True" = factor(results$data$yTest))
+  # Predictions
+  modPred <- results$res$test$predicted
+  levels  <- levels(factor(c(as.character(modPred),as.character(testTarget))))
+  
+  # Predictive performance
+  results[["testError"]] <- mean(testTarget != as.character(modPred))
+  # results[["testAUC"]]   <- 999999 # tk put AUC here
+  results[["oobError"]]  <- results$res$err.rate[length(results$res$err.rate)]
+  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels),
+                                  "True" = factor(results$data$testTarget, levels = levels))
   
   # Making a variable importance table
   results[["varImp"]] <- plyr::arrange(data.frame(
@@ -173,21 +176,23 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   if(options$dataTrain < 1){
     classRanForTable$addColumnInfo(name = "testError",  title = "Test Set Error", type = "number", format = "sf:4")
   }
+  # if (options$dataTrain < 1) {
+  #   classRanForTable$addColumnInfo(name = "testAUC",  title = "Test Set AUC", type = "number", format = "sf:4")
+  # }
   classRanForTable$addColumnInfo(name = "oobError", title = "OOB Error", type = "number", format = "sf:4")
-  classRanForTable$addColumnInfo(name = "ntrees"  , title = "Trees"    , type = "integer")
-  classRanForTable$addColumnInfo(name = "mtry"    , title = "m"        , type = "integer")
-  classRanForTable$addColumnInfo(name = "nTrain"  , title = "n (Train)", type = "integer")
-  classRanForTable$addColumnInfo(name = "nTest"   , title = "n (Test)" , type = "integer")
+  classRanForTable$addColumnInfo(name = "ntrees"  , title = "Trees"                , type = "integer")
+  classRanForTable$addColumnInfo(name = "mtry"    , title = "Predictors per split" , type = "integer")
+  classRanForTable$addColumnInfo(name = "nTrain"  , title = "n(Train)"             , type = "integer")
+  classRanForTable$addColumnInfo(name = "nTest"   , title = "n(Test)"              , type = "integer")
   
   # Add data per column
-  classRanForTable[["testError"]]  <- if (ready && options$dataTrain < 1)
-    mean(classRanForResults$preds != classRanForResults$data$yTest)                   else "."
-  classRanForTable[["oobError"]]   <- if (ready)
-    classRanForResults$res$err.rate[length(classRanForResults$res$err.rate)]          else "."
-  classRanForTable[["ntrees"]]     <- if (ready) classRanForResults$res$ntree         else "."
-  classRanForTable[["mtry"]]       <- if (ready) classRanForResults$res$mtry          else "."
-  classRanForTable[["nTrain"]]     <- if (ready) nrow(classRanForResults$data$xTrain) else "."
-  classRanForTable[["nTest"]]      <- if (ready) nrow(classRanForResults$data$xTest)  else "."
+  if (options$dataTrain < 1){ classRanForTable[["testError"]] <- if (ready) classRanForResults$testError else "." }
+  # if (options$dataTrain < 1){ classRanForTable[["testAUC"]]   <- if (ready) classRanForResults$testAUC   else "." }
+  classRanForTable[["oobError"]]   <- if (ready) classRanForResults$oobError              else "."
+  classRanForTable[["ntrees"]]     <- if (ready) classRanForResults$res$ntree             else "."
+  classRanForTable[["mtry"]]       <- if (ready) classRanForResults$res$mtry              else "."
+  classRanForTable[["nTrain"]]     <- if (ready) nrow(classRanForResults$data$trainPreds) else "."
+  classRanForTable[["nTest"]]      <- if (ready) nrow(classRanForResults$data$testPreds)  else "."
   
 }
 

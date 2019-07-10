@@ -42,10 +42,10 @@ Form
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "plotRelInf";          text: qsTr("Relative influence")       }
-        CheckBox { name: "plotDeviance";        text: qsTr("Deviance")                 }
-        CheckBox { name: "plotOOBChangeDev";    text: qsTr("OOB improvement")          }
-        CheckBox { name: "plotPredPerformance"; text: qsTr("Predictive performance")   }
+        CheckBox { name: "plotRelInf"      ; text: qsTr("Relative influence")       }
+        CheckBox { name: "plotDeviance"    ; text: qsTr("Deviance")                 }
+        CheckBox { name: "plotOOBChangeDev"; text: qsTr("OOB improvement")          }
+        CheckBox { name: "plotPredPerf"    ; text: qsTr("Predictive performance")   }
     }
 
     Section {
@@ -69,6 +69,15 @@ Form
                 RadioButton { text: qsTr("Out-of-bag")              ; name: "oob"                  }
                 RadioButton { text: qsTr("None")                    ; name: "noOpt"; checked: true }
             }
+
+            RadioButtonGroup
+            {
+                title: qsTr("Loss function")
+                name: "dist"
+                RadioButton { value: "gaussian" ; text: qsTr("Gaussian"); checked: true  }
+                RadioButton { value: "laplace"  ; text: qsTr("Laplace")                  }
+                RadioButton { value: "tdist"    ; text: qsTr("t")                        }
+            }
         }
 
         ColumnLayout {
@@ -83,16 +92,8 @@ Form
                     DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
                 }
             }
-
-            RadioButtonGroup
-            {
-                title: qsTr("Loss function")
-                name: "dist"
-                RadioButton { value: "gaussian" ; text: qsTr("Gaussian"); checked: true  }
-                RadioButton { value: "laplace"  ; text: qsTr("Laplace")                  }
-                RadioButton { value: "tdist"    ; text: qsTr("t")                        }
-            }
         }
+
     }
 
     Section {
