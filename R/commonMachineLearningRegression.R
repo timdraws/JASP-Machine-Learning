@@ -56,7 +56,7 @@
 
 .regressionMachineLearning <- function(dataset, options, jaspResults, ready, type){
 
-  if(!is.null(jaspResults[["classificationResult"]])) return()
+  if(!is.null(jaspResults[["regressionResult"]])) return()
 
   # set the seed so that every time the same set is chosen (to prevent random results) ##
   if(options[["seedBox"]]) set.seed(options[["seed"]])
@@ -117,7 +117,7 @@
 
   if(!is.null(jaspResults[["plotErrorVsK"]]) || !options[["plotErrorVsK"]] || options[["modelOpt"]] != "optimizationError") return()
 
-  plotErrorVsK <- createJaspPlot(plot = NULL, title = "Classification Error Plot", width = 500, height = 300)
+  plotErrorVsK <- createJaspPlot(plot = NULL, title = "Mean Squared Error Plot", width = 500, height = 300)
   plotErrorVsK$position <- position
   plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid"))

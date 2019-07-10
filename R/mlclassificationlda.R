@@ -48,6 +48,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the test of equality of movariance matrices table
   .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready)
 
+  # Create the multicollinearity table
+  .ldaMulticollinearity(dataset, options, jaspResults, ready)
+
   # Create the ROC curve
   .rocCurve(options, jaspResults, ready, position = 8)
 
@@ -438,22 +441,33 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
   
-  multicolTable <- createJaspTable(title = "Tests of Equality of Covariance Matrices")
+  multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlation")
   multicolTable$position <- 7
   multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
-
-  multicolTable$addColumnInfo(name = "test", title = "Test", type = "string")
-  boxTest$addColumnInfo(name = "x", title = "X\u00B2", type = "number")
-  boxTest$addColumnInfo(name = "df", title = "df", type = "integer")
-  boxTest$addColumnInfo(name = "p", title = "p", type = "pvalue")
-
-  boxTest$addFootnote(message= "The null hypothesis specifies equal covariance matrices." , symbol="<i>Note.</i>")
   
-  jaspResults[["boxTest"]] <- boxTest
+  jaspResults[["multicolTable"]] <- multicolTable
 
   if(!ready)  return()
 
   target <- dataset[, .v(options[["target"]])]
   predictors <- dataset[, .v(options[["predictors"]])]
+
+  boxSum <- .boxM(predictors, target)
+  corPooled <- cor(boxSum[["pooled"]])
+
+  multicolTable$addColumnInfo(name = "empty", title = "", type = "string")
+
+  for(i in 1:ncol(corPooled)){
+    multicolTable$addColumnInfo(name = paste0("v", i), title = unlist(options[["predictors"]])[i], type = "number")
+  }
+
+  for(i in 1:nrow(corPooled)){
+    row <- data.frame(empty = unlist(options[["predictors"]])[i])
+    for(j in 1:ncol(corPooled)){
+      if(j <= i)
+        row[[paste0("v", j)]] <- corPooled[j, i]
+    }
+    multicolTable$addRows(row)
+  }
 
 }

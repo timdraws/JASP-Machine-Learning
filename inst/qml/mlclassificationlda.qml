@@ -44,7 +44,7 @@ Form
         }
 
         GroupBox {
-            title: qsTr("Assumption Checks")
+            title: qsTr("Assumptions")
 
             CheckBox { name: "manovaTable";       text: qsTr("Equality of group means")             }
             CheckBox { name: "boxTest";           text: qsTr("Equality of covariance matrices")     }
