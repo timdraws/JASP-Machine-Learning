@@ -86,30 +86,33 @@ Form {
               IntegerField { name: "noOfNearestNeighbours"; text: qsTr("No. of nearest neighbors:") ; defaultValue: 3 ; min: 1; max: 999999; fieldWidth: 60; enabled: optimizationManual.checked }
               IntegerField { name: "maxK"; text: qsTr("Max. nearest neighbors:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: !optimizationManual.checked }
               PercentField { name: "trainingDataManual"; text: qsTr("Data used for training:")       ; defaultValue: 80; enabled: validationManual.checked }
-              ComboBox {
-                  name: "distanceParameterManual"
-                  label: qsTr("Distance:")
-                  enabled: !validationLeaveOneOut.checked
-                  model: ListModel {
-                      ListElement { key: 1                ; value: "1"; name: "Manhattan" }
-                      ListElement { key: 2                ; value: "2"; name: "Euclidian" }
-                  }
-              }ComboBox {
-                  name: "weights"
-                  label: qsTr("Weights:")
-                  enabled: !validationLeaveOneOut.checked
-                  model: ListModel {
-                      ListElement { key: "Rectangular"                ; value: "rectangular" }
-                      ListElement { key: "Epanechnikov"               ; value: "epanechnikov" }
-                      ListElement { key: "Biweight"                   ; value: "biweight" }
-                      ListElement { key: "Triweight"                  ; value: "triweight" }
-                      ListElement { key: "Cosine"                     ; value: "cos" }
-                      ListElement { key: "Inverse"                    ; value: "inv" }
-                      ListElement { key: "Gaussian"                   ; value: "gaussian" }
-                      ListElement { key: "Rank"                       ; value: "rank" }
-                      ListElement { key: "Optimal"                    ; value: "optimal" }
-                  }
-              }
+                DropDown {
+                    name: "distanceParameterManual"
+                    indexDefaultValue: 0
+                    label: qsTr("Distance:")
+                    values:
+                    [
+                        { label: "Euclidian", value: "2"},
+                        { label: "Manhattan", value: "1"}
+                    ]
+                }
+                DropDown {
+                    name: "weights"
+                    indexDefaultValue: 0
+                    label: qsTr("Weights:")
+                    values:
+                    [
+                        { label: "Rectangular", value: "rectangular"},
+                        { label: "Epanechnikov", value: "epanechnikov"},
+                        { label: "Biweight", value: "biweight"},
+                        { label: "Triweight", value: "triweight"},
+                        { label: "Cosine", value: "cos"},
+                        { label: "Inverse", value: "inv"},
+                        { label: "Gaussian", value: "gaussian"},
+                        { label: "Rank", value: "rank"},
+                        { label: "Optimal", value: "optimal"}
+                    ]
+                }
               CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                   DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }}
           }

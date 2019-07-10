@@ -75,14 +75,18 @@ Form {
               IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
               IntegerField { name: "noOfIterations"; text: qsTr("Iterations:") ; defaultValue: 25 ; min: 1; max: 999999; fieldWidth: 60 }
               IntegerField { name: "noOfRandomSets"; text: qsTr("Random sets:") ; defaultValue: 25 ; min: 1; max: 999999; fieldWidth: 60 }
-              ComboBox { name: "algorithm"; label: qsTr("Algorithm:");
-                  model: ListModel {
-                      ListElement { key: "Hartigan-Wong"            ; value: "Hartigan-Wong" }
-                      ListElement { key: "Lloyd"                    ; value: "Lloyd" }
-                      ListElement { key: "Forgy"                    ; value: "Forgy" }
-                      ListElement { key: "MacQueen"                 ; value: "MacQueen" }
-                  }
-              }
+                DropDown {
+                    name: "algorithm"
+                    indexDefaultValue: 0
+                    label: qsTr("Algorithm:")
+                    values:
+                    [
+                        { label: "Hartigan-Wong", value: "Hartigan-Wong"},
+                        { label: "Lloyd", value: "Lloyd"},
+                        { label: "Forgy", value: "Forgy"},
+                        { label: "MacQueen", value: "MacQueen"}
+                    ]
+                }  
               CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
               CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                   DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }

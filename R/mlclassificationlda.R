@@ -413,7 +413,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   boxTest$position <- 7
   boxTest$dependOn(options = c("boxTest", "scaleEqualSD", "target", "predictors"))
 
-  boxTest$addColumnInfo(name = "test", title = "Test", type = "string")
+  boxTest$addColumnInfo(name = "test", title = "", type = "string")
   boxTest$addColumnInfo(name = "x", title = "X\u00B2", type = "number")
   boxTest$addColumnInfo(name = "df", title = "df", type = "integer")
   boxTest$addColumnInfo(name = "p", title = "p", type = "pvalue")
@@ -441,7 +441,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
   
-  multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlation")
+  multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlations")
   multicolTable$position <- 7
   multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
   

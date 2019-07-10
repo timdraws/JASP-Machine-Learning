@@ -28,7 +28,7 @@ Form
     VariablesForm {
         AvailableVariablesList { name: "allVariablesList" }
         AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "nominalText", "ordinal"]; id: target }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "ordinal"]; id: predictors                                        }
+        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "ordinal", "nominal"]; id: predictors                                        }
     }
 
     ColumnLayout {
@@ -57,7 +57,7 @@ Form
         title: qsTr("Plots")
 
         CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries") 
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries"); enabled: predictors.count > 1 
             RowLayout {
                 CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
                 CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }

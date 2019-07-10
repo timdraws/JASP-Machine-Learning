@@ -29,25 +29,41 @@ Form
     VariablesForm
     {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"     ; title: qsTr("Target")    ; singleVariable: true; allowedColumns: ["scale"] }
-        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors") ; allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]       }
-        AssignedVariablesList  { name: "weights"    ; title: qsTr("Weights")   ; singleVariable: true; allowedColumns: ["scale"] }
+        AssignedVariablesList  { 
+            id: target
+            name: "target"     
+            title: qsTr("Target")    
+            singleVariable: true
+            allowedColumns: ["scale"] 
+        }
+        AssignedVariablesList { 
+            id: predictors
+            name: "predictors"
+            title: qsTr("Predictors") 
+            allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]       
+        }
+        AssignedVariablesList  { 
+            name: "weights"    
+            title: qsTr("Weights")   
+            singleVariable: true
+            allowedColumns: ["scale"] 
+        }
     }
 
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { name: "regRegCoefTable";	text: qsTr("Coefficients table"); checked: true }
+        CheckBox { name: "regRegCoefTable";	text: qsTr("Coefficients"); checked: true }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
         CheckBox { name: "plotLars"    ; text: qsTr("Variable trace")
-            CheckBox { name: "legendLars"; text: qsTr("Show legend")          }
+            CheckBox { name: "legendLars"; text: qsTr("Legend"); checked: true          }
         }
         CheckBox { name: "plotCVLambda"; text: qsTr("\u03BB evaluation")
-            CheckBox { name: "legendCVLambda"; text: qsTr("Show legend")      }
+            CheckBox { name: "legendCVLambda"; text: qsTr("Legend"); checked: true      }
         }
         CheckBox { name: "plotPredPerf"; text: qsTr("Predictive performance") }
     }
@@ -56,7 +72,7 @@ Form
         text: qsTr("Training Parameters")
 
         RadioButtonGroup {
-            title: qsTr("Shrinkage parameter (\u03BB)")
+            title: qsTr("Shrinkage Parameter (\u03BB)")
             name: "shrinkage"
             RadioButton { text: qsTr("Minimum CV MSE")               ; name: "optMin"; checked: true             }
             RadioButton { text: qsTr("Largest \u03BB within 1 SE of min."); name: "opt1SE"                            }
@@ -72,27 +88,25 @@ Form
                 DoubleField  { name: "thresh"     ; text: qsTr("Convergence threshold:")    ; defaultValue: 1e-7; min: 1e-999; max: 1; fieldWidth: 60; visible: false              }
                 PercentField { name: "dataTrain"  ; text: qsTr("Data used for training:")   ; defaultValue: 80                                                                     }
                 CheckBox     { name: "intercept"  ; text: qsTr("Fit intercept")             ; checked: true                                                                        }
-                CheckBox     { name: "standardize"; text: qsTr("Standardize data")          ; checked: true                                                                        }
-                CheckBox     { name: "seedBox"    ; text: qsTr("Set seed:")                 ; childrenOnSameRow: true
+                CheckBox     { name: "standardize"; text: qsTr("Scale variables")          ; checked: true                                                                        }
+                CheckBox     { name: "seedBox"    ; text: qsTr("Set seed:")                 ; childrenOnSameRow: true; checked: true
                     DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
                 }
             }
 
-                GroupBox
-                    {
+            GroupBox {
 
-                    title: qsTr("Penalty")
+                title: qsTr("Penalty")
 
-                    RadioButtonGroup
-                    {
-                        name: "penalty"
-                        RadioButton { value: "ridge"      ; text: qsTr("Ridge")      ; checked: true   }
-                        RadioButton { value: "lasso"      ; text: qsTr("Lasso")      ; id: lasso       }
-                        RadioButton { value: "elasticNet" ; text: qsTr("Elastic net"); id: elasticNet  }
-                    }
-                    }
+                RadioButtonGroup
+                {
+                    name: "penalty"
+                    RadioButton { value: "ridge"      ; text: qsTr("Ridge")      ; checked: true   }
+                    RadioButton { value: "lasso"      ; text: qsTr("Lasso")      ; id: lasso       }
+                    RadioButton { value: "elasticNet" ; text: qsTr("Elastic net"); id: elasticNet  }
+                }
+            }
         }
-
     }
 
     Section {
@@ -117,6 +131,23 @@ Form
                 singleVariable: true
                 allowedColumns: ["nominal"]
             }
+        }
+    }
+
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 1 && target.count > 0
+            onClicked:      { }
+            debug: true	
         }
     }
 

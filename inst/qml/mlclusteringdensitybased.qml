@@ -58,7 +58,6 @@ GroupBox {
 Section {
     title: qsTr("Training Parameters")
 
-    GridLayout {
     RadioButtonGroup {
         title: qsTr("Model Optimization")
         name: "modelOpt"
@@ -68,18 +67,21 @@ Section {
     GroupBox {
         DoubleField { name: "eps"; text: qsTr("eps:") ; decimals: 2; defaultValue: 2 ; min: 0.001; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
         DoubleField { name: "minPts"; text: qsTr("minPts:") ; decimals: 2; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60 }
-        ComboBox { name: "distance"; label: qsTr("Distance metric:");
-            model: ListModel {
-                ListElement { key: "Normal densities"            ; value: "Normal densities" }
-                ListElement { key: "Correlated densities"                    ; value: "Correlated densities" }
-            }
+        DropDown {
+            name: "distance"
+            indexDefaultValue: 0
+            label: qsTr("Distance:")
+            values:
+            [
+                { label: "Normal", value: "Normal densities"},
+                { label: "Correlated", value: "Correlated densities"}
+            ]
         }
         CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
         CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
             DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
         }
     }
-}
 }
 
     // Section {

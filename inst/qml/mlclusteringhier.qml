@@ -73,20 +73,28 @@ Form {
           GroupBox {
               IntegerField { name: "noOfClusters"; text: qsTr("Clusters:") ; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
               IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
-              ComboBox { name: "distance"; label: qsTr("Distance metric:");
-                  model: ListModel {
-                      ListElement { key: "Euclidean"            ; value: "Euclidean" }
-                      ListElement { key: "Pearson correlation"  ; value: "Pearson correlation" }
-                  }
-              }
-              ComboBox { name: "linkage"; label: qsTr("Linkage:");
-                  model: ListModel {
-                      ListElement { key: "average"                    ; value: "average" }
-                      ListElement { key: "single"                     ; value: "single" }
-                      ListElement { key: "complete"                   ; value: "complete" }
-                      ListElement { key: "centroid"                   ; value: "centroid" }
-                  }
-              }
+                DropDown {
+                    name: "distance"
+                    indexDefaultValue: 0
+                    label: qsTr("Distance:")
+                    values:
+                    [
+                        { label: "Euclidean", value: "Euclidean"},
+                        { label: "Pearson", value: "Pearson correlation"}
+                    ]
+                }
+                DropDown {
+                    name: "linkage"
+                    indexDefaultValue: 0
+                    label: qsTr("Linkage:")
+                    values:
+                    [
+                        { label: "average", value: "average"},
+                        { label: "single", value: "single"},
+                        { label: "complete", value: "complete"},
+                        { label: "centroid", value: "centroid"}
+                    ]
+                }   
               CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
               CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                   DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }

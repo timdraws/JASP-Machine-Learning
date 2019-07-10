@@ -21,16 +21,24 @@ import QtQuick.Layouts 1.3
 import JASP.Controls 1.0
 import JASP.Theme 1.0
 
-// All Analysis forms must be built with the From QML item
-Form
-{
-    usesJaspResults: true
+Form {
 
     VariablesForm
     {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["scale"]                               }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors")   ; allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]                  }
+        AssignedVariablesList  { 
+            id: target
+            name: "target"    
+            title: qsTr("Target")         
+            singleVariable: true
+            allowedColumns: ["scale"]                               
+        }
+        AssignedVariablesList { 
+            id: predictors
+            name: "predictors"
+            title: qsTr("Predictors")
+            allowedColumns: ["scale", "nominal", "ordinal", "nominalText"]                  
+        }
     }
 
     GroupBox {
@@ -53,52 +61,65 @@ Form
     {
         title: qsTr("Training Parameters")
 
-        GridLayout {
-
-            RadioButtonGroup {
-                title: qsTr("Predictors considered per split")
-                name: "noOfPredictors"
-                RadioButton { name: "auto"  ; text: qsTr("Auto")   ; checked: true}
-                RadioButton { name: "manual"; text: qsTr("Manual") ; childrenOnSameRow: true
-                    IntegerField { name: "numberOfPredictors"; min: 1; max: 999999; defaultValue: 1; fieldWidth: 60 }
-                }
+        RadioButtonGroup {
+            title: qsTr("Predictors considered per split")
+            name: "noOfPredictors"
+            RadioButton { name: "auto"  ; text: qsTr("Auto")   ; checked: true}
+            RadioButton { name: "manual"; text: qsTr("Manual") ; childrenOnSameRow: true
+                IntegerField { name: "numberOfPredictors"; min: 1; max: 999999; defaultValue: 1; fieldWidth: 60 }
             }
+        }
 
-            GroupBox {
-                IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
-                PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
-                PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
-                CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-                }
+        GroupBox {
+            IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
+            PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
+            PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
+            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
+                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
             }
-
         }
     }
 
     Section {
-          text: qsTr("Predictions")
-          debug: true
+        text: qsTr("Predictions")
+        debug: true
 
-              RadioButtonGroup
-              {
-                  name: "applyModel"
-                  RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-                  RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-                  RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-              }
-
-              VariablesForm {
-              visible: applyIndicator.checked
-                  height: 150
-                  AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-                  AssignedVariablesList {
-                              name: "indicator"
-                              title: qsTr("Apply indicator")
-                              singleVariable: true
-                              allowedColumns: ["nominal"]
-                  }
-              }
+        RadioButtonGroup
+        {
+            name: "applyModel"
+            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
         }
+
+        VariablesForm {
+        visible: applyIndicator.checked
+            height: 150
+            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+            AssignedVariablesList {
+                        name: "indicator"
+                        title: qsTr("Apply indicator")
+                        singleVariable: true
+                        allowedColumns: ["nominal"]
+            }
+        }
+    }
+
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 1 && target.count > 0
+            onClicked:      { }
+            debug: true	
+        }
+    }
 
 }

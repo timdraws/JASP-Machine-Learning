@@ -21,22 +21,31 @@ import QtQuick.Layouts 1.3
 import JASP.Controls 1.0
 import JASP.Theme 1.0
 
-// All Analysis forms must be built with the From QML item
-Form
-{
+Form {
     usesJaspResults: true
 
     VariablesForm
     {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"     ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["scale"]  }
-        AssignedVariablesList  { name: "predictors" ; title: qsTr("Predictors"); allowedColumns: ["scale", "nominal", "ordinal", "nominalText"] }
+        AssignedVariablesList  { 
+            id: target
+            name: "target"     
+            title: qsTr("Target")         
+            singleVariable: true
+            allowedColumns: ["scale"]  
+        }
+        AssignedVariablesList { 
+            id: predictors
+            name: "predictors" 
+            title: qsTr("Predictors")
+            allowedColumns: ["scale", "nominal", "ordinal", "nominalText"] 
+        }
     }
 
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { name: "regBoostRelInfTable";	text: qsTr("Relative Influence Table")            }
+        CheckBox { name: "regBoostRelInfTable";	text: qsTr("Relative influence")            }
     }
 
     GroupBox {
@@ -52,73 +61,87 @@ Form
         text: qsTr("Training Parameters")
         columns: 2
 
-        ColumnLayout {
-            RadioButtonGroup {
-                title: qsTr("Model optimization")
-                name: "modelOptimization"
-                RadioButton { name: "cv"; childrenOnSameRow: true
-                    IntegerField {
-                        name: "cvFolds"
-                        afterLabel: qsTr("-fold cross-validation")
-                        defaultValue: 3
-                        min: 2
-                        max: 30
-                        fieldWidth: 25
-                }
-                }
-                RadioButton { text: qsTr("Out-of-bag")              ; name: "oob"                  }
-                RadioButton { text: qsTr("None")                    ; name: "noOpt"; checked: true }
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOptimization"
+            RadioButton { name: "cv"; childrenOnSameRow: true
+                IntegerField {
+                    name: "cvFolds"
+                    afterLabel: qsTr("-fold cross-validation")
+                    defaultValue: 3
+                    min: 2
+                    max: 30
+                    fieldWidth: 25
             }
+            }
+            RadioButton { text: qsTr("Out-of-bag")              ; name: "oob"                  }
+            RadioButton { text: qsTr("None")                    ; name: "noOpt"; checked: true }
+        }
 
-            RadioButtonGroup
-            {
-                title: qsTr("Loss function")
+        GroupBox {
+            DoubleField  { name: "noOfTrees"   ; text: qsTr("Number of trees for training:") ; defaultValue: 100 ; min: 1     ; max: 999999; fieldWidth: 60 }
+            DoubleField  { name: "shrinkage"   ; text: qsTr("Shrinkage:")                    ; defaultValue: 0.1; min: 0; max: 1; fieldWidth: 60;           }
+            IntegerField { name: "int.depth"   ; text: qsTr("Interaction depth:")            ; defaultValue: 1; min: 1; max: 99; fieldWidth: 60;            }
+            IntegerField { name: "nNode"       ; text: qsTr("Min. no. observations in node:"); defaultValue: 10; min: 1; max: 999999; fieldWidth: 60;       }
+            DropDown {
                 name: "dist"
-                RadioButton { value: "gaussian" ; text: qsTr("Gaussian"); checked: true  }
-                RadioButton { value: "laplace"  ; text: qsTr("Laplace")                  }
-                RadioButton { value: "tdist"    ; text: qsTr("t")                        }
+                indexDefaultValue: 0
+                label: qsTr("Loss function:")
+                values:
+                [
+                    { label: "Gaussian", value: "gaussian"},
+                    { label: "Laplace", value: "laplace"},
+                    { label: "t", value: "tdist"}
+                ]
+            }
+            PercentField { name: "dataTrain"   ; text: qsTr("Data used for training:")       ; defaultValue: 80                                             }
+            PercentField { name: "bag.fraction"; text: qsTr("Training data used per tree:")  ; defaultValue: 50                                             }
+            CheckBox     { name: "seedBox"     ; text: qsTr("Set seed:")                     ; childrenOnSameRow: true
+                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
             }
         }
-
-        ColumnLayout {
-            GroupBox {
-                DoubleField  { name: "noOfTrees"   ; text: qsTr("Number of trees for training:") ; defaultValue: 100 ; min: 1     ; max: 999999; fieldWidth: 60 }
-                DoubleField  { name: "shrinkage"   ; text: qsTr("Shrinkage:")                    ; defaultValue: 0.1; min: 0; max: 1; fieldWidth: 60;           }
-                IntegerField { name: "int.depth"   ; text: qsTr("Interaction depth:")            ; defaultValue: 1; min: 1; max: 99; fieldWidth: 60;            }
-                IntegerField { name: "nNode"       ; text: qsTr("Min. no. observations in node:"); defaultValue: 10; min: 1; max: 999999; fieldWidth: 60;       }
-                PercentField { name: "dataTrain"   ; text: qsTr("Data used for training:")       ; defaultValue: 80                                             }
-                PercentField { name: "bag.fraction"; text: qsTr("Training data used per tree:")  ; defaultValue: 50                                             }
-                CheckBox     { name: "seedBox"     ; text: qsTr("Set seed:")                     ; childrenOnSameRow: true
-                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-                }
-            }
-        }
-
     }
 
     Section {
-          text: qsTr("Predictions")
-          debug: true
+        text: qsTr("Predictions")
+        debug: true
 
-              RadioButtonGroup
-              {
-                  name: "applyModel"
-                  RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true                            }
-                  RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")                              }
-                  RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator }
-              }
-
-              VariablesForm {
-              visible: applyIndicator.checked
-                  height: 150
-                  AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-                  AssignedVariablesList {
-                              name: "indicator"
-                              title: qsTr("Apply indicator")
-                              singleVariable: true
-                              allowedColumns: ["nominal"]
-                  }
-              }
+        RadioButtonGroup
+        {
+            name: "applyModel"
+            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true                            }
+            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")                              }
+            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator }
         }
+
+        VariablesForm {
+        visible: applyIndicator.checked
+            height: 150
+            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+            AssignedVariablesList {
+                        name: "indicator"
+                        title: qsTr("Apply indicator")
+                        singleVariable: true
+                        allowedColumns: ["nominal"]
+            }
+        }
+    }
+
+    Item 
+    {
+        height: 			saveModel.height
+        Layout.fillWidth: 	true
+        Layout.columnSpan: 2
+
+        Button 
+        {
+            id: 			saveModel
+            anchors.right: 	parent.right
+            text: 			qsTr("<b>Save Model</b>")
+            enabled: 		predictors.count > 1 && target.count > 0
+            onClicked:      { }
+            debug: true	
+        }
+    }
 
 }
