@@ -23,55 +23,42 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   
   # Check if analysis is ready to run
   ready <- .classificationAnalysesReady(options, type = "lda")
+
+  # Run the analysis 
+  .classification(dataset, options, jaspResults, ready, type = "lda")
   
-  # Compute results and create the model summary table
-  .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "lda")
-
-  # Add test set indicator to data
-  .addTestIndicatorToData(options, jaspResults, ready, purpose = "classification")
-
-  # Create the data split plot
-	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "classification", type = "lda")
+  # create the results table
+  .classificationTable(options, jaspResults, ready, type = "lda")
 
   # Create the confusion table
-  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 3)
-
-  # Create the class proportions table
-  .classificationClassProportions(dataset, options, jaspResults, ready, position = 4)
-
-  # Create the validation measures table
-  .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 5)
+  .classificationConfusionTable(dataset, options, jaspResults, ready)
 
   # Create the coefficients table
-  .ldaClassificationCoefficients(options, jaspResults, ready, position = 6)
+  .ldaClassificationCoefficients(options, jaspResults, ready)
 
   # Create the prior and posterior table
-  .ldaClassificationPriorPosterior(options, jaspResults, ready, position = 7)
+  .ldaClassificationPriorPosterior(options, jaspResults, ready)
 
   # Create the group means table
-  .ldaClassificationMeans(options, jaspResults, ready, position = 8)
+  .ldaClassificationMeans(options, jaspResults, ready)
 
   # Create the test of equality of means table
-  .ldaEqualityOfClassMeans(dataset, options, jaspResults, ready, position = 9)
+  .ldaEqualityOfGroupMeans(dataset, options, jaspResults, ready)
 
-  # Create the test of equality of covariance matrices table
-  .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready, position = 10)
+  # Create the test of equality of movariance matrices table
+  .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready)
 
   # Create the multicollinearity table
-  .ldaMulticollinearity(dataset, options, jaspResults, ready, position = 11)
+  .ldaMulticollinearity(dataset, options, jaspResults, ready)
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 12, type = "lda")
-
-  # Create the Andrews curves
-  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 13)
+  .rocCurve(options, jaspResults, ready, position = 8)
 
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 14)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 9)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 15, type = "lda")
-  
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "lda")
 }
 
 # Error handling 
@@ -91,96 +78,51 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 .ldaClassification <- function(dataset, options, jaspResults){
 
   formula <- jaspResults[["formula"]]$object
+  
+  if(options[["modelValid"]] == "validationManual"){
 
-  dataset                   <- na.omit(dataset)
-  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
-    train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else {
-    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
-  }
-  trainAndValid           <- dataset[train.index, ]
-  valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
-  test                    <- dataset[-train.index, ]
-  valid                   <- trainAndValid[valid.index, ]
-  train                   <- trainAndValid[-valid.index, ]
+    dataset                 <- na.omit(dataset)
+    train.index             <- sample(c(TRUE,FALSE),nrow(dataset), replace = TRUE, prob = c(options[['trainingDataManual']], 1-options[['trainingDataManual']]))
+    train                   <- dataset[train.index, ]
+    test                    <- dataset[!train.index, ]
 
-  method <- base::switch(options[["estimationMethod"]], 
-                          "moment" = "moment",
-                          "mle" = "mle",
-                          "covMve" = "mve",
-                          "t" = "t")
-  ldafit      <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
-  pred_valid  <- stats::predict(ldafit, newdata = valid)
-  pred_test   <- stats::predict(ldafit, newdata = test)
+    method <- base::switch(options[["estimationMethod"]], 
+                            "moment" = "moment",
+                            "mle" = "mle",
+                            "covMve" = "mve",
+                            "t" = "t")
+    ldafit <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
+    pred.values <- stats::predict(ldafit, newdata = test)
 
-  # Calculate AUC
-  lvls <- levels(factor(test[, .v(options[["target"]])]))
-  auc <- numeric(length(lvls)) 
-
-  predictorNames <- .v(options[["predictors"]])
-  AUCformula <- formula(paste("levelVar", "~", paste(predictorNames, collapse=" + ")))
-
-  for(i in 1:length(lvls)){
-
-    levelVar <- train[,.v(options[["target"]])] == lvls[i]
-    typeData <- cbind(train, levelVar = factor(levelVar))
-    column <- which(colnames(typeData) == .v(options[["target"]]))
-    typeData <- typeData[, -column]
-
-    ldafit_auc <- MASS::lda(formula = AUCformula, data = typeData, method = method, CV = FALSE)
-    
-    score <- predict(ldafit_auc, test, type = "prob")$posterior[, 'TRUE']
-    actual.class <- test[,.v(options[["target"]])] == lvls[i]
-
-    pred <- ROCR::prediction(score, actual.class)
-    auc[i] <- ROCR::performance(pred, "auc")@y.values[[1]]
   }
 
-  # Create results object
   classificationResult <- list()
-  classificationResult[["model"]]               <- ldafit
-  classificationResult[["method"]]              <- method
-  classificationResult[["scaling"]]             <- ldafit[["scaling"]]
-
-  classificationResult[["validationConfTable"]] <- table('Pred' = pred_valid[["class"]], 'Real' = valid[,.v(options[["target"]])])
-  classificationResult[['validAcc']]            <- sum(diag(prop.table(classificationResult[['validationConfTable']])))
-  classificationResult[['confTable']]           <- table('Pred' = pred_test[["class"]], 'Real' = test[,.v(options[["target"]])])
-  classificationResult[['testAcc']]             <- sum(diag(prop.table(classificationResult[['confTable']])))
-  classificationResult[["auc"]]                 <- auc
-
-  classificationResult[["testPred"]]            <- pred_test[["class"]]
-  classificationResult[["testReal"]]            <- test[,.v(options[["target"]])]
-
-  classificationResult[["meanTable"]]           <- ldafit[["means"]]
-  classificationResult[["relInf"]]              <- summary(ldafit, plot = FALSE)
-  classificationResult[["prior"]]               <- ldafit[["prior"]]
-  classificationResult[["postprob"]]            <- colMeans(pred_test[["posterior"]])
-
-  classificationResult[["ntrain"]]              <- nrow(train)
-  classificationResult[["nvalid"]]              <- nrow(valid)
-  classificationResult[["ntest"]]               <- nrow(test)
-
-  classificationResult[["train"]]               <- train
-  classificationResult[["valid"]]               <- valid
-  classificationResult[["test"]]                <- test
-
-  testIndicatorColumn <- rep(1, nrow(dataset))
-  testIndicatorColumn[train.index] <- 0
-  classificationResult[["testIndicatorColumn"]] <- testIndicatorColumn
+  classificationResult[["model"]] <- ldafit
+  classificationResult[["relInf"]] <- summary(ldafit, plot = FALSE)
+  classificationResult[["meanTable"]] <- ldafit[["means"]]
+  classificationResult[["y"]] <- pred.values[["class"]]
+  classificationResult[["x"]] <- test[,.v(options[["target"]])]
+  classificationResult[['confTable']]   <- table('Pred' = pred.values[["class"]], 'Real' = test[,.v(options[["target"]])])
+  classificationResult[["prior"]] <- ldafit[["prior"]]
+  classificationResult[["postprob"]] <- colMeans(pred.values[["posterior"]])
+  classificationResult[["ntrain"]] <- nrow(train)
+  classificationResult[["ntest"]] <- nrow(test)
+  classificationResult[["mse"]] <- 1 - sum(diag(prop.table(classificationResult[['confTable']])))
+  classificationResult[["scaling"]] <- ldafit[["scaling"]]
+  classificationResult[["train"]] <- train
+  classificationResult[["test"]] <- test
   
   return(classificationResult)
 }
 
-.ldaClassificationCoefficients <- function(options, jaspResults, ready, position){
+.ldaClassificationCoefficients <- function(options, jaspResults, ready){
 
   if(!is.null(jaspResults[["coefficientsTable"]]) || !options[["coefficientsTable"]]) return()
   
   coefficientsTable <- createJaspTable(title = "Linear Discriminant Coefficients")
-  coefficientsTable$position <- position
+  coefficientsTable$position <- 3
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
-                                          "holdoutData", "testDataManual"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
   
   jaspResults[["coefficientsTable"]] <- coefficientsTable
@@ -199,16 +141,14 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   coefficientsTable$addRows(row) 
 }
 
-.ldaClassificationPriorPosterior <- function(options, jaspResults, ready, position){
+.ldaClassificationPriorPosterior <- function(options, jaspResults, ready){
 
   if(!is.null(jaspResults[["priorTable"]]) || !options[["priorTable"]]) return()
   
-  priorTable <- createJaspTable(title = "Prior and Posterior Class Probabilities")
-  priorTable$position <- position
+  priorTable <- createJaspTable(title = "Prior and Posterior Group Probabilities")
+  priorTable$position <- 4
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
-                                          "holdoutData", "testDataManual"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
   priorTable$addColumnInfo(name = "typeprob", title = "", type = "string")
   priorTable$addColumnInfo(name = "prior", title = "Prior", type = "number")
@@ -227,15 +167,14 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   priorTable$addRows(row)
 }
 
-.ldaClassificationMeans <- function(options, jaspResults, ready, position){
+.ldaClassificationMeans <- function(options, jaspResults, ready){
 
   if(!is.null(jaspResults[["meanTable"]]) || !options[["meanTable"]]) return()
   
-  meanTable <- createJaspTable(title = "Class Means in Training Data")
-  meanTable$position <- position
-  meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
-                                          "holdoutData", "testDataManual"))
+  meanTable <- createJaspTable(title = "Group Means in Training Data")
+  meanTable$position <- 5
+  meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
   meanTable$addColumnInfo(name = "target_level", title = "", type = "string")
   for (i in options[["predictors"]]){
@@ -258,10 +197,10 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if (!is.null(jaspResults[["matrixplot"]]) || !options[["matrixplot"]]) return()
   
-  matrixplot <- createJaspPlot(title = "Linear Discriminant Matrix", height = 400, width = 300)
+  matrixplot <- createJaspPlot(title = "Discriminant Matrix Plot", height = 400, width = 300)
   matrixplot$position <- position
-  matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt", "holdoutData", "testDataManual",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+  matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   jaspResults[["matrixplot"]] <- matrixplot 
 
   if(!ready)  return()
@@ -297,7 +236,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   oldFontSize <- JASPgraphs::getGraphOption("fontsize")
   JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
   
-  startProgressbar(length(plotMat)+1)
+  jaspResults$startProgressbar(length(plotMat)+1)
   for (row in seq_len(l)) {
     for (col in seq_len(l)) {
       if (row == col) {
@@ -353,7 +292,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
         if (col == 1 && row == 2){
           plotMat[[2, 1]] <- .legendPlot(dataset, options, col) 
         }
-        progressbarTick()
+        jaspResults$progressbarTick()
       }
     }
   }  
@@ -365,7 +304,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables, topLabels = variables,
                                 scaleXYlabels = NULL, labelPos = labelPos)
   
-  progressbarTick()
+  jaspResults$progressbarTick()
   matrixplot$plotObject <- p
 }
   
@@ -427,12 +366,12 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   return(p)
 }
 
-.ldaEqualityOfClassMeans <- function(dataset, options, jaspResults, ready, position){
+.ldaEqualityOfGroupMeans <- function(dataset, options, jaspResults, ready){
 
   if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
   
-  manovaTable <- createJaspTable(title = "Tests of Equality of Class Means")
-  manovaTable$position <- position
+  manovaTable <- createJaspTable(title = "Tests of Equality of Group Means")
+  manovaTable$position <- 6
   manovaTable$dependOn(options = c("manovaTable", "scaleEqualSD", "target", "predictors"))
   manovaTable$addColumnInfo(name = "model", title = "", type = "string")
   manovaTable$addColumnInfo(name = "f", title = "F", type = "number")
@@ -440,7 +379,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   manovaTable$addColumnInfo(name = "df2", title = "df2", type = "integer")
   manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
 
-  manovaTable$addFootnote(message= "The null hypothesis specifies equal class means." , symbol="<i>Note.</i>")
+  manovaTable$addFootnote(message= "The null hypothesis specifies equal group means." , symbol="<i>Note.</i>")
   
   jaspResults[["manovaTable"]] <- manovaTable
 
@@ -466,15 +405,15 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
 }
 
-.ldaEqualityOfCovarianceMatrices <- function(dataset, options, jaspResults, ready, position){
+.ldaEqualityOfCovarianceMatrices <- function(dataset, options, jaspResults, ready){
 
   if(!is.null(jaspResults[["boxTest"]]) || !options[["boxTest"]]) return()
   
   boxTest <- createJaspTable(title = "Tests of Equality of Covariance Matrices")
-  boxTest$position <- position
+  boxTest$position <- 7
   boxTest$dependOn(options = c("boxTest", "scaleEqualSD", "target", "predictors"))
 
-  boxTest$addColumnInfo(name = "test", title = "", type = "string")
+  boxTest$addColumnInfo(name = "test", title = "Test", type = "string")
   boxTest$addColumnInfo(name = "x", title = "X\u00B2", type = "number")
   boxTest$addColumnInfo(name = "df", title = "df", type = "integer")
   boxTest$addColumnInfo(name = "p", title = "p", type = "pvalue")
@@ -498,12 +437,12 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   boxTest$addRows(row)
 }
 
-.ldaMulticollinearity <- function(dataset, options, jaspResults, ready, position){
+.ldaMulticollinearity <- function(dataset, options, jaspResults, ready){
 
   if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
   
-  multicolTable <- createJaspTable(title = "Pooled Within-Class Matrices Correlations")
-  multicolTable$position <- position
+  multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlation")
+  multicolTable$position <- 7
   multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
   
   jaspResults[["multicolTable"]] <- multicolTable

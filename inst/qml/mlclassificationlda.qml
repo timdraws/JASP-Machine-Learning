@@ -86,7 +86,7 @@ Form {
         Divider { }
 
         GroupBox {
-            title: qsTr("Assumption Checks")
+            title: qsTr("Assumptions")
 
             CheckBox { 
                 name: "manovaTable"
