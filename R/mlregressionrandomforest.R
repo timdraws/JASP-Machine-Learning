@@ -132,7 +132,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   testTarget  <- modelData[idtestPreds, target]
   
   # Run Random Forest
-  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, testPreds = testPreds, testTarget = testTarget,
+  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, xtest = testPreds, ytest = testTarget,
                                                  ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
                                                  sampsize = ceiling(options$bagFrac * nrow(dataset)),
                                                  importance = TRUE, keep.forest = TRUE)
@@ -210,7 +210,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   regRanForTable$addColumnInfo(name = "nTest" ,  title = "n(Test)"             , type = "integer")
   
   # Add data per column
-  if (options$dataTrain < 1){ regRanForTable[["testError"]] <- if (ready) regRanForResults$testError   else "." }
+  if (options$dataTrain < 1){ regRanForTable[["testMSE"]] <- if (ready) regRanForResults$testMSE       else "." }
   if (options$dataTrain < 1){ regRanForTable[["testR2"]]    <- if (ready) regRanForResults$testR2      else "." }
   regRanForTable[["oobMSE"]]  <- if (ready) regRanForResults$res$mse[length(regRanForResults$res$mse)] else "."
   regRanForTable[["ntrees"]]  <- if (ready) regRanForResults$res$ntree else "."

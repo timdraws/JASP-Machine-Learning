@@ -355,9 +355,6 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   if (!options$plotLars) return()
   
   if (options$legendLars) legPos <- "right" else legPos <- "none"
-  
-  # regRegLarsPlot <- plot(regRegResults$res$glmnet.fit, "norm", label = TRUE)
-  
   object       <- regRegResults$res$glmnet.fit
   coefs        <- as.matrix(regRegResults$res$glmnet.fit$beta)
   d            <- stack(as.data.frame(coefs))
@@ -366,6 +363,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   limitsLambda <- c(min(pretty(d$lambda)), max(pretty(d$lambda)))
   limitsCoefs  <- c(min(pretty(d$values)), max(pretty(d$values)))
 
+  # regRegLarsPlot <- plot(regRegResults$res$glmnet.fit, "norm", label = TRUE)
   regRegLarsPlot <- JASPgraphs::themeJasp(
     ggplot2::ggplot(data = d, mapping = ggplot2::aes(x = lambda, y = values, colour = ind), show.legend = TRUE) +
       ggplot2::geom_line() +
@@ -376,9 +374,9 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   # Create plot and bind to jaspResults
   regRegLarsPlot <- createJaspPlot(plot = regRegLarsPlot, title = "Variable Trace Plot", width = 400, height = 400)
-  
+
   jaspResults[["regRegLarsPlot"]] <- regRegLarsPlot
-  jaspResults[["regRegLarsPlot"]] <- 4
+  jaspResults[["regRegLarsPlot"]]$position <- 4
   jaspResults[["regRegLarsPlot"]]$dependOn(options = c("target", "predictors", "indicator", "weights", "penalty",
                                                        "applyModel", "alpha", "thresh", "dataTrain", "standardize",
                                                        "intercept", "shrinkage", "lambda", "seedBox", "seed",

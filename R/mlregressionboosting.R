@@ -333,7 +333,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
       ggplot2::scale_x_continuous(name = "Trees", labels = scales::comma) +
       ggplot2::ylab(paste(regBoostResults$spec$distribution, " Deviance")) +
       ggplot2::scale_color_manual(name = "", values = c("OOB" = "gray20", "CV" = "#99c454")) +
-      ggplot2::geom_vline(xintercept = regBoostResults$optTrees, color = "lightgray", linetype = "dashed"),
+      ggplot2::geom_vline(xintercept = regBoostResults$optTrees, color = "gray20", linetype = "dashed"),
     legend.position = "right"
   )
 

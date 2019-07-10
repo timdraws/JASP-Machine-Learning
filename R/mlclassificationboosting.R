@@ -163,12 +163,13 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Predictions
   prob <- gbm::predict.gbm(results$res, newdata = testPreds, n.trees = results$optTrees, type = "response")
   modPred <- colnames(prob)[apply(prob, 1, which.max)]
-
+  levels  <- levels(factor(c(as.character(modPred),as.character(testTarget))))
+  
   # Predictive Performance
   results[["testError"]] <- mean(testTarget != as.character(modPred))
-  results[["testAUC"]]   <- 999999 # tk put AUC here
-  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels(results$data$testTarget)),
-                                  "True" = factor(results$data$testTarget))
+  # results[["testAUC"]]   <- roc(...) # In its standard form, ROC can only be calculated for binary outcome variables
+  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels),
+                                  "True" = factor(results$data$testTarget, levels = levels))
 
   # Apply model to new data if requested
   if(options$applyModel == "applyIndicator" && options$indicator != "") {
@@ -209,9 +210,9 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   if(options$dataTrain < 1){
     classBoostTable$addColumnInfo(name = "testError",  title = "Test Set Error", type = "number", format = "sf:4")
   }
-  if (options$dataTrain < 1) {
-    classBoostTable$addColumnInfo(name = "testAUC"  ,  title = "Test Set AUC"  , type = "number", format = "sf:4")
-  }
+  # if (options$dataTrain < 1) {
+  #   classBoostTable$addColumnInfo(name = "testAUC"  ,  title = "Test Set AUC"  , type = "number", format = "sf:4")
+  # }
   classBoostTable$addColumnInfo(name = "ntrees"      ,  title = "Trees"         , type = "integer"                )
   classBoostTable$addColumnInfo(name = "shrinkage"   ,  title = "Shrinkage"     , type = "number", format = "sf:4")
   classBoostTable$addColumnInfo(name = "intDepth"    ,  title = "Int. Depth"    , type = "integer"                )
@@ -221,7 +222,7 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   
   # Add data per column
   if (options$dataTrain < 1){ classBoostTable[["testError"]] <- if (ready) classBoostResults$testError else "." }
-  if (options$dataTrain < 1){ classBoostTable[["testAUC"]]   <- if (ready) classBoostResults$testAUC   else "." }
+  # if (options$dataTrain < 1){ classBoostTable[["testAUC"]]   <- if (ready) classBoostResults$testAUC   else "." }
   classBoostTable[["ntrees"]]       <- if (ready) classBoostResults$optTrees                else "."
   classBoostTable[["shrinkage"]]    <- if (ready) classBoostResults$res$shrinkage           else "."
   classBoostTable[["intDepth"]]     <- if (ready) classBoostResults$res$interaction.depth   else "."

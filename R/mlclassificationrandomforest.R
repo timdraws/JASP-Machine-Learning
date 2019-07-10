@@ -119,13 +119,14 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
   # Predictions
   modPred <- results$res$test$predicted
+  levels  <- levels(factor(c(as.character(modPred),as.character(testTarget))))
   
   # Predictive performance
   results[["testError"]] <- mean(testTarget != as.character(modPred))
-  results[["testAUC"]]   <- 999999 # tk put AUC here
-  results[["oobError"]]  <- results$res$err.rate[length(classRanForResults$res$err.rate)]
-  results[["confTable"]] <- table("Pred" = factor(results$preds, levels = levels(results$data$testTarget)),
-                                  "True" = factor(results$data$testTarget))
+  # results[["testAUC"]]   <- 999999 # tk put AUC here
+  results[["oobError"]]  <- results$res$err.rate[length(results$res$err.rate)]
+  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels),
+                                  "True" = factor(results$data$testTarget, levels = levels))
   
   # Making a variable importance table
   results[["varImp"]] <- plyr::arrange(data.frame(
@@ -175,9 +176,9 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   if(options$dataTrain < 1){
     classRanForTable$addColumnInfo(name = "testError",  title = "Test Set Error", type = "number", format = "sf:4")
   }
-  if (options$dataTrain < 1) {
-    classRanForTable$addColumnInfo(name = "testAUC",  title = "Test Set AUC", type = "number", format = "sf:4")
-  }
+  # if (options$dataTrain < 1) {
+  #   classRanForTable$addColumnInfo(name = "testAUC",  title = "Test Set AUC", type = "number", format = "sf:4")
+  # }
   classRanForTable$addColumnInfo(name = "oobError", title = "OOB Error", type = "number", format = "sf:4")
   classRanForTable$addColumnInfo(name = "ntrees"  , title = "Trees"                , type = "integer")
   classRanForTable$addColumnInfo(name = "mtry"    , title = "Predictors per split" , type = "integer")
@@ -186,7 +187,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
   # Add data per column
   if (options$dataTrain < 1){ classRanForTable[["testError"]] <- if (ready) classRanForResults$testError else "." }
-  if (options$dataTrain < 1){ classRanForTable[["testAUC"]]   <- if (ready) classRanForResults$testAUC   else "." }
+  # if (options$dataTrain < 1){ classRanForTable[["testAUC"]]   <- if (ready) classRanForResults$testAUC   else "." }
   classRanForTable[["oobError"]]   <- if (ready) classRanForResults$oobError              else "."
   classRanForTable[["ntrees"]]     <- if (ready) classRanForResults$res$ntree             else "."
   classRanForTable[["mtry"]]       <- if (ready) classRanForResults$res$mtry              else "."
