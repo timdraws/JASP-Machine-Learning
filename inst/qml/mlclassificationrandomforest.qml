@@ -45,16 +45,23 @@ Form {
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { name: "classRanForConfTable"   ;	text: qsTr("Confusion table")    ; checked: true }
+        CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
+          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} }  
         CheckBox { name: "tableVariableImportance";	text: qsTr("Variable importance")                }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "plotVarImp1";           text: qsTr("Mean decrease in accuracy")     }
-        CheckBox { name: "plotVarImp2";           text: qsTr("Total increase in node purity") }
-        CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
+        CheckBox { name: "plotVarImp1";           text: qsTr("Mean decrease in accuracy"); debug: true     }
+        CheckBox { name: "plotVarImp2";           text: qsTr("Total increase in node purity"); debug: true  }
+        CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. OOB error")        }
+        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries"); enabled: predictors.count > 1
+            RowLayout {
+                CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
+                CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }
+            }
+        }
     }
 
     Section {
@@ -71,7 +78,7 @@ Form {
 
         GroupBox {
             IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
-            PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
+            PercentField { name: "trainingDataManual"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
             PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
             CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
                 DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
@@ -79,30 +86,30 @@ Form {
         }
     }
 
-    Section {
-        text: qsTr("Predictions")
-        debug: true
+    // Section {
+    //     text: qsTr("Predictions")
+    //     debug: true
 
-        RadioButtonGroup
-        {
-            name: "applyModel"
-            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-        }
+    //     RadioButtonGroup
+    //     {
+    //         name: "applyModel"
+    //         RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //         RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //         RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //     }
 
-        VariablesForm {
-        visible: applyIndicator.checked
-            height: 150
-            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-            AssignedVariablesList {
-                        name: "indicator"
-                        title: qsTr("Apply indicator")
-                        singleVariable: true
-                        allowedColumns: ["nominal"]
-            }
-        }
-    }
+    //     VariablesForm {
+    //     visible: applyIndicator.checked
+    //         height: 150
+    //         AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //         AssignedVariablesList {
+    //                     name: "indicator"
+    //                     title: qsTr("Apply indicator")
+    //                     singleVariable: true
+    //                     allowedColumns: ["nominal"]
+    //         }
+    //     }
+    // }
 
     Item 
     {

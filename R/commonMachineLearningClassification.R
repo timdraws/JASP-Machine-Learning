@@ -44,7 +44,7 @@
 }
 
 .classificationAnalysesReady <- function(options, type){
-  if(type == "lda"){
+  if(type == "lda" || type == "randomForest"){
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2 && options[["target"]] != ""
   } else {
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 1 && options[["target"]] != ""
@@ -74,13 +74,14 @@
       classificationResult <- .knnClassification(dataset, options, jaspResults)
     } else if(type == "lda"){
       classificationResult <- .ldaClassification(dataset, options, jaspResults)
+    } else if(type == "randomForest"){
+      classificationResult <- .randomForestClassification(dataset, options, jaspResults)
     }
     jaspResults[["classificationResult"]] <- createJaspState(classificationResult)
     jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
-                                                              "estimationMethod"))
+                                                              "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   }
-
 }
 
 .classificationTable <- function(options, jaspResults, ready, type){
@@ -89,13 +90,14 @@
 
   title <- base::switch(type,
                       "knn" = "K-Nearest Neighbors Classification",
-                      "lda" = "Linear Discriminant Classification")
+                      "lda" = "Linear Discriminant Classification",
+                      "randomForest" = "Random Forest Classification")
 
   classificationTable <- createJaspTable(title)
   classificationTable$position <- 1
   classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
-                                          "estimationMethod"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
 
   if(type == "knn"){
     classificationTable$addColumnInfo(name = 'nn', title = 'Nearest neighbors', type = 'integer')
@@ -104,10 +106,16 @@
   } else if(type =="lda"){
     classificationTable$addColumnInfo(name = 'lda', title = 'Linear Discriminants', type = 'integer')
     classificationTable$addColumnInfo(name = 'method', title = 'Method', type = 'string')
+  } else if(type == "randomForest"){
+    classificationTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
+    classificationTable$addColumnInfo(name = 'preds', title = 'Predictors per split', type = 'integer')
   }
   classificationTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   classificationTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
-  classificationTable$addColumnInfo(name = 'mse', title = 'Test Set Error', type = 'number', format = 'dp:3')
+  classificationTable$addColumnInfo(name = 'mse', title = 'Test Set Error', type = 'number')
+  if(type == "randomForest"){
+    classificationTable$addColumnInfo(name = 'oob', title = 'OOB Error', type = 'number')
+  }
 
   jaspResults[["classificationTable"]] <- classificationTable
   
@@ -131,6 +139,11 @@
     row <- data.frame(lda = ncol(classificationResult[["scaling"]]), method = method, ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
     classificationTable$addRows(row)
 
+  } else if(type == "randomForest"){
+
+    row <- data.frame(trees = classificationResult[["noOfTrees"]], preds = classificationResult[["predPerSplit"]], ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]], oob = classificationResult[["oobError"]])
+    classificationTable$addRows(row)
+
   }
 }
 
@@ -142,7 +155,7 @@
   confusionTable$position <- 2
   confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
-                                          "estimationMethod"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   
   jaspResults[["confusionTable"]] <- confusionTable
   
@@ -238,7 +251,7 @@
   decisionBoundary$dependOn(options = c("decisionBoundary", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
                                           "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
-                                          "plotLegend", "plotPoints"))
+                                          "plotLegend", "plotPoints", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
   if(!ready)  return()
@@ -334,14 +347,20 @@
     grid <- as.data.frame(expand.grid(seq(x_min, x_max, by = hs), seq(y_min, y_max, by =hs)))
     colnames(grid) <- colnames(predictors)
 
+    classificationResult <- jaspResults[["classificationResult"]]$object
+
     if(type == "lda"){
       ldafit <- MASS::lda(formula, data = dataset)
       preds <- predict(ldafit, newdata = grid)$class
     } else if(type == "knn"){
-      classificationResult <- jaspResults[["classificationResult"]]$object
       kfit <- kknn::train.kknn(formula = formula, data = dataset, ks = classificationResult[["nn"]], 
                   distance = classificationResult[['distance']], kernel = classificationResult[['weights']], scale = FALSE)
       preds <- predict(kfit, newdata = grid)
+    } else if(type == "randomForest"){
+      rfit <- randomForest::randomForest(x = predictors, y = target,
+                                                 ntree = classificationResult[["noOfTrees"]], mtry = classificationResult[["predPerSplit"]],
+                                                 sampsize = classificationResult[["bagFrac"]], importance = TRUE, keep.forest = TRUE)
+      preds <- predict(rfit, newdata = grid)
     }
 
     gridData <- data.frame(x = grid[, 1], y = grid[, 2])

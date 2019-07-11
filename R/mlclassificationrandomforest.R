@@ -17,291 +17,107 @@
 
 MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
-  # Read dataset
-  if (options$target == "") options$target <- NULL
-  dataset <- .readDataSetToEnd(columns.as.factor = options$target, columns = options$predictors,
-                               columns.as.nommnomm = options$indicator)
+  # Preparatory work
+  dataset <- .readDataClassificationAnalyses(dataset, options)
+  .errorHandlingClassificationAnalyses(dataset, options)
   
-  # Check if results can be computed
-  ready <- (!is.null(options$target) && length(.v(options$predictors)) > 0)
+  # Check if analysis is ready to run
+  ready <- .classificationAnalysesReady(options, type = "randomForest")
+
+  # Run the analysis
+  .classification(dataset, options, jaspResults, ready, type = "randomForest")
+
+  # create the results table
+  .classificationTable(options, jaspResults, ready, type = "randomForest")
+
+  # Create the confusion table
+  .classificationConfusionTable(dataset, options, jaspResults, ready)
+
+  # Create the variable importance table
+  .randomForestClassificationVariableImportance(options, jaspResults, ready)
+
+  # Create the trees vs model error plot
+  .randomForestClassificationTreesError(options, jaspResults, ready, position = 4)
   
-  # Error checking
-  if (ready) errors <- .classRanForErrorHandling(dataset, options)
-  
-  # Compute (a list of) results from which tables and plots can be created
-  if (ready) classRanForResults <- .classRanForComputeResults(jaspResults, dataset, options)
-  
-  # Output tables
-  .classRanForTable(             jaspResults, options, classRanForResults, ready)
-  .classRanForConfTable(         jaspResults, options, classRanForResults, ready, dataset)
-  .classRanForTableVarImportance(jaspResults, options, classRanForResults, ready)
-  .classRanForApplyTable(        jaspResults, options, classRanForResults, ready)
-  
-  # Output plots
-  if (ready) .classRanForPlotVarImp1(          jaspResults, options, classRanForResults, ready)
-  if (ready) .classRanForPlotVarImp2(          jaspResults, options, classRanForResults, ready)
-  if (ready) .classRanForPlotTreesVsModelError(jaspResults, options, classRanForResults, ready)
-  
-  return()
+  # # Output plots
+  # if (ready) .classRanForPlotVarImp1(          jaspResults, options, classRanForResults, ready)
+  # if (ready) .classRanForPlotVarImp2(          jaspResults, options, classRanForResults, ready)
+  # if (ready) .classRanForPlotTreesVsModelError(jaspResults, options, classRanForResults, ready)
+
+  # Decision boundaries
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "randomForest")
 }
 
-# Check for errors
-.classRanForErrorHandling <- function(dataset, options) {
+.randomForestClassification <- function(dataset, options, jaspResults){
   
-  # Error Check 1: Provide a test set
-  if (options$dataTrain == 1) {
-    JASP:::.quitAnalysis("Please provide a test set.")
-  }
-  
-  # Error Check 2: Provide at least 10 training observations
-  if ((nrow(dataset) * options$dataTrain) < 10) {
-    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
-  }
-  
-  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
-  if (length(.v(options$predictors)) < 2L) {
-    JASP:::.quitAnalysis("Please provide at least 2 predictors.")
-  }
-  
-}
+  dataset                 <- na.omit(dataset)
+  train.index             <- sample(c(TRUE,FALSE),nrow(dataset), replace = TRUE, prob = c(options[['trainingDataManual']], 1-options[['trainingDataManual']]))
+  train                   <- dataset[train.index, ]
+  test                    <- dataset[!train.index, ]
 
-# Compute results
-.classRanForComputeResults <- function(jaspResults, dataset, options) {
-  
-  if (!is.null(jaspResults[["stateRegRanForResults"]])) return (jaspResults[["stateRegRanForResults"]]$object)
-  
-  # Create results object
-  results <- list()
-  
-  results[["spec"]] <- .classRanForCalcSpecs(dataset, options)
-  results[["res"]] <- list()
-  
-  # Set seed	
-  if (options$seedBox) set.seed(options$seed)
-  
-  # Prepare data
-  preds <- which(colnames(dataset) %in% .v(options$predictors)) # predictors
-  target <- which(colnames(dataset) == .v(options$target)) # target
-  if(options$indicator != "") indicator <- which(colnames(dataset) == .v(options$indicator))
-  dataset <- na.omit(dataset)
-  
-  # Splitting the data into training set, test set, and application set
-  if (options$indicator != "") {
-    
-    idxApply <- which(dataset[, indicator] == 1) # apply indicator doesn't work yet
-    idxModel <- which(dataset[, indicator] == 0) # something goes wrong with making these indices
-    
-    applyData <- dataset[idxApply, preds, drop = FALSE]
-    modelData <- dataset[idxModel, -indicator]
-    
-  } else {
-    
-    modelData <- dataset
-    
-  }
-  
-  idtrainPreds <- sample(1:nrow(modelData), floor(options$dataTrain * nrow(modelData)))
-  idtestPreds <- (1:nrow(modelData))[-idtrainPreds]
-  
-  trainPreds <- modelData[idtrainPreds, preds, drop = FALSE]
-  trainTarget <- modelData[idtrainPreds, target]
-  testPreds <- modelData[idtestPreds, preds, drop = FALSE]
-  testTarget <- modelData[idtestPreds, target]
-  
-  # Run Random Forest
-  results[["res"]] <- randomForest::randomForest(x = trainPreds, y = trainTarget, xtest = testPreds, ytest = testTarget,
-                                                 ntree = options$noOfTrees, mtry = results$spec$noOfPredictors,
-                                                 sampsize = ceiling(options$bagFrac*nrow(dataset)),
-                                                 importance = TRUE, keep.forest = TRUE)
-  
-  results[["data"]] <- list(trainPreds = trainPreds, trainTarget = trainTarget, 
-                            testPreds = testPreds, testTarget = testTarget)
-  
-  # Predictions
-  modPred <- results$res$test$predicted
-  levels  <- levels(factor(c(as.character(modPred),as.character(testTarget))))
-  
-  # Predictive performance
-  results[["testError"]] <- mean(testTarget != as.character(modPred))
-  # results[["testAUC"]]   <- 999999 # tk put AUC here
-  results[["oobError"]]  <- results$res$err.rate[length(results$res$err.rate)]
-  results[["confTable"]] <- table("Pred" = factor(modPred, levels = levels),
-                                  "True" = factor(results$data$testTarget, levels = levels))
-  
-  # Making a variable importance table
-  results[["varImp"]] <- plyr::arrange(data.frame(
-    Variable         = .unv(as.factor(names(results$res$importance[,1]))),
-    MeanIncrMSE      = results$res$importance[, 1],
-    TotalDecrNodeImp = results$res$importance[, 2]
-  ), -TotalDecrNodeImp)
-  
-  if(options$indicator != "") results[["apply"]] <- predict(results$res, applyData, type = "class")
-  
-  # Save results to state
-  jaspResults[["stateclassRanForResults"]] <- createJaspState(results)
-  jaspResults[["stateclassRanForResults"]]$dependOn(options =c("target", "predictors", "indicator", "noOfTrees",
-                                                             "noOfPredictors", "numberOfPredictors", "dataTrain",
-                                                             "bagFrac", "seedBox", "seed", "applyModel"))
-  
-  return(results)
-}
+  predictors <- train[, .v(options[["predictors"]])]
+  target <- train[, .v(options[["target"]])]
+  test_predictors <- test[, .v(options[["predictors"]])]
+  test_target <- test[, .v(options[["target"]])]
 
-.classRanForCalcSpecs <- function(dataset, options) {
-  specs <- list()
-  
-  # Setting the number of variables considered at each split
   if (options$noOfPredictors == "manual") {
-    specs$noOfPredictors <- as.integer(options$numberOfPredictors)
+    noOfPredictors <- options[["numberOfPredictors"]]
   } else {
-    specs$noOfPredictors <- if (!is.null(options$target) && !is.factor(options$target)) 
-      max(floor(length(.v(options$predictors))/3), 1) else floor(sqrt(length(.v(options$predictors))))
+    noOfPredictors <- floor(sqrt(length(options[["numberOfPredictors"]])))
   }
-  
-  return(specs)
+
+  rfit <- randomForest::randomForest(x = predictors, y = target, xtest = test_predictors, ytest = test_target,
+                                                 ntree = options[["noOfTrees"]], mtry = noOfPredictors,
+                                                 sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                                 importance = TRUE, keep.forest = TRUE)
+
+  classificationResult <- list()
+  classificationResult[["rfit"]]          <- rfit
+  classificationResult[["train"]]         <- train
+  classificationResult[["test"]]          <- test
+  classificationResult[["noOfTrees"]]     <- options[["noOfTrees"]]
+  classificationResult[["predPerSplit"]]  <- noOfPredictors
+  classificationResult[["bagFrac"]]       <- ceiling(options[["bagFrac"]]*nrow(dataset))
+  classificationResult[["y"]]             <- rfit$test[["predicted"]]
+  classificationResult[["x"]]             <- test[,.v(options[["target"]])]
+  classificationResult[["confTable"]]     <- table('Pred' = classificationResult[["y"]], 'Real' = test[,.v(options[["target"]])])
+  classificationResult[["mse"]]           <- 1 - sum(diag(prop.table(classificationResult[['confTable']])))
+  classificationResult[["ntrain"]]        <- nrow(train)
+  classificationResult[["ntest"]]         <- nrow(test)
+  classificationResult[["oobError"]]      <- rfit$err.rate[length(rfit$err.rate)]
+  classificationResult[["varImp"]] <- plyr::arrange(data.frame(
+    Variable         = .unv(as.factor(names(rfit$importance[,1]))),
+    MeanIncrMSE      = rfit$importance[, 1],
+    TotalDecrNodeImp = rfit$importance[, 2]
+  ), -TotalDecrNodeImp)
+
+  return(classificationResult)
 }
 
-# Output functions
-.classRanForTable <- function(jaspResults, options, classRanForResults, ready) {
-  if (!is.null(jaspResults[["classRanForTable"]])) return()
-  
-  # Create table and bind to jaspResults
-  classRanForTable <- createJaspTable(title = "Random Forest Classification Model Summary")
-  jaspResults[["classRanForTable"]] <- classRanForTable
-  jaspResults[["classRanForTable"]]$position <- 1
-  jaspResults[["classRanForTable"]]$dependOn(options =c("target", "predictors", "indicator", "noOfTrees",
-                                                      "noOfPredictors", "numberOfPredictors", "dataTrain",
-                                                      "bagFrac", "seedBox", "seed", "applyModel"))
-  
-  # Add column info
-  if(options$dataTrain < 1){
-    classRanForTable$addColumnInfo(name = "testError",  title = "Test Set Error", type = "number", format = "sf:4")
-  }
-  # if (options$dataTrain < 1) {
-  #   classRanForTable$addColumnInfo(name = "testAUC",  title = "Test Set AUC", type = "number", format = "sf:4")
-  # }
-  classRanForTable$addColumnInfo(name = "oobError", title = "OOB Error", type = "number", format = "sf:4")
-  classRanForTable$addColumnInfo(name = "ntrees"  , title = "Trees"                , type = "integer")
-  classRanForTable$addColumnInfo(name = "mtry"    , title = "Predictors per split" , type = "integer")
-  classRanForTable$addColumnInfo(name = "nTrain"  , title = "n(Train)"             , type = "integer")
-  classRanForTable$addColumnInfo(name = "nTest"   , title = "n(Test)"              , type = "integer")
-  
-  # Add data per column
-  if (options$dataTrain < 1){ classRanForTable[["testError"]] <- if (ready) classRanForResults$testError else "." }
-  # if (options$dataTrain < 1){ classRanForTable[["testAUC"]]   <- if (ready) classRanForResults$testAUC   else "." }
-  classRanForTable[["oobError"]]   <- if (ready) classRanForResults$oobError              else "."
-  classRanForTable[["ntrees"]]     <- if (ready) classRanForResults$res$ntree             else "."
-  classRanForTable[["mtry"]]       <- if (ready) classRanForResults$res$mtry              else "."
-  classRanForTable[["nTrain"]]     <- if (ready) nrow(classRanForResults$data$trainPreds) else "."
-  classRanForTable[["nTest"]]      <- if (ready) nrow(classRanForResults$data$testPreds)  else "."
-  
-}
+.randomForestClassificationVariableImportance <- function(options, jaspResults, ready){
 
-.classRanForConfTable <- function(jaspResults, options, classBoostResults, ready, dataset) {
-  if (!options$classRanForConfTable || !is.null(jaspResults[["classRanForConfTable"]])) return()
+  if(!is.null(jaspResults[["tableVariableImportance"]]) || !options[["tableVariableImportance"]]) return()
   
-  # Create table and bind to jaspResults
-  classRanForConfTable <- createJaspTable(title = "Confusion Table")
-  jaspResults[["classRanForConfTable"]] <- classRanForConfTable
-  jaspResults[["classRanForConfTable"]]$position <- 2
-  jaspResults[["classRanForConfTable"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  jaspResults[["classRanForConfTable"]]$dependOn(options ="classRanForConfTable")
-  
-  target <- .v(options$target)
-  
-  if (ready) {
-    
-    classRanForConfTable$addColumnInfo(name = "pred_name", title = "", type = "string")
-    classRanForConfTable$addColumnInfo(name = "varname_pred", title = "", type = "string")
-    
-    classRanForConfTable[["pred_name"]] <- c("Predicted", rep("", nrow(classBoostResults$confTable) - 1))
-    classRanForConfTable[["varname_pred"]] <- colnames(classBoostResults$confTable)
-    
-    for (i in 1:length(rownames(classBoostResults$confTable))) {
-      
-      name <- paste("varname_obs", i, sep = "")
-      classRanForConfTable$addColumnInfo(name = name, title = as.character(rownames(classBoostResults$confTable)[i]),
-                                        type = "integer", overtitle = "Observed")
-      classRanForConfTable[[name]] <- classBoostResults$confTable[, i] 
-      
-    }
-    
-  } else if (!is.null(options$target) && !ready) {
-    
-    classRanForConfTable$addColumnInfo(name = "pred_name", title = "", type = "string")
-    classRanForConfTable$addColumnInfo(name = "varname_pred", title = "", type = "string")
-    
-    classRanForConfTable[["pred_name"]] <- c("Predicted", rep("", length(unique(dataset[, target])) - 1))
-    classRanForConfTable[["varname_pred"]] <- levels(dataset[, target])
-    
-    for (i in 1:length(unique(dataset[, target]))) {
-      
-      name <- paste("varname_obs", i, sep = "")
-      classRanForConfTable$addColumnInfo(name = name, title = as.character(levels(dataset[, target])[i]),
-                                        type = "integer", overtitle = "Observed")
-      classRanForConfTable[[name]] <- rep(".", length(unique(dataset[, target])))
-      
-    }
-    
-  } else {
-    
-    classRanForConfTable$addColumnInfo(name = "pred_name"    , title = "" , type = "string")
-    classRanForConfTable$addColumnInfo(name = "varname_pred" , title = "" , type = "string")
-    classRanForConfTable$addColumnInfo(name = "varname_obs1", title = ".", type = "integer")
-    classRanForConfTable$addColumnInfo(name = "varname_obs2", title = ".", type = 'integer')
-    
-    classRanForConfTable[["pred_name"]] <- c("Predicted", "")
-    classRanForConfTable[["varname_pred"]] <- rep(".", 2)
-    classRanForConfTable[["varname_obs1"]] <- rep("", 2)
-    classRanForConfTable[["varname_obs2"]] <- rep("", 2)
-    
-  }
-  
-}
+  tableVariableImportance <- createJaspTable(title = "Variable Importance")
+  tableVariableImportance$position <- 3
+  tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors",
+                                                "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox"))
 
-.classRanForTableVarImportance <- function(jaspResults, options, classRanForResults, ready) {
-  if (!options$tableVariableImportance || !is.null(jaspResults[["tableVarImp"]])) return()
+  tableVariableImportance$addColumnInfo(name = "predictor",  title = " ", type = "string")
+  tableVariableImportance$addColumnInfo(name = "MDiA",  title = "Mean decrease in accuracy", type = "number")
+  tableVariableImportance$addColumnInfo(name = "MDiNI",  title = "Total increase in node purity", type = "number")
   
-  # Create table
-  classRanForTableVarImp <- createJaspTable(title = "Variable Importance")
-  jaspResults[["tableVarImp"]] <- classRanForTableVarImp
-  jaspResults[["tableVarImp"]]$position <- 3
-  jaspResults[["tableVarImp"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  jaspResults[["tableVarImp"]]$dependOn(options =c("tableVariableImportance"))
-  
-  # Add column info
-  classRanForTableVarImp$addColumnInfo(name = "predictor",  title = " ", type = "string")
-  classRanForTableVarImp$addColumnInfo(name = "MDiA",  title = "Mean decrease in accuracy", type = "number",
-                                       format = "sf:4")
-  classRanForTableVarImp$addColumnInfo(name = "MDiNI",  title = "Total increase in node purity", type = "number",
-                                       format = "sf:4")
-  
-  # Ordering the variables according to their mean decrease in accuracy
-  if(ready) varImpOrder <- sort(classRanForResults$res$importance[,1], decr = TRUE, index.return = TRUE)$ix
-  
-  # Add data per column
-  classRanForTableVarImp[["predictor"]] <- if(ready) .unv(.v(classRanForResults$varImp$Variable)) else "."
-  classRanForTableVarImp[["MDiA"]]      <- if(ready) classRanForResults$varImp$MeanIncrMSE        else "."
-  classRanForTableVarImp[["MDiNI"]]     <- if(ready) classRanForResults$varImp$TotalDecrNodeImp   else "."
-  
-}
+  jaspResults[["tableVariableImportance"]] <- tableVariableImportance
 
-.classRanForApplyTable <- function(jaspResults, options, classRanForResults, ready) {
-  if (!is.null(jaspResults[["classRanForApplyTable"]])) return()
-  if (options$indicator == "") return()
+  if(!ready)  return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
+
+  varImpOrder <- sort(classificationResult[["rfit"]]$importance[,1], decr = TRUE, index.return = TRUE)$ix
   
-  # Create table and bind to jaspResults
-  classRanForApplyTable <- createJaspTable(title = "Random Forest Model Predictions")
-  jaspResults[["classRanForApplyTable"]] <- classRanForApplyTable
-  jaspResults[["classRanForApplyTable"]]$position <- 4
-  jaspResults[["classRanForApplyTable"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  
-  # Add column info
-  classRanForApplyTable$addColumnInfo(name = "row",  title = "Row", type = "integer")
-  classRanForApplyTable$addColumnInfo(name = "pred",  title = "Prediction", type = "number", format = "sf:4")
-  
-  # Add data per column
-  classRanForApplyTable[["row"]]  <- if (ready) as.numeric(rownames(as.data.frame(classRanForResults$apply))) else "."
-  classRanForApplyTable[["pred"]]  <- if (ready) as.numeric(classRanForResults$apply) else "."
+  tableVariableImportance[["predictor"]] <- .unv(.v(classificationResult[["varImp"]]$Variable))
+  tableVariableImportance[["MDiA"]]      <- classificationResult[["varImp"]]$MeanIncrMSE    
+  tableVariableImportance[["MDiNI"]]     <- classificationResult[["varImp"]]$TotalDecrNodeImp
   
 }
 
@@ -343,25 +159,29 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   jaspResults[["varImpPlot2"]]$dependOn(options ="plotVarImp2")
 }
 
-.classRanForPlotTreesVsModelError <- function(jaspResults, options, classRanForResults, ready) {
-  if (!options$plotTreesVsModelError) return()
-  
+.randomForestClassificationTreesError <- function(options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["plotTreesVsModelError"]]) || !options[["plotTreesVsModelError"]]) return()
+
+  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = "Trees vs. Model Error", width = 500, height = 300)
+  plotTreesVsModelError$position <- position
+  plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD",
+                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+  jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
+
+  if(!ready) return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
+
   treesMSE <- dplyr::tibble(
-    trees = 1:length(classRanForResults$res$err.rate[,1]),
-    error = classRanForResults$res$err.rate[,1]
+    trees = 1:length(classificationResult[["rfit"]]$err.rate[,1]),
+    error = classificationResult[["rfit"]]$err.rate[,1]
   )
   
-  plotTreesVsModelError <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
-      ggplot2::geom_line(size = 1) +
-      ggplot2::scale_x_continuous(name = "Trees", labels = scales::comma) +
-      ggplot2::scale_y_continuous(name = "OOB Classification Error")
-  )
-  
-  jaspResults[['plotTreesVsModelError']] <- createJaspPlot(plot = plotTreesVsModelError, title = "Trees vs. Model Error",
-                                                   width = 400, height = 400)
-  
-  jaspResults[["plotTreesVsModelError"]]$position <- 7
-  jaspResults[["plotTreesVsModelError"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  jaspResults[["plotTreesVsModelError"]]$dependOn(options ="plotTreesVsModelError")
+  p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
+        ggplot2::geom_line() +
+        ggplot2::scale_x_continuous(name = "Trees", labels = scales::comma) +
+        ggplot2::scale_y_continuous(name = "OOB Classification Error")
+  p <- JASPgraphs::themeJasp(p)
+  plotTreesVsModelError$plotObject <- p
 }
