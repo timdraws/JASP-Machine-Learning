@@ -61,12 +61,12 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     } else { 
       nnRange <- 1:options[["maxK"]]
       errorStore <- numeric(length(nnRange))
-      jaspResults$startProgressbar(length(nnRange))
+      startProgressbar(length(nnRange))
       for(i in nnRange){
           kfit_tmp <- kknn::kknn(formula = formula, train = train, test = test, k = i, 
               distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
           errorStore[i] <- 1 - sum(diag(prop.table(table(kfit_tmp$fitted.values, test[,.v(options[["target"]])]))))
-          jaspResults$progressbarTick()
+          progressbarTick()
       }
       nn <- base::switch(options[["modelOpt"]],
                           "optimizationError" = nnRange[which.min(errorStore)])
@@ -105,12 +105,12 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
 
       nnRange <- 1:options[["maxK"]]
       errorStore <- numeric(length(nnRange))
-      jaspResults$startProgressbar(length(nnRange))
+      startProgressbar(length(nnRange))
       for(i in nnRange){
           kfit_tmp <- kknn::cv.kknn(formula = formula, data = dataset, distance = options[['distanceParameterManual']], kernel = options[['weights']],
                             kcv = options[['noOfFolds']], k = i)
           errorStore[i] <- 1 - sum(diag(prop.table(table(kfit_tmp[[1]][,1], kfit_tmp[[1]][,2]))))
-          jaspResults$progressbarTick()
+          progressbarTick()
       }
       nn <- base::switch(options[["modelOpt"]],
                         "optimizationError" = nnRange[which.min(errorStore)])

@@ -236,7 +236,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   oldFontSize <- JASPgraphs::getGraphOption("fontsize")
   JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
   
-  jaspResults$startProgressbar(length(plotMat)+1)
+  startProgressbar(length(plotMat)+1)
   for (row in seq_len(l)) {
     for (col in seq_len(l)) {
       if (row == col) {
@@ -292,7 +292,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
         if (col == 1 && row == 2){
           plotMat[[2, 1]] <- .legendPlot(dataset, options, col) 
         }
-        jaspResults$progressbarTick()
+        progressbarTick()
       }
     }
   }  
@@ -304,7 +304,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables, topLabels = variables,
                                 scaleXYlabels = NULL, labelPos = labelPos)
   
-  jaspResults$progressbarTick()
+  progressbarTick()
   matrixplot$plotObject <- p
 }
   

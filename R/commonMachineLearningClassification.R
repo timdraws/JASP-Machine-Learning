@@ -272,7 +272,7 @@
   JASPgraphs::setGraphOption("fontsize", .85 * oldFontSize)
   
   target <- dataset[, .v(options[["target"]])]
-  jaspResults$startProgressbar(length(plotMat)+1)
+  startProgressbar(length(plotMat)+1)
 
   for (row in 2:l) {
     for (col in 1:(l-1)) {
@@ -301,7 +301,7 @@
       if(l > 2)
       if(options[["plotLegend"]])
         plotMat[[1, 2]] <- .legendPlot(dataset, options, col)
-      jaspResults$progressbarTick()
+      progressbarTick()
     }
   }
   
@@ -313,7 +313,7 @@
   p <- JASPgraphs::ggMatrixPlot(plotList = plotMat, leftLabels = variables[-1], topLabels = variables[-length(variables)],
                                 scaleXYlabels = NULL, labelPos = labelPos)
   
-  jaspResults$progressbarTick()
+  progressbarTick()
   decisionBoundary$plotObject <- p
 }
 

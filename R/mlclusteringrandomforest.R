@@ -64,7 +64,7 @@ if(options[["modelOpt"]] == "validationManual"){
     aicStore <-  numeric(options[["maxClusters"]] - 1)
     bicStore <-  numeric(options[["maxClusters"]] - 1)
 
-    jaspResults$startProgressbar(length(clusterRange))
+    startProgressbar(length(clusterRange))
 
 	rfit_tmp <- randomForest::randomForest(x = dataset[, .v(options[["predictors"]])], 
 									y = NULL, 
@@ -98,7 +98,7 @@ if(options[["modelOpt"]] == "validationManual"){
 	aicStore[i - 1] <- D + 2*m*k
 	bicStore[i - 1] <- D + log(n)*m*k
       
-    jaspResults$progressbarTick()
+    progressbarTick()
   }
 
   clusters <- base::switch(options[["modelOpt"]],

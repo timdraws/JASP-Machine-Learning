@@ -65,7 +65,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
     aicStore <-  numeric(options[["maxClusters"]] - 1)
     bicStore <-  numeric(options[["maxClusters"]] - 1)
 
-    jaspResults$startProgressbar(length(clusterRange))
+    startProgressbar(length(clusterRange))
 
     for (i in clusterRange){
 
@@ -99,7 +99,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
       aicStore[i - 1] <- D + 2*m*k
       bicStore[i - 1] <- D + log(n)*m*k
       
-      jaspResults$progressbarTick()
+      progressbarTick()
     }
 
     clusters <- base::switch(options[["modelOpt"]],
