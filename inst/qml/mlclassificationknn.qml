@@ -43,19 +43,50 @@ Form {
     GroupBox {
         title: qsTr("Tables")
         
-        CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
-          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} }  
+        CheckBox { 
+            text: qsTr("Confusion matrix")
+            name: "confusionTable"
+            checked: true
+
+          CheckBox { 
+              text: qsTr("Display proportions")
+              name: "confusionProportions"
+              } 
+        }  
     }
     
     GroupBox {
         title: qsTr("Plots")
         
-        CheckBox { text: qsTr("Classification error") ; name: "plotErrorVsK"; enabled: !optimizationManual.checked }
-        CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries"); enabled: predictors.count > 1
+        CheckBox { 
+            text: qsTr("Classification error") 
+            name: "plotErrorVsK"
+            enabled: !optimizationManual.checked 
+        }
+
+        CheckBox { 
+            name: "rocCurve"
+            text: qsTr("ROC curve") 
+        }
+
+        CheckBox { 
+            name: "decisionBoundary"
+            text: qsTr("Decision boundaries")
+            enabled: predictors.count > 1
+
             RowLayout {
-                CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
-                CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }
+
+                CheckBox {
+                    name: "plotLegend"
+                    text: qsTr("Legend")
+                    checked: true 
+                } 
+
+                CheckBox {
+                    name: "plotPoints"
+                    text: qsTr("Points")
+                    checked: true 
+                }
             }
         }
     }
@@ -70,35 +101,81 @@ Form {
                 title: qsTr("Model Optimization")
                 name: "modelOpt"
               
-              RadioButton { text: qsTr("Classification error")          ; name: "optimizationError"; checked: true }
-              RadioButton { text: qsTr("Manual")                        ; name: "optimizationManual"; id: optimizationManual }
+                RadioButton { 
+                    text: qsTr("Classification error")
+                    name: "optimizationError"
+                    checked: true 
+                }
+
+                RadioButton { 
+                    text: qsTr("Manual")                     
+                    name: "optimizationManual"
+                    id: optimizationManual 
+                }
             }
 
             RadioButtonGroup {
                 title: qsTr("Cross Validation")
                 name: "modelValid"
               
-              RadioButton { text: qsTr("Leave-one-out")                 ; name: "validationLeaveOneOut"; checked: true; id: validationLeaveOneOut }
-              RadioButton { name: "validationKFold"; childrenOnSameRow: true
-                  IntegerField {
-                      name: "noOfFolds"
-                      afterLabel: qsTr("-fold")
-                      defaultValue: 3
-                      min: 2
-                      max: 15
-                      fieldWidth: 25
-                 }
+                RadioButton { 
+                    text: qsTr("Leave-one-out")                 
+                    name: "validationLeaveOneOut"
+                    checked: true
+                    id: validationLeaveOneOut 
                 }
-            RadioButton { text: qsTr("None")                        ; name: "validationManual"; id: validationManual }
+
+                RadioButton { 
+                    name: "validationKFold"
+                    childrenOnSameRow: true
+
+                    IntegerField {
+                        name: "noOfFolds"
+                        afterLabel: qsTr("-fold")
+                        defaultValue: 3
+                        min: 2
+                        max: 15
+                        fieldWidth: 25
+                    } 
+                }
+
+                RadioButton { 
+                    text: qsTr("None") 
+                    name: "validationManual"
+                    id: validationManual 
+                }
             }
-
-
           }
         
           GroupBox {
-              IntegerField { name: "noOfNearestNeighbours"; text: qsTr("No. of nearest neighbors:") ; defaultValue: 3 ; min: 1; max: 999999; fieldWidth: 60; enabled: optimizationManual.checked }
-              IntegerField { name: "maxK"; text: qsTr("Max. nearest neighbors:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: !optimizationManual.checked }
-              PercentField { name: "trainingDataManual"; text: qsTr("Data used for training:")       ; defaultValue: 80; enabled: validationManual.checked }
+
+              IntegerField { 
+                  name: "noOfNearestNeighbours"
+                  text: qsTr("No. of nearest neighbors:")
+                  defaultValue: 3
+                  min: 1
+                  max: 999999
+                  fieldWidth: 60
+                  enabled: optimizationManual.checked 
+                }
+
+              IntegerField { 
+                  name: "maxK"
+                  text: qsTr("Max. nearest neighbors:") 
+                  defaultValue: 10 
+                  min: 1
+                  max: 999999
+                  fieldWidth: 60
+                  enabled: !optimizationManual.checked 
+                }
+
+              PercentField { 
+                  name: "trainingDataManual"
+                  text: qsTr("Data used for training:")
+                  defaultValue: 80
+                  enabled: validationManual.checked 
+                }
+
                 DropDown {
                     name: "distanceParameterManual"
                     indexDefaultValue: 0
@@ -109,6 +186,7 @@ Form {
                         { label: "Manhattan", value: "1"}
                     ]
                 }
+
                 DropDown {
                     name: "weights"
                     indexDefaultValue: 0
@@ -126,10 +204,22 @@ Form {
                         { label: "Optimal", value: "optimal"}
                     ]
                 }
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
-                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+
+                CheckBox { 
+                    name: "seedBox"
+                    text: qsTr("Set seed:")
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField  { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    }
+                }
             }
-          }
         }
     }
     
@@ -157,8 +247,7 @@ Form {
     //                   }
     //       }  
     // }
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -168,8 +257,11 @@ Form {
             id: 			saveModel
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
-            enabled: 		predictors.count > 0 && target.count > 0
-            onClicked:      { }
+            enabled: 		predictors.count > 1 && target.count > 0
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }

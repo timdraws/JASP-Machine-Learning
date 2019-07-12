@@ -22,67 +22,147 @@ import JASP.Widgets 1.0
 
 Form {
 
-VariablesForm {
-    AvailableVariablesList {name: "variables"}
-    AssignedVariablesList {
-        id: predictors
-        name: "predictors"
-        title: qsTr("Variables")
-        singleVariable: false
-        allowedColumns: ["ordinal", "scale"]
-    }
-}
-
-GroupBox {
-    title: qsTr("Tables")
-
-    CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
-        CheckBox { text: qsTr("Within sum of squares") ; name: "tableClusterInfoWSS" ; checked: true}
-        CheckBox { text: qsTr("Silhouette score") ; name: "tableClusterInfoSilhouette" ; checked: false}
-        CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false }
-        CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false }
-    }
-}
-
-GroupBox {
-    title: qsTr("Plots")
-    
-    CheckBox { text: qsTr("K-distance plot")         ; name: "k-distplot"    ; checked: false; enabled: true}
-    CheckBox { text: qsTr("T-sne cluster plot")     ; name: "plot2dCluster" ; checked: false; enabled: true;
-        RowLayout{ CheckBox {text: qsTr("Legend")  ; name: "legend"; checked: true } 
-                CheckBox {text: qsTr("Labels")  ; name: "labels"; checked: false }
+    VariablesForm {
+        AvailableVariablesList {name: "variables"}
+        AssignedVariablesList {
+            id: predictors
+            name: "predictors"
+            title: qsTr("Variables")
+            singleVariable: false
+            allowedColumns: ["ordinal", "scale"]
         }
-    }
-}
-
-Section {
-    title: qsTr("Training Parameters")
-
-    RadioButtonGroup {
-        title: qsTr("Model Optimization")
-        name: "modelOpt"
-        RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
     }
 
     GroupBox {
-        DoubleField { name: "eps"; text: qsTr("eps:") ; decimals: 2; defaultValue: 2 ; min: 0.001; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
-        DoubleField { name: "minPts"; text: qsTr("minPts:") ; decimals: 2; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60 }
-        DropDown {
-            name: "distance"
-            indexDefaultValue: 0
-            label: qsTr("Distance:")
-            values:
-            [
-                { label: "Normal", value: "Normal densities"},
-                { label: "Correlated", value: "Correlated densities"}
-            ]
-        }
-        CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
-        CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
-            DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+        title: qsTr("Tables")
+
+        CheckBox { 
+            id: clusterInfo
+            text: qsTr("Cluster information") 
+            name: "tableClusterInformation" 
+            checked: true
+
+            CheckBox { 
+                text: qsTr("Within sum of squares") 
+                name: "tableClusterInfoWSS" 
+                checked: true
+            }
+
+            CheckBox { 
+                text: qsTr("Silhouette score") 
+                name: "tableClusterInfoSilhouette" 
+            }
+
+            CheckBox { 
+                text: qsTr("Between sum of squares") 
+                name: "tableClusterInfoBetweenSumSquares"  
+            }
+
+            CheckBox { 
+                text: qsTr("Total sum of squares") 
+                name: "tableClusterInfoTotalSumSquares" 
+            }
         }
     }
-}
+
+    GroupBox {
+        title: qsTr("Plots")
+        
+        CheckBox { 
+            text: qsTr("K-distance plot")        
+            name: "k-distplot"
+        }
+
+        CheckBox { 
+            text: qsTr("T-sne cluster plot") 
+            name: "plot2dCluster" 
+
+            RowLayout {
+
+                CheckBox {
+                    text: qsTr("Legend")  
+                    name: "legend"
+                    checked: true 
+                }
+
+                CheckBox {
+                    text: qsTr("Labels")  
+                    name: "labels"
+                }
+            }
+        }
+    }
+
+    Section {
+        title: qsTr("Training Parameters")
+
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
+
+            RadioButton { 
+                id: validationManual 
+                text: qsTr("Manual")                          
+                name: "validationManual"
+            }
+        }
+
+        GroupBox {
+
+            DoubleField { 
+                name: "eps"
+                text: qsTr("eps:") 
+                decimals: 2
+                defaultValue: 2 
+                min: 0.001
+                max: 999999
+                fieldWidth: 60
+                enabled: validationManual.checked 
+            }
+
+            DoubleField { 
+                name: "minPts"
+                text: qsTr("minPts:") 
+                decimals: 2
+                defaultValue: 3 
+                min: 2
+                max: 999999
+                fieldWidth: 60 
+            }
+
+            DropDown {
+                name: "distance"
+                indexDefaultValue: 0
+                label: qsTr("Distance:")
+                values:
+                [
+                    { label: "Normal", value: "Normal densities"},
+                    { label: "Correlated", value: "Correlated densities"}
+                ]
+            }
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
+            }
+        }
+    }
 
     // Section {
     // text: qsTr("Predictions")
@@ -108,8 +188,7 @@ Section {
     //                 }
     //     }
     // }
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -120,9 +199,11 @@ Section {
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 1
-            onClicked:      { }
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }
-
 }

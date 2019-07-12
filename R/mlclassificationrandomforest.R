@@ -38,14 +38,15 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 
   # Create the trees vs model error plot
   .randomForestClassificationTreesError(options, jaspResults, ready, position = 4)
-  
-  # # Output plots
-  # if (ready) .classRanForPlotVarImp1(          jaspResults, options, classRanForResults, ready)
-  # if (ready) .classRanForPlotVarImp2(          jaspResults, options, classRanForResults, ready)
-  # if (ready) .classRanForPlotTreesVsModelError(jaspResults, options, classRanForResults, ready)
+
+  # Create the mean decrease in accuracy plot
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 5)
+
+  # Create the total increase in node purity plot
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 6)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "randomForest")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 7, type = "randomForest")
 }
 
 .randomForestClassification <- function(dataset, options, jaspResults){
@@ -121,42 +122,48 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
 }
 
-.classRanForPlotVarImp1 <- function(jaspResults, options, classRanForResults, ready) {
-  if (!options$plotVarImp1) return()
+.randomForestPlotDecreaseAccuracy <- function(options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["plotDecreaseAccuracy"]]) || !options[["plotDecreaseAccuracy"]]) return()
+
+  plotDecreaseAccuracy <- createJaspPlot(plot = NULL, title = "Mean Decrease in Accuracy", width = 500, height = 300)
+  plotDecreaseAccuracy$position <- position
+  plotDecreaseAccuracy$dependOn(options = c("plotDecreaseAccuracy", "trainingDataManual", "scaleEqualSD",
+                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+  jaspResults[["plotDecreaseAccuracy"]] <- plotDecreaseAccuracy
+
+  if(!ready) return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
   
-  varImpPlot1 <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(classRanForResults$varImp, ggplot2::aes(x = reorder(Variable, MeanIncrMSE), y = MeanIncrMSE)) +
+  p <- ggplot2::ggplot(classificationResult[["varImp"]], ggplot2::aes(x = reorder(Variable, MeanIncrMSE), y = MeanIncrMSE)) +
       ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
-      ggplot2::labs(x = "", y = "Mean Decrease in Accuracy"),
-    horizontal = TRUE
-  )
+      ggplot2::labs(x = "", y = "Mean Decrease in Accuracy")
+  p <-JASPgraphs::themeJasp(p, horizontal = TRUE)
   
-  jaspResults[['varImpPlot1']] <- createJaspPlot(plot = varImpPlot1, title = "Mean Decrease in Accuracy per Variable",
-                                                 width = 400, height = 20 * nrow(classRanForResults$varImp) + 60)
-  
-  jaspResults[["varImpPlot1"]]$position <- 5
-  jaspResults[["varImpPlot1"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  jaspResults[["varImpPlot1"]]$dependOn(options ="plotVarImp1")
+  plotDecreaseAccuracy$plotObject <- p
 }
 
-.classRanForPlotVarImp2 <- function(jaspResults, options, classRanForResults, ready) {
-  if (!options$plotVarImp2) return()
+.randomForestPlotIncreasePurity <- function(options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["plotIncreasePurity"]]) || !options[["plotIncreasePurity"]]) return()
+
+  plotIncreasePurity <- createJaspPlot(plot = NULL, title = "Total Increase in Node Purity", width = 500, height = 300)
+  plotIncreasePurity$position <- position
+  plotIncreasePurity$dependOn(options = c("plotIncreasePurity", "trainingDataManual", "scaleEqualSD",
+                                            "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+  jaspResults[["plotIncreasePurity"]] <- plotIncreasePurity
+
+  if(!ready) return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
   
-  varImpPlot2 <- JASPgraphs::themeJasp(
-    ggplot2::ggplot(classRanForResults$varImp, ggplot2::aes(x = reorder(Variable, TotalDecrNodeImp), 
-                                                            y = TotalDecrNodeImp)) +
-      ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
-      ggplot2::labs(x = "", y = "Total Increase in Node Purity"),
-    horizontal = TRUE
-  )
-  
-  jaspResults[['varImpPlot2']] <- createJaspPlot(plot = varImpPlot2, 
-                                                 title = "Total Increase in Node Purity per Variable",
-                                                 width = 400, height = 20 * nrow(classRanForResults$varImp) + 60)
-  
-  jaspResults[["varImpPlot2"]]$position <- 6
-  jaspResults[["varImpPlot2"]]$dependOn(optionsFromObject =jaspResults[["classRanForTable"]])
-  jaspResults[["varImpPlot2"]]$dependOn(options ="plotVarImp2")
+  p <- ggplot2::ggplot(classificationResult[["varImp"]], ggplot2::aes(x = reorder(Variable, TotalDecrNodeImp), y = TotalDecrNodeImp)) +
+        ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", size = .3) +
+        ggplot2::labs(x = "", y = "Total Increase in Node Purity")
+  p <- JASPgraphs::themeJasp(p, horizontal = TRUE)
+
+  plotIncreasePurity$plotObject <- p
 }
 
 .randomForestClassificationTreesError <- function(options, jaspResults, ready, position){

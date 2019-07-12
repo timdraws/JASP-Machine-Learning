@@ -43,79 +43,145 @@ Form {
     GroupBox {
         title: qsTr("Plots")
         
-        CheckBox { text: qsTr("Predicted performance") ; name: "predictedPerformancePlot"; checked: true }
-        CheckBox { text: qsTr("Mean squared error") ; name: "plotErrorVsK"; enabled: !optimizationManual.checked }
+        CheckBox { 
+            text: qsTr("Predicted performance") 
+            name: "predictedPerformancePlot"
+            checked: true 
+        }
+
+        CheckBox { 
+            text: qsTr("Mean squared error") 
+            name: "plotErrorVsK"
+            enabled: !optimizationManual.checked 
+        }
     }
     
     Section {
         title: qsTr("Training Parameters")
 
-        GridLayout {
-            ColumnLayout{
+        ColumnLayout{
 
             RadioButtonGroup {
                 title: qsTr("Model Optimization")
                 name: "modelOpt"
-              
-              RadioButton { text: qsTr("Mean squared error")          ; name: "optimizationError"; checked: true }
-              RadioButton { text: qsTr("Manual")                        ; name: "optimizationManual"; id: optimizationManual }
+                
+                RadioButton { 
+                    text: qsTr("Mean squared error")          
+                    name: "optimizationError"
+                    checked: true 
+                }
+
+                RadioButton { 
+                    id: optimizationManual 
+                    text: qsTr("Manual")                        
+                    name: "optimizationManual"
+                }
             }
 
             RadioButtonGroup {
                 title: qsTr("Cross Validation")
                 name: "modelValid"
-              
-              RadioButton { text: qsTr("Leave-one-out")                 ; name: "validationLeaveOneOut"; checked: true; id: validationLeaveOneOut }
-              RadioButton { name: "validationKFold"; childrenOnSameRow: true
-                  IntegerField {
-                      name: "noOfFolds"
-                      afterLabel: qsTr("-fold")
-                      defaultValue: 3
-                      min: 2
-                      max: 15
-                      fieldWidth: 25
-                 }
+                
+                RadioButton { 
+                    id: validationLeaveOneOut 
+                    text: qsTr("Leave-one-out")        
+                    name: "validationLeaveOneOut"
+                    checked: true;
                 }
-            RadioButton { text: qsTr("None")                        ; name: "validationManual"; id: validationManual }
+
+                RadioButton { 
+                    name: "validationKFold"
+                    childrenOnSameRow: true
+
+                    IntegerField {
+                        name: "noOfFolds"
+                        afterLabel: qsTr("-fold")
+                        defaultValue: 3
+                        min: 2
+                        max: 15
+                        fieldWidth: 25
+                    }
+                }
+
+                RadioButton { 
+                    id: validationManual 
+                    text: qsTr("None")                       
+                    name: "validationManual"
+                }
+            }
+        }
+    
+        GroupBox {
+
+            IntegerField { 
+                name: "noOfNearestNeighbours"
+                text: qsTr("No. of nearest neighbors:") 
+                defaultValue: 3 
+                min: 1; max: 999999
+                fieldWidth: 60
+                enabled: optimizationManual.checked 
             }
 
+            IntegerField { 
+                name: "maxK"
+                text: qsTr("Max. nearest neighbors:") 
+                defaultValue: 10 
+                min: 1
+                max: 999999
+                fieldWidth: 60
+                enabled: !optimizationManual.checked 
+            }
 
-          }
-        
-          GroupBox {
-              IntegerField { name: "noOfNearestNeighbours"; text: qsTr("No. of nearest neighbors:") ; defaultValue: 3 ; min: 1; max: 999999; fieldWidth: 60; enabled: optimizationManual.checked }
-              IntegerField { name: "maxK"; text: qsTr("Max. nearest neighbors:") ; defaultValue: 10 ; min: 1; max: 999999; fieldWidth: 60; enabled: !optimizationManual.checked }
-              PercentField { name: "trainingDataManual"; text: qsTr("Data used for training:")       ; defaultValue: 80; enabled: validationManual.checked }
-                DropDown {
-                    name: "distanceParameterManual"
-                    indexDefaultValue: 0
-                    label: qsTr("Distance:")
-                    values:
-                    [
-                        { label: "Euclidian", value: "2"},
-                        { label: "Manhattan", value: "1"}
-                    ]
+            PercentField { 
+                name: "trainingDataManual"
+                text: qsTr("Data used for training:")       
+                defaultValue: 80
+                enabled: validationManual.checked 
+            }
+
+            DropDown {
+                name: "distanceParameterManual"
+                indexDefaultValue: 0
+                label: qsTr("Distance:")
+                values:
+                [
+                    { label: "Euclidian", value: "2"},
+                    { label: "Manhattan", value: "1"}
+                ]
+            }
+            
+            DropDown {
+                name: "weights"
+                indexDefaultValue: 0
+                label: qsTr("Weights:")
+                values:
+                [
+                    { label: "Rectangular", value: "rectangular"},
+                    { label: "Epanechnikov", value: "epanechnikov"},
+                    { label: "Biweight", value: "biweight"},
+                    { label: "Triweight", value: "triweight"},
+                    { label: "Cosine", value: "cos"},
+                    { label: "Inverse", value: "inv"},
+                    { label: "Gaussian", value: "gaussian"},
+                    { label: "Rank", value: "rank"},
+                    { label: "Optimal", value: "optimal"}
+                ]
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
                 }
-                DropDown {
-                    name: "weights"
-                    indexDefaultValue: 0
-                    label: qsTr("Weights:")
-                    values:
-                    [
-                        { label: "Rectangular", value: "rectangular"},
-                        { label: "Epanechnikov", value: "epanechnikov"},
-                        { label: "Biweight", value: "biweight"},
-                        { label: "Triweight", value: "triweight"},
-                        { label: "Cosine", value: "cos"},
-                        { label: "Inverse", value: "inv"},
-                        { label: "Gaussian", value: "gaussian"},
-                        { label: "Rank", value: "rank"},
-                        { label: "Optimal", value: "optimal"}
-                    ]
-                }
-              CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
-                  DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }}
-          }
+            }
         }
     }
     
@@ -144,8 +210,7 @@ Form {
     //       }  
     // }
 
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -156,7 +221,10 @@ Form {
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 0 && target.count > 0
-            onClicked:      { }
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }

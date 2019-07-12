@@ -21,60 +21,128 @@ import QtQuick.Layouts 1.3
 import JASP.Controls 1.0
 import JASP.Theme 1.0
 
-// All Analysis forms must be built with the From QML item
-Form
-{
+Form {
 
     VariablesForm {
         AvailableVariablesList { name: "allVariablesList" }
-        AssignedVariablesList  { name: "target"    ; title: qsTr("Target")         ; singleVariable: true; allowedColumns: ["nominal", "nominalText", "ordinal"]; id: target }
-        AssignedVariablesList  { name: "predictors"; title: qsTr("Predictors"); allowedColumns: ["scale", "ordinal", "nominal"]; id: predictors                                        }
+        AssignedVariablesList  { 
+            name: "target"    
+            title: qsTr("Target")         
+            singleVariable: true
+            allowedColumns: ["nominal", "nominalText", "ordinal"]
+            id: target 
+        }
+        AssignedVariablesList  { 
+            name: "predictors"
+            title: qsTr("Predictors")
+            allowedColumns: ["scale", "ordinal", "nominal"]
+            id: predictors                                        
+        }
     }
 
     ColumnLayout {
 
         GroupBox {
-        title: qsTr("Tables")
+            title: qsTr("Tables")
 
-        CheckBox { text: qsTr("Confusion matrix") ; name: "confusionTable"; checked: true
-          CheckBox { text: qsTr("Display proportions"); name: "confusionProportions"} } 
-        CheckBox { name: "coefficientsTable";   text: qsTr("Coefficients")       }
-        CheckBox { name: "priorTable";	    text: qsTr("Prior and posterior probabilities")            }
-        CheckBox { name: "meanTable";       text: qsTr("Group means training data")             }
+            CheckBox { 
+                text: qsTr("Confusion matrix") 
+                name: "confusionTable"
+                checked: true
+
+                CheckBox { 
+                    text: qsTr("Display proportions")
+                    name: "confusionProportions"
+                } 
+            }
+
+            CheckBox { 
+                name: "coefficientsTable"
+                text: qsTr("Coefficients")       
+            }
+
+            CheckBox { 
+                name: "priorTable"
+                text: qsTr("Prior and posterior probabilities")
+            }
+
+            CheckBox { 
+                name: "meanTable"
+                text: qsTr("Group means training data")             
+            }
         }
 
         GroupBox {
             title: qsTr("Assumptions")
 
-            CheckBox { name: "manovaTable";       text: qsTr("Equality of group means")             }
-            CheckBox { name: "boxTest";           text: qsTr("Equality of covariance matrices")     }
-            CheckBox { name: "multicolTable";      text: qsTr("Multicollinearity")                   }
-        }
+            CheckBox { 
+                name: "manovaTable"
+                text: qsTr("Equality of group means")             
+            }
 
+            CheckBox { 
+                name: "boxTest"
+                text: qsTr("Equality of covariance matrices")     
+            }
+
+            CheckBox { 
+                name: "multicolTable"
+                text: qsTr("Multicollinearity")                   
+            }
+        }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "rocCurve"; text: qsTr("ROC curve") }
-        CheckBox { name: "decisionBoundary"; text: qsTr("Decision boundaries"); enabled: predictors.count > 1 
+        CheckBox { 
+            name: "rocCurve"
+            text: qsTr("ROC curve") 
+        }
+
+        CheckBox { 
+            name: "decisionBoundary"
+            text: qsTr("Decision boundaries")
+            enabled: predictors.count > 1 
+
             RowLayout {
-                CheckBox {name: "plotLegend"; text: qsTr("Legend"); checked: true } 
-                CheckBox {name: "plotPoints"; text: qsTr("Points"); checked: true }
+
+                CheckBox {
+                    name: "plotLegend"
+                    text: qsTr("Legend")
+                    checked: true 
+                }
+
+                CheckBox {
+                    name: "plotPoints"
+                    text: qsTr("Points")
+                    checked: true 
+                }
             }
         }
-        CheckBox { name: "matrixplot"
+
+        CheckBox { 
+            name: "matrixplot"
             text: qsTr("Discriminant matrix")
 
             RowLayout {
-                CheckBox { name: "plotDensities"; text:qsTr("Densities"); checked: true}
-                CheckBox { name: "plotStatistics"; text: qsTr("Scatter plots"); checked: true}
+
+                CheckBox { 
+                    name: "plotDensities"
+                    text:qsTr("Densities")
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "plotStatistics"
+                    text: qsTr("Scatter plots")
+                    checked: true
+                }
             }
         }
     }
 
-    Section
-    {
+    Section {
         title: qsTr("Training Parameters")
 
         ColumnLayout{
@@ -82,19 +150,34 @@ Form
             RadioButtonGroup {
                 title: qsTr("Model Optimization")
                 name: "modelOpt"
-                RadioButton { text: qsTr("Manual") ; name: "optimizationManual"; checked: true }
+
+                RadioButton { 
+                    text: qsTr("Manual") 
+                    name: "optimizationManual"
+                    checked: true 
+                }
             }
+
             RadioButtonGroup {
                 title: qsTr("Cross Validation")
                 name: "modelValid"
-                RadioButton { text: qsTr("None") ; name: "validationManual"; checked: true }
-            }
 
+                RadioButton { 
+                    text: qsTr("None") 
+                    name: "validationManual"
+                    checked: true 
+                }
+            }
         }
 
         GroupBox {
 
-            PercentField { name: "trainingDataManual"; text: qsTr("Data used for training:")       ; defaultValue: 80    }
+            PercentField { 
+                name: "trainingDataManual"
+                text: qsTr("Data used for training:")       
+                defaultValue: 80    
+            }
+
             DropDown {
                 name: "estimationMethod"
                 indexDefaultValue: 0
@@ -108,8 +191,20 @@ Form
                 ]
             }
 
-            CheckBox { name: "seedBox"; text: qsTr("Set seed: "); childrenOnSameRow: true; checked: true
-                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 } }
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed: ")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField  { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                } 
+            }
         }
     }
 
@@ -129,8 +224,7 @@ Form
     //                }
     //             }
     // }
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -141,7 +235,10 @@ Form
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 0 && target.count > 0
-            onClicked:      { }
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }

@@ -24,7 +24,7 @@ import JASP.Widgets 1.0
 Form {
 
     VariablesForm {
-        AvailableVariablesList {name: "variables"}
+        AvailableVariablesList { name: "variables"}
         AssignedVariablesList {
             id: predictors
             name: "predictors"
@@ -37,22 +37,65 @@ Form {
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { text: qsTr("Cluster information") ; name: "tableClusterInformation" ; enabled: true ; id: clusterInfo; checked: true
-          CheckBox { text: qsTr("Within sum of squares") ; name: "tableClusterInfoWSS" ; checked: true}
-          CheckBox { text: qsTr("Silhouette score") ; name: "tableClusterInfoSilhouette" ; checked: false}
-          CheckBox { text: qsTr("Centroids") ; name: "tableClusterInfoCentroids" ; checked: false}
-          CheckBox { text: qsTr("Between sum of squares") ; name: "tableClusterInfoBetweenSumSquares" ; checked: false}
-          CheckBox { text: qsTr("Total sum of squares") ; name: "tableClusterInfoTotalSumSquares" ; checked: false}
-      }
+        CheckBox { 
+            id: clusterInfo
+            text: qsTr("Cluster information") 
+            name: "tableClusterInformation" 
+            checked: true
+
+            CheckBox { 
+                text: qsTr("Within sum of squares")
+                name: "tableClusterInfoWSS" 
+                checked: true
+            }
+
+            CheckBox { 
+                text: qsTr("Silhouette score")
+                name: "tableClusterInfoSilhouette"
+            }
+
+            CheckBox { 
+                text: qsTr("Centroids")
+                name: "tableClusterInfoCentroids" 
+            }
+
+            CheckBox { 
+                text: qsTr("Between sum of squares") 
+                name: "tableClusterInfoBetweenSumSquares" 
+            }
+
+            CheckBox { 
+                text: qsTr("Total sum of squares")
+                name: "tableClusterInfoTotalSumSquares" 
+            }
+        }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { text: qsTr("Within sum of squares")  ; name: "withinssPlot" ; checked: false; enabled: validationManual.checked ? false : true}
-        CheckBox { text: qsTr("T-sne cluster plot")     ; name: "plot2dCluster" ; checked: false; enabled: true;
-            RowLayout{ CheckBox {text: qsTr("Legend")  ; name: "legend"; checked: true } 
-                    CheckBox {text: qsTr("Labels")  ; name: "labels"; checked: false }
+        CheckBox { 
+            text: qsTr("Within sum of squares")  
+            name: "withinssPlot" 
+            enabled: !validationManual.checked
+        }
+
+        CheckBox { 
+            text: qsTr("T-sne cluster plot")     
+            name: "plot2dCluster" 
+
+            RowLayout {
+
+                CheckBox {
+                    text: qsTr("Legend")  
+                    name: "legend"
+                    checked: true 
+                } 
+                
+                CheckBox {
+                    text: qsTr("Labels")  
+                    name: "labels"
+                }
             }
         }
     }
@@ -60,40 +103,108 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
-        GridLayout {
-          RadioButtonGroup {
-              title: qsTr("Model Optimization")
-              name: "modelOpt"
-              RadioButton { text: qsTr("AIC")                             ; name: "validationAIC" }
-              RadioButton { text: qsTr("BIC")                             ; name: "validationBIC" ; checked: true }
-              RadioButton { text: qsTr("Silhouette")                      ; name: "validationSilh" }
-              RadioButton { text: qsTr("Manual")                          ; name: "validationManual"; id: validationManual }
-          }
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
 
-          GroupBox {
-              IntegerField { name: "noOfClusters"; text: qsTr("Clusters:") ; defaultValue: 3 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked }
-              IntegerField { name: "maxClusters"; text: qsTr("Max. clusters:") ; defaultValue: 10 ; min: 2; max: 999999; fieldWidth: 60; enabled: validationManual.checked ? false : true }
-              IntegerField { name: "noOfIterations"; text: qsTr("Iterations:") ; defaultValue: 25 ; min: 1; max: 999999; fieldWidth: 60 }
-              IntegerField { name: "noOfRandomSets"; text: qsTr("Random sets:") ; defaultValue: 25 ; min: 1; max: 999999; fieldWidth: 60 }
-                DropDown {
-                    name: "algorithm"
-                    indexDefaultValue: 0
-                    label: qsTr("Algorithm:")
-                    values:
-                    [
-                        { label: "Hartigan-Wong", value: "Hartigan-Wong"},
-                        { label: "Lloyd", value: "Lloyd"},
-                        { label: "Forgy", value: "Forgy"},
-                        { label: "MacQueen", value: "MacQueen"}
-                    ]
-                }  
-              CheckBox { text: qsTr("Scale variables") ; name: "scaleEqualSD"; checked: true}
-              CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true; checked: true
-                  DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-              }
-          }
+            RadioButton { 
+                text: qsTr("AIC")                             
+                name: "validationAIC" 
+            }
+
+            RadioButton { 
+                text: qsTr("BIC")                             
+                name: "validationBIC" 
+                checked: true 
+            }
+
+            RadioButton { 
+                text: qsTr("Silhouette")                      
+                name: "validationSilh" 
+            }
+
+            RadioButton { 
+                id: validationManual 
+                text: qsTr("Manual")                          
+                name: "validationManual"
+            }
         }
-      }
+
+        GroupBox {
+
+            IntegerField { 
+                name: "noOfClusters"
+                text: qsTr("Clusters:") 
+                defaultValue: 3 
+                min: 2
+                max: 999999
+                fieldWidth: 60
+                enabled: validationManual.checked 
+            }
+
+            IntegerField { 
+                name: "maxClusters"
+                text: qsTr("Max. clusters:") 
+                defaultValue: 10 
+                min: 2
+                max: 999999
+                fieldWidth: 60
+                enabled: !validationManual.checked 
+            }
+
+            IntegerField { 
+                name: "noOfIterations"
+                text: qsTr("Iterations:") 
+                defaultValue: 25 
+                min: 1
+                max: 999999
+                fieldWidth: 60 
+            }
+
+            IntegerField { 
+                name: "noOfRandomSets"
+                text: qsTr("Random sets:") 
+                defaultValue: 25 
+                min: 1
+                max: 999999
+                fieldWidth: 60 
+            }
+
+            DropDown {
+                name: "algorithm"
+                indexDefaultValue: 0
+                label: qsTr("Algorithm:")
+                values:
+                [
+                    { label: "Hartigan-Wong", value: "Hartigan-Wong"},
+                    { label: "Lloyd", value: "Lloyd"},
+                    { label: "Forgy", value: "Forgy"},
+                    { label: "MacQueen", value: "MacQueen"}
+                ]
+            }  
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
+            }
+        }
+    }
 
     //   Section {
     //     text: qsTr("Predictions")
@@ -119,8 +230,7 @@ Form {
     //                     }
     //         }
     //   }
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -131,7 +241,10 @@ Form {
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 1
-            onClicked:      { }
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }

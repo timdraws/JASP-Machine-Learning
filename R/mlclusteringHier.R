@@ -177,7 +177,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   dendrogram$position <- position
   dendrogram$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "dendogram"))
+                                          "linkage", "m", "dendrogram"))
   jaspResults[["dendrogram"]] <- dendrogram
 
   if(!ready) return()
