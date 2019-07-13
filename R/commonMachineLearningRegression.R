@@ -126,6 +126,8 @@
   if(!ready) return()
 
   regressionResult <- jaspResults[["regressionResult"]]$object  
+
+  graphicType <- ifelse(options[["maxK"]] <= 50, yes = "point", no = "line")
    
   xvalues <- 1:options[["maxK"]]
   yvalues <- regressionResult[["errorStore"]]      
@@ -133,11 +135,16 @@
   xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
   yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
     
-  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) +
-          JASPgraphs::geom_point()
+  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y))
+  if(graphicType == "point"){
+    p <- p + JASPgraphs::geom_point()
+  } else {
+    p <- p + JASPgraphs::geom_line()
+  }
   p <- p + ggplot2::scale_x_continuous(name = "Nearest neighbors", breaks = xBreaks, limits = range(xBreaks)) + 
           ggplot2::scale_y_continuous(name = "Mean squared error", breaks = yBreaks, limits = range(yBreaks))
-  p <- p + JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = regressionResult[["nn"]], y = yvalues[regressionResult[["nn"]]]), fill = "red")
+  if(graphicType == "point")
+    p <- p + JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = regressionResult[["nn"]], y = yvalues[regressionResult[["nn"]]]), fill = "red")
   p <- JASPgraphs::themeJasp(p)
 
   plotErrorVsK$plotObject <- p

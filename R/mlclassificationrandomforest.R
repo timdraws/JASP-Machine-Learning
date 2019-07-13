@@ -67,16 +67,34 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
     noOfPredictors <- floor(sqrt(length(options[["numberOfPredictors"]])))
   }
 
-  rfit <- randomForest::randomForest(x = predictors, y = target, xtest = test_predictors, ytest = test_target,
-                                                 ntree = options[["noOfTrees"]], mtry = noOfPredictors,
-                                                 sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
-                                                 importance = TRUE, keep.forest = TRUE)
+  if(options[["modelOpt"]] == "optimizationManual"){
+      rfit <- randomForest::randomForest(x = predictors, y = target, xtest = test_predictors, ytest = test_target,
+                                              ntree = options[["noOfTrees"]], mtry = noOfPredictors,
+                                              sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                              importance = TRUE, keep.forest = TRUE)
+      noOfTrees <- options[["noOfTrees"]]
+  } else if(options[["modelOpt"]] == "optimizationError"){
+    rfit <- randomForest::randomForest(x = predictors, y = target, xtest = test_predictors, ytest = test_target,
+                                        ntree = options[["maxTrees"]], mtry = noOfPredictors,
+                                        sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                        importance = TRUE, keep.forest = TRUE)
+    oobError <- rfit$err.rate[, 1]
+    optimTrees <- which.min(oobError)[length(which.min(oobError))]
+
+    rfit <- randomForest::randomForest(x = predictors, y = target, xtest = test_predictors, ytest = test_target,
+                                            ntree = optimTrees, mtry = noOfPredictors,
+                                            sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                            importance = TRUE, keep.forest = TRUE)
+
+    noOfTrees <- optimTrees
+  }
+
 
   classificationResult <- list()
   classificationResult[["rfit"]]          <- rfit
   classificationResult[["train"]]         <- train
   classificationResult[["test"]]          <- test
-  classificationResult[["noOfTrees"]]     <- options[["noOfTrees"]]
+  classificationResult[["noOfTrees"]]     <- noOfTrees
   classificationResult[["predPerSplit"]]  <- noOfPredictors
   classificationResult[["bagFrac"]]       <- ceiling(options[["bagFrac"]]*nrow(dataset))
   classificationResult[["y"]]             <- rfit$test[["predicted"]]
@@ -101,7 +119,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
   tableVariableImportance <- createJaspTable(title = "Variable Importance")
   tableVariableImportance$position <- 3
-  tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors",
+  tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors", "modelOpt", "maxTrees",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox"))
 
   tableVariableImportance$addColumnInfo(name = "predictor",  title = " ", type = "string")
@@ -128,7 +146,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 
   plotDecreaseAccuracy <- createJaspPlot(plot = NULL, title = "Mean Decrease in Accuracy", width = 500, height = 300)
   plotDecreaseAccuracy$position <- position
-  plotDecreaseAccuracy$dependOn(options = c("plotDecreaseAccuracy", "trainingDataManual", "scaleEqualSD",
+  plotDecreaseAccuracy$dependOn(options = c("plotDecreaseAccuracy", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   jaspResults[["plotDecreaseAccuracy"]] <- plotDecreaseAccuracy
 
@@ -150,7 +168,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 
   plotIncreasePurity <- createJaspPlot(plot = NULL, title = "Total Increase in Node Purity", width = 500, height = 300)
   plotIncreasePurity$position <- position
-  plotIncreasePurity$dependOn(options = c("plotIncreasePurity", "trainingDataManual", "scaleEqualSD",
+  plotIncreasePurity$dependOn(options = c("plotIncreasePurity", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   jaspResults[["plotIncreasePurity"]] <- plotIncreasePurity
 
@@ -170,9 +188,9 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["plotTreesVsModelError"]]) || !options[["plotTreesVsModelError"]]) return()
 
-  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = "Trees vs. Model Error", width = 500, height = 300)
+  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = "Trees vs. Out-of-bag Error", width = 500, height = 300)
   plotTreesVsModelError$position <- position
-  plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD",
+  plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
   jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
 
@@ -184,11 +202,14 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
     trees = 1:length(classificationResult[["rfit"]]$err.rate[,1]),
     error = classificationResult[["rfit"]]$err.rate[,1]
   )
+
+  xBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["trees"]], min.n = 4)
+  yBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["error"]], min.n = 4)
   
   p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
         ggplot2::geom_line() +
-        ggplot2::scale_x_continuous(name = "Trees", labels = scales::comma) +
-        ggplot2::scale_y_continuous(name = "OOB Classification Error")
+        ggplot2::scale_x_continuous(name = "Trees", labels = xBreaks, breaks = xBreaks) +
+        ggplot2::scale_y_continuous(name = "OOB Classification Error", labels = yBreaks, breaks = yBreaks)
   p <- JASPgraphs::themeJasp(p)
   plotTreesVsModelError$plotObject <- p
 }

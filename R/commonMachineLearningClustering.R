@@ -119,6 +119,8 @@
   clusteringTable$addCitation("Hartigan, J. A., & Wong, M. A. (1979). Algorithm AS 136: A k-means clustering algorithm. Journal of the Royal Statistical Society. Series C (Applied Statistics), 28(1), 100-108.")
   jaspResults[["clusteringTable"]]      <- clusteringTable
 
+  if(!ready) clusteringTable$addFootnote(message="Please provide at least two variables.", symbol="<i>Note.</i>")
+
   if(!ready) return()
 
   clusterResult <- jaspResults[["clusterResult"]]$object
