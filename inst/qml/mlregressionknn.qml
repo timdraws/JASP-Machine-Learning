@@ -86,7 +86,6 @@ Form {
                     id: validationLeaveOneOut 
                     text: qsTr("Leave-one-out")        
                     name: "validationLeaveOneOut"
-                    checked: true;
                 }
 
                 RadioButton { 
@@ -107,6 +106,7 @@ Form {
                     id: validationManual 
                     text: qsTr("None")                       
                     name: "validationManual"
+                    checked: true
                 }
             }
         }

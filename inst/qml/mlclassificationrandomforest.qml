@@ -69,6 +69,11 @@ Form {
         }
 
         CheckBox { 
+            name: "rocCurve"
+            text: qsTr("ROC curve") 
+        }
+
+        CheckBox { 
             name: "plotDecreaseAccuracy"
             text: qsTr("Mean decrease in accuracy") 
         }

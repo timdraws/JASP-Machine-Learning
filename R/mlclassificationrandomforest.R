@@ -39,14 +39,17 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   # Create the trees vs model error plot
   .randomForestClassificationTreesError(options, jaspResults, ready, position = 4)
 
+  # Create the ROC curve
+  .rocCurve(options, jaspResults, ready, position = 5)
+
   # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 5)
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 6)
 
   # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 6)
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 7)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 7, type = "randomForest")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "randomForest")
 }
 
 .randomForestClassification <- function(dataset, options, jaspResults){
@@ -208,7 +211,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   
   p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
         ggplot2::geom_line() +
-        ggplot2::scale_x_continuous(name = "Trees", labels = xBreaks, breaks = xBreaks) +
+        ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
         ggplot2::scale_y_continuous(name = "OOB Classification Error", labels = yBreaks, breaks = yBreaks)
   p <- JASPgraphs::themeJasp(p)
   plotTreesVsModelError$plotObject <- p

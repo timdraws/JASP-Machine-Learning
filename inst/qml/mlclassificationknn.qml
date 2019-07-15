@@ -102,7 +102,7 @@ Form {
                 name: "modelOpt"
               
                 RadioButton { 
-                    text: qsTr("Classification error")
+                    text: qsTr("Test set classification error")
                     name: "optimizationError"
                     checked: true 
                 }
@@ -115,13 +115,12 @@ Form {
             }
 
             RadioButtonGroup {
-                title: qsTr("Cross Validation")
+                title: qsTr("Cross-Validation")
                 name: "modelValid"
               
                 RadioButton { 
                     text: qsTr("Leave-one-out")                 
                     name: "validationLeaveOneOut"
-                    checked: true
                     id: validationLeaveOneOut 
                 }
 
@@ -143,6 +142,7 @@ Form {
                     text: qsTr("None") 
                     name: "validationManual"
                     id: validationManual 
+                    checked: true
                 }
             }
           }

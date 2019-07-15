@@ -117,9 +117,10 @@
   clusteringTable$addColumnInfo(name = 'Silh', title = 'Silhouette', type = 'number', format = 'dp:2')
 
   clusteringTable$addCitation("Hartigan, J. A., & Wong, M. A. (1979). Algorithm AS 136: A k-means clustering algorithm. Journal of the Royal Statistical Society. Series C (Applied Statistics), 28(1), 100-108.")
-  jaspResults[["clusteringTable"]]      <- clusteringTable
 
   if(!ready) clusteringTable$addFootnote(message="Please provide at least two variables.", symbol="<i>Note.</i>")
+
+  jaspResults[["clusteringTable"]]      <- clusteringTable
 
   if(!ready) return()
 

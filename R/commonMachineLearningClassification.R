@@ -44,9 +44,9 @@
 }
 
 .classificationAnalysesReady <- function(options, type){
-  if(type == "lda" || type == "randomForest"){
+  if(type == "lda" || type == "randomForest" || type == "boosting"){
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2 && options[["target"]] != ""
-  } else {
+  } else if(type == "knn"){
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 1 && options[["target"]] != ""
   }
   return(ready)
@@ -76,11 +76,13 @@
       classificationResult <- .ldaClassification(dataset, options, jaspResults)
     } else if(type == "randomForest"){
       classificationResult <- .randomForestClassification(dataset, options, jaspResults)
+    } else if(type == "boosting"){
+      classificationResult <- .boostingClassification(dataset, options, jaspResults)
     }
     jaspResults[["classificationResult"]] <- createJaspState(classificationResult)
     jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
-                                                              "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+                                                              "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
   }
 }
 
@@ -91,31 +93,50 @@
   title <- base::switch(type,
                       "knn" = "K-Nearest Neighbors Classification",
                       "lda" = "Linear Discriminant Classification",
-                      "randomForest" = "Random Forest Classification")
+                      "randomForest" = "Random Forest Classification",
+                      "boosting" = "Boosting Classification")
 
   classificationTable <- createJaspTable(title)
   classificationTable$position <- 1
   classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
-                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
 
   if(type == "knn"){
+
     classificationTable$addColumnInfo(name = 'nn', title = 'Nearest neighbors', type = 'integer')
     classificationTable$addColumnInfo(name = 'weights', title = 'Weights', type = 'string')
     classificationTable$addColumnInfo(name = 'distance', title = 'Distance', type = 'string')
+  
   } else if(type =="lda"){
+
     classificationTable$addColumnInfo(name = 'lda', title = 'Linear Discriminants', type = 'integer')
     classificationTable$addColumnInfo(name = 'method', title = 'Method', type = 'string')
+  
   } else if(type == "randomForest"){
     classificationTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
     classificationTable$addColumnInfo(name = 'preds', title = 'Predictors per split', type = 'integer')
+  
+  } else if(type == "boosting"){
+
+    classificationTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
+    classificationTable$addColumnInfo(name = 'depth', title = 'Interaction depth', type = 'integer')
+    classificationTable$addColumnInfo(name = 'shrinkage', title = 'Shrinkage', type = 'number')
+    classificationTable$addColumnInfo(name = "minObs",  title = "Min. Obs. Node", type = "integer")
+  
   }
+  
   classificationTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   classificationTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
   classificationTable$addColumnInfo(name = 'mse', title = 'Test Set Error', type = 'number')
+  
   if(type == "randomForest"){
     classificationTable$addColumnInfo(name = 'oob', title = 'OOB Error', type = 'number')
   }
+
+  requiredVars <- ifelse(type == "knn", yes = 1, no = 2)
+  if(!ready)
+    classificationTable$addFootnote(message = paste0("Please provide a target variable and at least ", requiredVars, " predictor variable(s)."), symbol = "<i>Note.</i>")
 
   jaspResults[["classificationTable"]] <- classificationTable
   
@@ -144,6 +165,10 @@
     row <- data.frame(trees = classificationResult[["noOfTrees"]], preds = classificationResult[["predPerSplit"]], ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]], oob = classificationResult[["oobError"]])
     classificationTable$addRows(row)
 
+  } else if(type == "boosting"){
+    row <- data.frame(trees = classificationResult[["noOfTrees"]], depth = options[["intDepth"]], shrinkage = options[["shrinkage"]], minObs = options[["nNode"]], ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
+    classificationTable$addRows(row)
+
   }
 }
 
@@ -155,7 +180,7 @@
   confusionTable$position <- 2
   confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
-                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
   
   jaspResults[["confusionTable"]] <- confusionTable
   
@@ -219,7 +244,7 @@
   plotErrorVsK$position <- position
   plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
-                                                            "estimationMethod"))
+                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
   jaspResults[["plotErrorVsK"]] <- plotErrorVsK
 
   if(!ready) return()
@@ -258,7 +283,8 @@
   decisionBoundary$dependOn(options = c("decisionBoundary", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
                                           "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
-                                          "plotLegend", "plotPoints", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
+                                          "plotLegend", "plotPoints", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", 
+                                          "shrinkage", "intDepth", "nNode"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
   if(!ready)  return()
@@ -368,6 +394,13 @@
                                                  ntree = classificationResult[["noOfTrees"]], mtry = classificationResult[["predPerSplit"]],
                                                  sampsize = classificationResult[["bagFrac"]], importance = TRUE, keep.forest = TRUE)
       preds <- predict(rfit, newdata = grid)
+    } else if(type == "boosting"){
+      bfit <- gbm::gbm(formula = formula, data = dataset, n.trees = classificationResult[["noOfTrees"]],
+                        shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
+                        cv.folds = classificationResult[["noOfFolds"]], bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
+                        distribution = "multinomial")
+      probabilities <- gbm::predict.gbm(bfit, newdata = grid, n.trees = classificationResult[["noOfTrees"]], type = "response")
+      preds <- colnames(probabilities)[apply(probabilities, 1, which.max)]
     }
 
     gridData <- data.frame(x = grid[, 1], y = grid[, 2])
