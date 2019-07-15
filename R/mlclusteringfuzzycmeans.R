@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-MLFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
+MLClusteringFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   
   # Preparatory work
   dataset <- .readDataClusteringAnalyses(dataset, options)

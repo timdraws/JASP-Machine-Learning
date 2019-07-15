@@ -79,7 +79,7 @@ Form {
             }
 
             RadioButtonGroup {
-                title: qsTr("Cross Validation")
+                title: qsTr("Cross-Validation")
                 name: "modelValid"
                 
                 RadioButton { 
