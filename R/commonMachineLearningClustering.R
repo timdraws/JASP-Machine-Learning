@@ -124,6 +124,11 @@
 
   if(!ready) return()
 
+  if(options[["modelOpt"]] != "validationManual"){
+    criterion <- base::switch(options[["modelOpt"]], "validationAIC" = "AIC", "validationBIC" = "BIC", "validationSilh" = "silhouette")
+    clusteringTable$addFootnote(message = paste0("The model is optimized with respect to the <i>", criterion, "</i> value."), symbol="<i>Note.</i>")
+  }
+
   clusterResult <- jaspResults[["clusterResult"]]$object
     
   if(clusterResult[["clusters"]] == options[["maxClusters"]] && options[["modelOpt"]] != "validationManual"){
