@@ -23,8 +23,10 @@
   predictors                <- predictors[predictors != ""]
   variables.to.read         <- c(target, predictors)
   if (is.null(dataset)){
-    dataset <- .readDataSetToEnd(columns.as.numeric=variables.to.read, exclude.na.listwise=variables.to.read)
+    dataset <- .readDataSetToEnd(columns.as.numeric = variables.to.read, exclude.na.listwise = variables.to.read)
   }
+  if(options[["scaleEqualSD"]])
+    dataset <- as.data.frame(scale(dataset))
   return(dataset)
 }
 
@@ -41,8 +43,12 @@
                        exitAnalysisIfErrors = TRUE)
 }
 
-.regressionAnalysesReady <- function(options){
-  ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 1 && options[["target"]] != ""
+.regressionAnalysesReady <- function(options, type){
+  if(type == "randomForest" || type == "boosting"){
+    ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2 && options[["target"]] != ""
+  } else if(type == "knn"){
+    ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 1 && options[["target"]] != ""
+  }
   return(ready)
 }
 

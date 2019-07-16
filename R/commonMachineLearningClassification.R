@@ -23,7 +23,7 @@
   predictors                <- predictors[predictors != ""]
   variables.to.read         <- c(target, predictors)
   if (is.null(dataset)){
-    dataset <- .readDataSetToEnd(columns.as.numeric=variables.to.read, exclude.na.listwise=variables.to.read)
+    dataset <- .readDataSetToEnd(columns.as.numeric = variables.to.read, exclude.na.listwise = variables.to.read)
   }
   if(length(unlist(options[["predictors"]])) > 0 && options[["scaleEqualSD"]])
     dataset[,.v(options[["predictors"]])] <- scale(dataset[,.v(options[["predictors"]])])

@@ -55,9 +55,9 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     test                    <- dataset[!train.index, ]
 
     if(options[["modelOpt"]] == "optimizationManual"){
-      kfit <- kknn::kknn(formula = formula, train = train, test = test, k = options[['noOfNearestNeighbours']], 
-                  distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
-      nn <- options[['noOfNearestNeighbours']]
+        kfit <- kknn::kknn(formula = formula, train = train, test = test, k = options[['noOfNearestNeighbours']], 
+                    distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
+        nn <- options[['noOfNearestNeighbours']]
     } else { 
       nnRange <- 1:options[["maxK"]]
       errorStore <- numeric(length(nnRange))
@@ -79,17 +79,17 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
   } else if(options[["modelValid"]] == "validationLeaveOneOut"){
 
     if(options[["modelOpt"]] == "optimizationManual"){
-      optimkfit <- kknn::train.kknn(formula = formula, data = dataset, ks = options[['noOfNearestNeighbours']], scale = FALSE)
+      optimkfit <- kknn::train.kknn(formula = formula, data = dataset, ks = options[['noOfNearestNeighbours']], scale = FALSE, distance = options[['distanceParameterManual']], kernel = options[['weights']])
       nn <- options[['noOfNearestNeighbours']]
     } else {
-      optimkfit <- kknn::train.kknn(formula = formula, data = dataset, ks = 1:options[["maxK"]], scale = FALSE)  
+      optimkfit <- kknn::train.kknn(formula = formula, data = dataset, ks = 1:options[["maxK"]], scale = FALSE, distance = options[['distanceParameterManual']], kernel = options[['weights']])  
       errorStore <- as.numeric(optimkfit$MISCLASS)
       nn <- base::switch(options[["modelOpt"]],
                     "optimizationError" = optimkfit$best.parameters$k)
     }
 
-    weights <- optimkfit$best.parameters$kernel
-    distance <- optimkfit$distance
+    weights <- options[["weights"]]
+    distance <- options[["distanceParameterManual"]]
 
 		kfit <- list(fitted.values = as.numeric(optimkfit[["fitted.values"]][[1]]))
 		train <- dataset

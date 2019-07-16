@@ -46,7 +46,6 @@ Form {
         CheckBox { 
             text: qsTr("Predicted performance") 
             name: "predictedPerformancePlot"
-            checked: true 
         }
 
         CheckBox { 
@@ -166,6 +165,12 @@ Form {
                     { label: "Rank", value: "rank"},
                     { label: "Optimal", value: "optimal"}
                 ]
+            }
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
             }
 
             CheckBox { 
