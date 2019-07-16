@@ -25,6 +25,8 @@
   if (is.null(dataset)){
     dataset <- .readDataSetToEnd(columns.as.numeric=variables.to.read, exclude.na.listwise=variables.to.read)
   }
+  if(length(unlist(options[["predictors"]])) > 0 && options[["scaleEqualSD"]])
+    dataset[,.v(options[["predictors"]])] <- scale(dataset[,.v(options[["predictors"]])])
   if(options[["target"]] != "")
     dataset[, .v(options[["target"]])] <- factor(dataset[, .v(options[["target"]])])
   return(dataset)
@@ -276,7 +278,7 @@
 
 .classificationDecisionBoundaries <- function(dataset, options, jaspResults, ready, position, type){
 
-  if (!is.null(jaspResults[["decisionBoundary"]]) || !options[["decisionBoundary"]] || length(options[["predictors"]]) < 2) return()
+  if (!is.null(jaspResults[["decisionBoundary"]]) || !options[["decisionBoundary"]]) return()
   
   decisionBoundary <- createJaspPlot(title = "Decision Boundary Plots", height = 400, width = 300)
   decisionBoundary$position <- position
@@ -287,7 +289,7 @@
                                           "shrinkage", "intDepth", "nNode"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
-  if(!ready)  return()
+  if(!ready || length(options[["predictors"]]) < 2)  return()
   
   .classificationFillDecisionBoundary(dataset, options, jaspResults, decisionBoundary, type)
 }

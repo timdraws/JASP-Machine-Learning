@@ -86,7 +86,6 @@ Form {
         CheckBox { 
             name: "decisionBoundary"
             text: qsTr("Decision boundaries")
-            enabled: predictors.count > 1
 
             RowLayout {
 
@@ -209,6 +208,12 @@ Form {
                 name: "bagFrac"  
                 text: qsTr("Training data used per tree:")  
                 defaultValue: 50                                        
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
             }
 
             CheckBox { 

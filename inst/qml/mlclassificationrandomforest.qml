@@ -86,7 +86,6 @@ Form {
         CheckBox { 
             name: "decisionBoundary"
             text: qsTr("Decision boundaries")
-            enabled: predictors.count > 1
 
             RowLayout {
 
@@ -140,7 +139,7 @@ Form {
             IntegerField { 
                 name: "maxTrees"
                 text: qsTr("Max. no. of trees for training:") 
-                defaultValue: 1000 
+                defaultValue: 500 
                 min: 1
                 max: 999999
                 fieldWidth: 60
@@ -180,6 +179,12 @@ Form {
                     max: 999999
                     visible: noOfPredictors.currentIndex == 1 
                 }
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
             }
 
             CheckBox { 

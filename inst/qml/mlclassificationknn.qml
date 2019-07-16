@@ -72,7 +72,6 @@ Form {
         CheckBox { 
             name: "decisionBoundary"
             text: qsTr("Decision boundaries")
-            enabled: predictors.count > 1
 
             RowLayout {
 
@@ -203,6 +202,12 @@ Form {
                         { label: "Rank", value: "rank"},
                         { label: "Optimal", value: "optimal"}
                     ]
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale predictors") 
+                    name: "scaleEqualSD"
+                    checked: true
                 }
 
                 CheckBox { 

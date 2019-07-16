@@ -79,7 +79,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   formula <- jaspResults[["formula"]]$object
   
-  if(options[["modelValid"]] == "validationManual"){
+  if(options[["modelOpt"]] == "optimizationManual"){
 
     dataset                 <- na.omit(dataset)
     train.index             <- sample(c(TRUE,FALSE),nrow(dataset), replace = TRUE, prob = c(options[['trainingDataManual']], 1-options[['trainingDataManual']]))

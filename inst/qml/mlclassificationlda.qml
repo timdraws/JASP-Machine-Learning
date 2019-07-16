@@ -101,27 +101,6 @@ Form {
         }
 
         CheckBox { 
-            name: "decisionBoundary"
-            text: qsTr("Decision boundaries")
-            enabled: predictors.count > 1 
-
-            RowLayout {
-
-                CheckBox {
-                    name: "plotLegend"
-                    text: qsTr("Legend")
-                    checked: true 
-                }
-
-                CheckBox {
-                    name: "plotPoints"
-                    text: qsTr("Points")
-                    checked: true 
-                }
-            }
-        }
-
-        CheckBox { 
             name: "matrixplot"
             text: qsTr("Discriminant matrix")
 
@@ -140,6 +119,26 @@ Form {
                 }
             }
         }
+
+        CheckBox { 
+            name: "decisionBoundary"
+            text: qsTr("Decision boundaries")
+
+            RowLayout {
+
+                CheckBox {
+                    name: "plotLegend"
+                    text: qsTr("Legend")
+                    checked: true 
+                }
+
+                CheckBox {
+                    name: "plotPoints"
+                    text: qsTr("Points")
+                    checked: true 
+                }
+            }
+        }
     }
 
     Section {
@@ -154,17 +153,6 @@ Form {
                 RadioButton { 
                     text: qsTr("Manual") 
                     name: "optimizationManual"
-                    checked: true 
-                }
-            }
-
-            RadioButtonGroup {
-                title: qsTr("Cross Validation")
-                name: "modelValid"
-
-                RadioButton { 
-                    text: qsTr("None") 
-                    name: "validationManual"
                     checked: true 
                 }
             }
@@ -189,6 +177,12 @@ Form {
                     { label: "MVE", value: "covMve"},
                     { label: "t", value: "t"},
                 ]
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
             }
 
             CheckBox { 
