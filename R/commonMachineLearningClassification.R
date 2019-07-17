@@ -190,49 +190,49 @@
 
     classificationResult <- jaspResults[["classificationResult"]]$object
     
-    confusionTable$addColumnInfo(name = "pred_name", title = "", type = "string")
-    confusionTable$addColumnInfo(name = "varname_pred", title = "", type = "string")
+    confusionTable$addColumnInfo(name = "obs_name", title = "", type = "string")
+    confusionTable$addColumnInfo(name = "varname_obs", title = "", type = "string")
 
     confTable <- classificationResult[["confTable"]]
     if(options[["confusionProportions"]])
       confTable <- round(confTable / classificationResult[["ntest"]], 2)
     
-    confusionTable[["pred_name"]] <- c("Predicted", rep("", nrow(confTable)-1))
-    confusionTable[["varname_pred"]] <- colnames(confTable)
+    confusionTable[["obs_name"]] <- c("Observed", rep("", nrow(confTable)-1))
+    confusionTable[["varname_obs"]] <- colnames(confTable)
     
     for(i in 1:length(rownames(confTable))){
-      name <- paste("varname_obs", i, sep = "")
-      confusionTable$addColumnInfo(name = name, title = rownames(confTable)[i], type = "integer", overtitle = "Observed")
-      confusionTable[[name]] <- confTable[, i]  
+      name <- paste("varname_pred", i, sep = "")
+      confusionTable$addColumnInfo(name = name, title = rownames(confTable)[i], type = "integer", overtitle = "Predicted")
+      confusionTable[[name]] <- confTable[i, ]  
     }
     
   } else if(options[["target"]] != "" && !ready) {
     
-    confusionTable$addColumnInfo(name = "pred_name", title = "", type = "string")
-    confusionTable$addColumnInfo(name = "varname_pred", title = "", type = "string")
+    confusionTable$addColumnInfo(name = "obs_name", title = "", type = "string")
+    confusionTable$addColumnInfo(name = "varname_obs", title = "", type = "string")
 
     factorLevels <- levels(dataset[, .v(options[["target"]])])
     
-    confusionTable[["pred_name"]] <- c("Predicted", rep("", length(factorLevels) - 1))
-    confusionTable[["varname_pred"]] <- factorLevels
+    confusionTable[["obs_name"]] <- c("Observed", rep("", length(factorLevels) - 1))
+    confusionTable[["varname_obs"]] <- factorLevels
     
     for(i in 1:length(factorLevels)){ 
-      name <- paste("varname_obs", i, sep = "")
-      confusionTable$addColumnInfo(name = name, title = factorLevels[i], type = "integer", overtitle = "Observed")
+      name <- paste("varname_pred", i, sep = "")
+      confusionTable$addColumnInfo(name = name, title = factorLevels[i], type = "integer", overtitle = "Predicted")
       confusionTable[[name]] <- rep(".", length(factorLevels)) 
     }
     
   } else {
     
-    confusionTable$addColumnInfo(name = "pred_name"    , title = "" , type = "string")
-    confusionTable$addColumnInfo(name = "varname_pred" , title = "" , type = "string")
-    confusionTable$addColumnInfo(name = "varname_obs1", title = ".", type = "integer")
-    confusionTable$addColumnInfo(name = "varname_obs2", title = ".", type = 'integer')
+    confusionTable$addColumnInfo(name = "obs_name"    , title = "" , type = "string")
+    confusionTable$addColumnInfo(name = "varname_obs" , title = "" , type = "string")
+    confusionTable$addColumnInfo(name = "varname_pred1", title = ".", type = "integer")
+    confusionTable$addColumnInfo(name = "varname_pred2", title = ".", type = 'integer')
     
-    confusionTable[["pred_name"]] <- c("Predicted", "")
-    confusionTable[["varname_pred"]] <- rep(".", 2)
-    confusionTable[["varname_obs1"]] <- rep("", 2)
-    confusionTable[["varname_obs2"]] <- rep("", 2)
+    confusionTable[["obs_name"]] <- c("Observed", "")
+    confusionTable[["varname_obs"]] <- rep(".", 2)
+    confusionTable[["varname_pred1"]] <- rep("", 2)
+    confusionTable[["varname_pred2"]] <- rep("", 2)
     
   }
   
