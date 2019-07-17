@@ -40,7 +40,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   .randomForestClassificationTreesError(options, jaspResults, ready, position = 4)
 
   # Create the ROC curve
-  .rocCurve(options, jaspResults, ready, position = 5)
+  .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "randomForest")
 
   # Create the mean decrease in accuracy plot
   .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 6)

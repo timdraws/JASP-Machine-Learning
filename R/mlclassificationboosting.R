@@ -43,7 +43,7 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   .classificationBoostingDeviancePlot(options, jaspResults, ready, position = 5)
 
   # Create the ROC curve
-  .rocCurve(options, jaspResults, ready, position = 6)
+  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "boosting")
 
   # Create the relative influence plot
   .classificationBoostingRelativeInfluencePlot(options, jaspResults, ready, position = 7)

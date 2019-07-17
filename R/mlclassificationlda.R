@@ -52,7 +52,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .ldaMulticollinearity(dataset, options, jaspResults, ready)
 
   # Create the ROC curve
-  .rocCurve(options, jaspResults, ready, position = 8)
+  .rocCurve(dataset, options, jaspResults, ready, position = 8, type = "lda")
 
   # Create the LDA matrix plot 
   .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 9)
@@ -97,20 +97,21 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   }
 
   classificationResult <- list()
-  classificationResult[["model"]] <- ldafit
-  classificationResult[["relInf"]] <- summary(ldafit, plot = FALSE)
-  classificationResult[["meanTable"]] <- ldafit[["means"]]
-  classificationResult[["y"]] <- pred.values[["class"]]
-  classificationResult[["x"]] <- test[,.v(options[["target"]])]
+  classificationResult[["model"]]       <- ldafit
+  classificationResult[["relInf"]]      <- summary(ldafit, plot = FALSE)
+  classificationResult[["meanTable"]]   <- ldafit[["means"]]
+  classificationResult[["y"]]           <- pred.values[["class"]]
+  classificationResult[["x"]]           <- test[,.v(options[["target"]])]
   classificationResult[['confTable']]   <- table('Pred' = pred.values[["class"]], 'Real' = test[,.v(options[["target"]])])
-  classificationResult[["prior"]] <- ldafit[["prior"]]
-  classificationResult[["postprob"]] <- colMeans(pred.values[["posterior"]])
-  classificationResult[["ntrain"]] <- nrow(train)
-  classificationResult[["ntest"]] <- nrow(test)
-  classificationResult[["mse"]] <- 1 - sum(diag(prop.table(classificationResult[['confTable']])))
-  classificationResult[["scaling"]] <- ldafit[["scaling"]]
-  classificationResult[["train"]] <- train
-  classificationResult[["test"]] <- test
+  classificationResult[["prior"]]       <- ldafit[["prior"]]
+  classificationResult[["postprob"]]    <- colMeans(pred.values[["posterior"]])
+  classificationResult[["ntrain"]]      <- nrow(train)
+  classificationResult[["ntest"]]       <- nrow(test)
+  classificationResult[["mse"]]         <- 1 - sum(diag(prop.table(classificationResult[['confTable']])))
+  classificationResult[["scaling"]]     <- ldafit[["scaling"]]
+  classificationResult[["train"]]       <- train
+  classificationResult[["test"]]        <- test
+  classificationResult[["method"]]      <- method
   
   return(classificationResult)
 }

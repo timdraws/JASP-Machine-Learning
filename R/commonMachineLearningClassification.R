@@ -445,11 +445,11 @@
   return(p)
 }
 
-.rocCurve <- function(options, jaspResults, ready, position){
+.rocCurve <- function(dataset, options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["rocCurve"]]) || !options[["rocCurve"]]) return()
 
-    rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curve", width = 500, height = 300)
+    rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curves Plot", width = 500, height = 300)
     rocCurve$position <- position
     rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                     "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
@@ -458,24 +458,83 @@
 
     if(!ready) return()
 
-    classificationResult <- jaspResults[["classificationResult"]]$object  
+    classificationResult <- jaspResults[["classificationResult"]]$object 
 
-    labels <- as.factor(classificationResult[["x"]])
-    predictions <- as.factor(classificationResult[["y"]])
-    rocValues <- AUC::roc(predictions, labels)
+    lvls <- levels(factor(dataset[, .v(options[["target"]])]))
 
-    fpr <- rocValues$fpr
-    tpr <- rocValues$tpr
-    d <- data.frame(fpr = fpr, tpr = tpr)
-    
-    p <- ggplot2::ggplot(ggplot2::aes(x = fpr, y = tpr), data = d) +
-          JASPgraphs::geom_line(data = data.frame(x = c(0,1), y = c(0,1)), ggplot2::aes(x = x, y = y), color = "darkred") +
-          JASPgraphs::geom_line() +
-          ggplot2::xlab("1- specificity") +
-          ggplot2::ylab("sensitivity") +
-          ggplot2::xlim(0, 1) + 
-          ggplot2::ylim(0, 1)
-    p <- JASPgraphs::themeJasp(p)
+    predictors <- .v(options[["predictors"]])
+    formula <- formula(paste("levelVar", "~", paste(predictors, collapse=" + ")))
+
+    linedata <- data.frame(x = c(0,1), y = c(0,1))
+    p <- ggplot2::ggplot(linedata, ggplot2::aes(x = x, y = y)) +
+          JASPgraphs::geom_line(col = "black", linetype = 2) +
+          ggplot2::xlab("False positive rate") +
+          ggplot2::ylab("True positive rate")
+
+    rocXstore <- NULL
+    rocYstore <- NULL
+    rocNamestore <- NULL
+
+    for(i in 1:length(lvls)){
+
+      levelVar <- dataset[,.v(options[["target"]])] == lvls[i]
+      typeData <- cbind(dataset, levelVar = factor(levelVar))
+      column <- which(colnames(typeData) == .v(options[["target"]]))
+      typeData <- typeData[, -column]
+
+      if(type == "knn"){
+
+        kfit <- kknn::train.kknn(formula = formula, data = typeData, ks = classificationResult[["nn"]], 
+                    distance = classificationResult[['distance']], kernel = classificationResult[['weights']], scale = FALSE)
+        score <- predict(kfit, dataset, type = 'prob')[, 'TRUE']
+
+      } else if(type == "lda"){
+
+        ldafit <- MASS::lda(formula = formula, data = dataset, method = classificationResult[["method"]], CV = FALSE)
+        score <- predict(ldafit, dataset, type = "prob")$posterior[, 'TRUE']
+
+      } else if(type == "boosting"){
+
+        levelVar <- as.character(levelVar)
+        levelVar[levelVar == "TRUE"] <- 1
+        levelVar[levelVar == "FALSE"] <- 0
+        levelVar <- as.numeric(levelVar)
+        column <- which(colnames(typeData) == "levelVar")
+        typeData <- typeData[, -column]
+        typeData <- cbind(typeData, levelVar = levelVar)
+
+        bfit <- gbm::gbm(formula = formula, data = dataset, n.trees = classificationResult[["noOfTrees"]],
+                    shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
+                    cv.folds = classificationResult[["noOfFolds"]], bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
+                    distribution = "bernoulli")
+        score <- predict(bfit, newdata = dataset, n.trees = classificationResult[["noOfTrees"]], type = "response")
+
+      } else if(type == "randomForest"){
+        
+        column <- which(colnames(typeData) == "levelVar")
+        typeData <- typeData[, -column]
+        rfit <- randomForest::randomForest(x = typeData, y = factor(levelVar),
+                   ntree = classificationResult[["noOfTrees"]], mtry = classificationResult[["predPerSplit"]],
+                   sampsize = classificationResult[["bagFrac"]], importance = TRUE, keep.forest = TRUE)
+        score <- predict(rfit, dataset, type = "prob")[, 'TRUE']
+
+      }
+
+      actual.class <- dataset[,.v(options[["target"]])] == lvls[i]
+  
+      pred <- ROCR::prediction(score, actual.class)
+      nbperf <- ROCR::performance(pred, "tpr", "fpr")
+
+      rocXstore <- c(rocXstore, unlist(nbperf@x.values))
+      rocYstore <- c(rocYstore, unlist(nbperf@y.values))
+      rocNamestore <- c(rocNamestore, rep(lvls[i], length(unlist(nbperf@y.values))))
+    }
+
+    rocData <- data.frame(x = rocXstore, y = rocYstore, name = rocNamestore)
+    p <- p + JASPgraphs::geom_line(data = rocData, mapping = ggplot2::aes(x = x, y = y, col = name)) +
+              ggplot2::scale_color_manual(values = colorspace::qualitative_hcl(n = length(lvls))) +
+              ggplot2::labs(color = options[["target"]])
+    p <- JASPgraphs::themeJasp(p, legend.position = "right")
 
     rocCurve$plotObject <- p
 }

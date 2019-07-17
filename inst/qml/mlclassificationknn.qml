@@ -66,7 +66,7 @@ Form {
 
         CheckBox { 
             name: "rocCurve"
-            text: qsTr("ROC curve") 
+            text: qsTr("ROC curves") 
         }
 
         CheckBox { 

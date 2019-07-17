@@ -37,7 +37,7 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     .classificationErrorPlot(dataset, options, jaspResults, ready, position = 3)
 
     # Create the ROC curve
-    .rocCurve(options, jaspResults, ready, position = 4)
+    .rocCurve(dataset, options, jaspResults, ready, position = 4, type = "knn")
 
     # Decision boundaries
     .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 5, type = "knn")
