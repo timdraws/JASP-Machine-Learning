@@ -33,23 +33,26 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
 
+  # Create the evaluation metrics table
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+
   # Create the relative influence table
   .classificationBoostingRelativeInfluenceTable(options, jaspResults, ready)
 
   # Create the OOB improvement plot
-  .classificationBoostingOOBimprovement(options, jaspResults, ready, position = 4)
+  .classificationBoostingOOBimprovement(options, jaspResults, ready, position = 5)
 
   # Create the deviance plot
-  .classificationBoostingDeviancePlot(options, jaspResults, ready, position = 5)
+  .classificationBoostingDeviancePlot(options, jaspResults, ready, position = 6)
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "boosting")
+  .rocCurve(dataset, options, jaspResults, ready, position = 7, type = "boosting")
 
   # Create the relative influence plot
-  .classificationBoostingRelativeInfluencePlot(options, jaspResults, ready, position = 7)
+  .classificationBoostingRelativeInfluencePlot(options, jaspResults, ready, position = 8)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "boosting")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 9, type = "boosting")
 }
 
 # Compute results
@@ -115,7 +118,7 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   if (!options[["classBoostRelInfTable"]] || !is.null(jaspResults[["classBoostRelInfTable"]])) return()
   
   classBoostRelInfTable <- createJaspTable(title = "Relative Influence")
-  classBoostRelInfTable$position <- 3
+  classBoostRelInfTable$position <- 4
   classBoostRelInfTable$dependOn(options = c("classBoostRelInfTable", "target", "predictors", "modelOpt", "maxTrees", "intDepth", "shrinkage",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox", "modelValid", "nNode"))
   

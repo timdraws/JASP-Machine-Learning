@@ -33,6 +33,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
 
+  # Create the validation measures table
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+
   # Create the coefficients table
   .ldaClassificationCoefficients(options, jaspResults, ready)
 
@@ -52,13 +55,13 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .ldaMulticollinearity(dataset, options, jaspResults, ready)
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 8, type = "lda")
+  .rocCurve(dataset, options, jaspResults, ready, position = 9, type = "lda")
 
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 9)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 10)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "lda")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 11, type = "lda")
 }
 
 # Error handling 
@@ -121,7 +124,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["coefficientsTable"]]) || !options[["coefficientsTable"]]) return()
   
   coefficientsTable <- createJaspTable(title = "Linear Discriminant Coefficients")
-  coefficientsTable$position <- 3
+  coefficientsTable$position <- 4
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
@@ -147,7 +150,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["priorTable"]]) || !options[["priorTable"]]) return()
   
   priorTable <- createJaspTable(title = "Prior and Posterior Group Probabilities")
-  priorTable$position <- 4
+  priorTable$position <- 5
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -173,7 +176,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["meanTable"]]) || !options[["meanTable"]]) return()
   
   meanTable <- createJaspTable(title = "Group Means in Training Data")
-  meanTable$position <- 5
+  meanTable$position <- 6
   meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
@@ -443,7 +446,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
   
   multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlations")
-  multicolTable$position <- 7
+  multicolTable$position <- 8
   multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
   
   jaspResults[["multicolTable"]] <- multicolTable

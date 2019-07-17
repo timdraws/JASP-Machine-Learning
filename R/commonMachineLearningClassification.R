@@ -571,3 +571,55 @@
         class = c("htest", "boxM"))
     return(out)
 }
+
+.classificationEvaluationMetrics <- function(dataset, options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["validationMeasures"]]) || !options[["validationMeasures"]]) return()
+  
+  validationMeasures <- createJaspTable(title = "Evaluation Metrics")
+  validationMeasures$position <- 3
+  validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
+                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
+
+  validationMeasures$addColumnInfo(name = "group", title = "", type = "string")
+  validationMeasures$addColumnInfo(name = "precision", title = "Precision", type = "number")
+  validationMeasures$addColumnInfo(name = "recall", title = "Recall", type = "number")
+  validationMeasures$addColumnInfo(name = "f1", title = "F1 score", type = "number")
+
+  validationMeasures[["group"]] <- levels(factor(dataset[, .v(options[["target"]])]))
+  
+  jaspResults[["validationMeasures"]] <- validationMeasures
+
+  if(!ready)  return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object
+
+  pred <- factor(classificationResult[["y"]])
+  real <- factor(classificationResult[["x"]])
+
+  lvls <- levels(as.factor(real))
+
+  precision <- numeric()
+  recall <- numeric()
+  f1 <- numeric()
+
+  for(i in 1:length(lvls)){
+
+    TP <- length(which(pred == lvls[i] & real == lvls[i]))
+    FP <- length(which(pred != lvls[i] & real == lvls[i]))
+    FN <- length(which(pred != lvls[i] & real != lvls[i]))
+
+    precision_tmp <- TP / (TP + FP)
+    recall_tmp <- TP / (TP + FN)
+    f1_tmp <- 2 * ( ( precision_tmp * recall_tmp ) / ( precision_tmp + recall_tmp ) )
+
+    precision[i] <- precision_tmp
+    recall[i] <- recall_tmp 
+    f1[i] <- f1_tmp
+  }
+
+  validationMeasures[["precision"]] <- precision
+  validationMeasures[["recall"]] <- recall
+  validationMeasures[["f1"]] <- f1
+}

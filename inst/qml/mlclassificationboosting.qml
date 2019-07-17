@@ -54,6 +54,11 @@ Form {
             } 
         }
 
+        CheckBox {
+            text: qsTr("Evaluation metrics")
+            name: "validationMeasures"
+        } 
+
         CheckBox { 
             name: "classBoostRelInfTable"
             text: qsTr("Relative influence")            

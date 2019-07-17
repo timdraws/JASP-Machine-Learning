@@ -33,23 +33,26 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
 
+  # Create the validation measures table
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+
   # Create the variable importance table
   .randomForestClassificationVariableImportance(options, jaspResults, ready)
 
   # Create the trees vs model error plot
-  .randomForestClassificationTreesError(options, jaspResults, ready, position = 4)
+  .randomForestClassificationTreesError(options, jaspResults, ready, position = 5)
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "randomForest")
+  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "randomForest")
 
   # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 6)
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7)
 
   # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 7)
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 8)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "randomForest")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 9, type = "randomForest")
 }
 
 .randomForestClassification <- function(dataset, options, jaspResults){
@@ -121,7 +124,7 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["tableVariableImportance"]]) || !options[["tableVariableImportance"]]) return()
   
   tableVariableImportance <- createJaspTable(title = "Variable Importance")
-  tableVariableImportance$position <- 3
+  tableVariableImportance$position <- 4
   tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors", "modelOpt", "maxTrees",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox"))
 

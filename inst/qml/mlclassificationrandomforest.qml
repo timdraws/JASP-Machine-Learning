@@ -52,7 +52,12 @@ Form {
                 text: qsTr("Display proportions")
                 name: "confusionProportions"
             } 
-        }     
+        }   
+
+        CheckBox {
+            text: qsTr("Evaluation metrics")
+            name: "validationMeasures"
+        }    
 
         CheckBox { 
             name: "tableVariableImportance"

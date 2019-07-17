@@ -32,15 +32,18 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     
     # Create the confusion table
     .classificationConfusionTable(dataset, options, jaspResults, ready)
+
+    # Create the validation measures table
+    .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
     
     # Create the classification error plot
-    .classificationErrorPlot(dataset, options, jaspResults, ready, position = 3)
+    .classificationErrorPlot(dataset, options, jaspResults, ready, position = 4)
 
     # Create the ROC curve
-    .rocCurve(dataset, options, jaspResults, ready, position = 4, type = "knn")
+    .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "knn")
 
     # Decision boundaries
-    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 5, type = "knn")
+    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 6, type = "knn")
 }
 
 .knnClassification <- function(dataset, options, jaspResults){
