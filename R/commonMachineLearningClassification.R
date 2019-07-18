@@ -586,8 +586,9 @@
   validationMeasures$addColumnInfo(name = "precision", title = "Precision", type = "number")
   validationMeasures$addColumnInfo(name = "recall", title = "Recall", type = "number")
   validationMeasures$addColumnInfo(name = "f1", title = "F1 score", type = "number")
+  validationMeasures$addColumnInfo(name = "support", title = "Support", type = "integer")
 
-  validationMeasures[["group"]] <- levels(factor(dataset[, .v(options[["target"]])]))
+  validationMeasures[["group"]] <- c(levels(factor(dataset[, .v(options[["target"]])])), "Average / Total")
   
   jaspResults[["validationMeasures"]] <- validationMeasures
 
@@ -603,23 +604,32 @@
   precision <- numeric()
   recall <- numeric()
   f1 <- numeric()
+  support <- numeric()
 
   for(i in 1:length(lvls)){
 
-    TP <- length(which(pred == lvls[i] & real == lvls[i]))
-    FP <- length(which(pred != lvls[i] & real == lvls[i]))
-    FN <- length(which(pred != lvls[i] & real != lvls[i]))
+    TP                <- length(which(pred == lvls[i] & real == lvls[i]))
+    FP                <- length(which(pred != lvls[i] & real == lvls[i]))
+    FN                <- length(which(pred != lvls[i] & real != lvls[i]))
 
-    precision_tmp <- TP / (TP + FP)
-    recall_tmp <- TP / (TP + FN)
-    f1_tmp <- 2 * ( ( precision_tmp * recall_tmp ) / ( precision_tmp + recall_tmp ) )
+    precision_tmp     <- TP / (TP + FP)
+    recall_tmp        <- TP / (TP + FN)
+    f1_tmp            <- 2 * ( ( precision_tmp * recall_tmp ) / ( precision_tmp + recall_tmp ) )
+    support_tmp       <- length(which(real == lvls[i]))
 
-    precision[i] <- precision_tmp
-    recall[i] <- recall_tmp 
-    f1[i] <- f1_tmp
+    precision[i]      <- precision_tmp
+    recall[i]         <- recall_tmp 
+    f1[i]             <- f1_tmp
+    support[i]        <- support_tmp
   }
+
+  precision[length(precision) + 1]    <- precision * support / sum(support)
+  recall[length(recall) + 1]          <- recall * support / sum(support)
+  f1[length(f1) + 1]                  <- f1 * support / sum(support)
+  support[length(support) + 1]        <- sum(support)
 
   validationMeasures[["precision"]] <- precision
   validationMeasures[["recall"]] <- recall
   validationMeasures[["f1"]] <- f1
+  validationMeasures[["support"]] <- support
 }
