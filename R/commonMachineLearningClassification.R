@@ -588,7 +588,8 @@
   validationMeasures$addColumnInfo(name = "f1", title = "F1 score", type = "number")
   validationMeasures$addColumnInfo(name = "support", title = "Support", type = "integer")
 
-  validationMeasures[["group"]] <- c(levels(factor(dataset[, .v(options[["target"]])])), "Average / Total")
+  if(options[["target"]] != "")
+    validationMeasures[["group"]] <- c(levels(factor(dataset[, .v(options[["target"]])])), "Average / Total")
   
   jaspResults[["validationMeasures"]] <- validationMeasures
 
@@ -623,9 +624,9 @@
     support[i]        <- support_tmp
   }
 
-  precision[length(precision) + 1]    <- precision * support / sum(support)
-  recall[length(recall) + 1]          <- recall * support / sum(support)
-  f1[length(f1) + 1]                  <- f1 * support / sum(support)
+  precision[length(precision) + 1]    <- sum(precision * support) / sum(support)
+  recall[length(recall) + 1]          <- sum(recall * support) / sum(support)
+  f1[length(f1) + 1]                  <- sum(f1 * support) / sum(support)
   support[length(support) + 1]        <- sum(support)
 
   validationMeasures[["precision"]] <- precision
