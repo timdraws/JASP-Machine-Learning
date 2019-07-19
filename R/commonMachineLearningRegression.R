@@ -17,7 +17,7 @@
 
 .readDataRegressionAnalyses <- function(dataset, options){
   target                    <- NULL
-  if(!(options[["target"]] == ""))
+  if(options[["target"]] != "")
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
@@ -34,7 +34,7 @@
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
   target                    <- NULL
-  if(!(options[["target"]] == ""))
+  if(options[["target"]] != "")
     target                  <- options[["target"]]
   variables.to.read         <- c(predictors, target)
   errors <- .hasErrors(dataset, perform, type = c('infinity', 'observations'),
@@ -44,7 +44,7 @@
 }
 
 .regressionAnalysesReady <- function(options, type){
-  if(type == "randomForest" || type == "boosting"){
+  if(type == "randomForest" || type == "boosting" || type == "regularized"){
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 2 && options[["target"]] != ""
   } else if(type == "knn"){
     ready <- length(options[["predictors"]][options[["predictors"]] != ""]) >= 1 && options[["target"]] != ""
@@ -100,6 +100,10 @@
   regressionTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   regressionTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
   regressionTable$addColumnInfo(name = 'mse', title = 'Test set MSE', type = 'number', format = 'dp:3')
+
+  requiredVars <- ifelse(type == "knn", yes = 1, no = 2)
+  if(!ready)
+    regressionTable$addFootnote(message = paste0("Please provide a target variable and at least ", requiredVars, " predictor variable(s)."), symbol = "<i>Note.</i>")
 
   jaspResults[["regressionTable"]] <- regressionTable
   

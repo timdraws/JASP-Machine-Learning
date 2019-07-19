@@ -17,7 +17,7 @@
 
 .readDataClassificationAnalyses <- function(dataset, options){
   target                    <- NULL
-  if(!(options[["target"]] == ""))
+  if(options[["target"]] != "")
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
@@ -36,7 +36,7 @@
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
   target                    <- NULL
-  if(!(options[["target"]] == ""))
+  if(options[["target"]] != "")
     target                  <- options[["target"]]
   variables.to.read         <- c(predictors, target)
   errors <- .hasErrors(dataset, perform, type = c('infinity', 'observations'),

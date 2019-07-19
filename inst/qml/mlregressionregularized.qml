@@ -22,12 +22,9 @@ import JASP.Controls 1.0
 import JASP.Theme 1.0
 
 // All Analysis forms must be built with the From QML item
-Form
-{
-    usesJaspResults: true
+Form {
 
-    VariablesForm
-    {
+    VariablesForm {
         AvailableVariablesList { name: "allVariablesList" }
         AssignedVariablesList  { 
             id: target
@@ -53,57 +50,142 @@ Form
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { name: "regRegCoefTable";	text: qsTr("Coefficients"); checked: true }
+        CheckBox { 
+            name: "regRegCoefTable"
+            text: qsTr("Regression coefficients")
+        }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "plotLars"    ; text: qsTr("Variable trace")
-            CheckBox { name: "legendLars"; text: qsTr("Legend"); checked: true          }
+        CheckBox { 
+            name: "plotPredPerf"
+            text: qsTr("Predictive performance") 
         }
-        CheckBox { name: "plotCVLambda"; text: qsTr("\u03BB evaluation")
-            CheckBox { name: "legendCVLambda"; text: qsTr("Legend"); checked: true      }
+
+        CheckBox { 
+            name: "plotLars"    
+            text: qsTr("Variable trace")
+
+            CheckBox { 
+                name: "legendLars"
+                text: qsTr("Legend")
+                checked: true          
+            }
         }
-        CheckBox { name: "plotPredPerf"; text: qsTr("Predictive performance") }
+
+        CheckBox { 
+            name: "plotCVLambda"
+            text: qsTr("\u03BB evaluation")
+
+            CheckBox { 
+                name: "legendCVLambda"
+                text: qsTr("Legend")
+                checked: true      
+            }
+        }
     }
 
     Section {
         text: qsTr("Training Parameters")
 
         RadioButtonGroup {
-            title: qsTr("Shrinkage Parameter (\u03BB)")
+            title: qsTr("\u03BB Optimization")
             name: "shrinkage"
-            RadioButton { text: qsTr("Minimum CV MSE")               ; name: "optMin"; checked: true             }
-            RadioButton { text: qsTr("Largest \u03BB within 1 SE of min."); name: "opt1SE"                            }
-            RadioButton { text: qsTr("Manual")                       ; name: "manual"  ; childrenOnSameRow: true
-                DoubleField { name: "lambda"; defaultValue: 1 ; min: 0; max: 999999; fieldWidth: 60              }
+
+            RadioButton { 
+                text: qsTr("Minimum CV MSE")               
+                name: "optMin"
+                checked: true             
+            }
+
+            RadioButton { 
+                text: qsTr("Largest \u03BB within 1 SE of min.")
+                name: "opt1SE"                            
+            }
+
+            RadioButton { 
+                text: qsTr("Manual")                       
+                name: "manual"  
+                childrenOnSameRow: true
+
+                DoubleField { 
+                    name: "lambda"
+                    defaultValue: 1 
+                    min: 0
+                    max: 999999
+                    fieldWidth: 60              
+                }
             }
         }
 
-        ColumnLayout {
+        GroupBox {
 
-            GroupBox {
-                DoubleField  { name: "alpha"      ; text: qsTr("Elastic net parameter (α):"); defaultValue: 0.5 ; min: 0     ; max: 1; fieldWidth: 60; visible: elasticNet.checked }
-                DoubleField  { name: "thresh"     ; text: qsTr("Convergence threshold:")    ; defaultValue: 1e-7; min: 1e-999; max: 1; fieldWidth: 60; visible: false              }
-                PercentField { name: "dataTrain"  ; text: qsTr("Data used for training:")   ; defaultValue: 80                                                                     }
-                CheckBox     { name: "intercept"  ; text: qsTr("Fit intercept")             ; checked: true                                                                        }
-                CheckBox     { name: "standardize"; text: qsTr("Scale variables")          ; checked: true                                                                        }
-                CheckBox     { name: "seedBox"    ; text: qsTr("Set seed:")                 ; childrenOnSameRow: true; checked: true
-                    DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
-                }
+            DoubleField { 
+                name: "thresh"     
+                text: qsTr("Convergence threshold:")    
+                defaultValue: 1e-7
+                min: 1e-999
+                max: 1
+                fieldWidth: 60
+                visible: false              
             }
 
-            GroupBox {
+            PercentField { 
+                name: "dataTrain"  
+                text: qsTr("Data used for training:")   
+                defaultValue: 80   
+                min: 5
+                max: 95                                                                   
+            }
 
-                title: qsTr("Penalty")
+            DropDown {
+                id: penalty
+                name: "penalty"
+                indexDefaultValue: 0
+                label: qsTr("Penalty:")
+                values:
+                [
+                    { label: "Ridge", value: "ridge"},
+                    { label: "Lasso", value: "lasso"},
+                    { label: "Elastic net", value: "elasticNet"}
+                ]
+            }
 
-                RadioButtonGroup
-                {
-                    name: "penalty"
-                    RadioButton { value: "ridge"      ; text: qsTr("Ridge")      ; checked: true   }
-                    RadioButton { value: "lasso"      ; text: qsTr("Lasso")      ; id: lasso       }
-                    RadioButton { value: "elasticNet" ; text: qsTr("Elastic net"); id: elasticNet  }
+            DoubleField { 
+                name: "alpha"      
+                text: qsTr("Elastic net parameter (α):")
+                defaultValue: 0.5 
+                min: 0     
+                max: 1
+                visible: penalty.currentIndex == 2 
+            }
+
+            CheckBox { 
+                name: "intercept"  
+                text: qsTr("Fit intercept")             
+                checked: true                                                                        
+            }
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
                 }
             }
         }

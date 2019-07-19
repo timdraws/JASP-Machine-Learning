@@ -17,14 +17,12 @@
 
 MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
-  # Read dataset
-  dataset <- .regRegReadData(dataset, options)
-  
-  # Check if results can be computed
-  ready <- (options$target != "" && length(.v(options$predictors)) > 0)
-  
-  # Error checking
-  if (ready) errors <- .regRegErrorHandling(dataset, options)
+	# Preparatory work
+	dataset <- .readDataRegularizedRegression(dataset, options)
+	.errorHandlingRegressionAnalyses(dataset, options)
+	
+	# Check if analysis is ready to run
+	ready <- .regressionAnalysesReady(options, type = "regularized")
   
   # Compute (a list of) results from which tables and plots can be created
   if (ready) regRegResults <- .regRegComputeResults(jaspResults, dataset, options)
@@ -38,41 +36,26 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   if (ready) .regRegLarsPlot(    jaspResults, options, regRegResults)
   if (ready) .regRegCVLambdaPlot(jaspResults, options, regRegResults)
   if (ready) .regRegPredPerfPlot(jaspResults, options, regRegResults)
-  
-  return()
 }
 
 # Read dataset
-.regRegReadData <- function(dataset, options) {
+.readDataRegularizedRegression <- function(dataset, options){
   
-  if (options$target == "")    options$target    <- NULL
-  if (options$indicator == "") options$indicator <- NULL
-  if (options$weights == "")   options$weights   <- NULL
-  
-  data <- .readDataSetToEnd(columns.as.numeric = c(options$target, options$weights), columns = options$predictors,
-                            columns.as.factor = options$indicator)
-  
-  return(data)
-}
-
-# Error checking
-.regRegErrorHandling <- function(dataset, options) {
-  
-  # Error Check 1: Provide a test set
-  if (options$dataTrain == 1) {
-    JASP:::.quitAnalysis("Please provide a test set.")
+  target                    <- NULL
+  if(options[["target"]] != "")
+    target                  <- options[["target"]]
+  weights <- NULL
+  if(options[["weights"]] != "")
+    weights                 <- options[["weights"]]
+  predictors                <- unlist(options['predictors'])
+  predictors                <- predictors[predictors != ""]
+  variables.to.read         <- c(target, predictors, weights)
+  if (is.null(dataset)){
+    dataset <- .readDataSetToEnd(columns.as.numeric = variables.to.read, exclude.na.listwise = variables.to.read)
   }
-  
-  # Error Check 2: Provide at least 10 training observations
-  if ((nrow(dataset) * options$dataTrain) < 10) {
-    JASP:::.quitAnalysis("Please provide at least 10 training observations.")
-  }
-  
-  # Error Check 3: There should be least 2 predictors, otherwise randomForest() complains
-  if (length(.v(options$predictors)) < 2L) {
-    JASP:::.quitAnalysis("Please provide at least 2 predictors.")
-  }
-  
+  if(options[["scaleEqualSD"]])
+    dataset <- as.data.frame(scale(dataset))
+  return(dataset)
 }
 
 # Compute results
@@ -308,7 +291,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   
   # Add column info
   regRegCoefTable$addColumnInfo(name = "var",  title = " ", type = "string")
-  regRegCoefTable$addColumnInfo(name = "coefs",  title = "Coefficient", type = "number", format = "sf:4")
+  regRegCoefTable$addColumnInfo(name = "coefs",  title = "Coefficient (\u03B2)", type = "number")
   
   # Disentangle variable names
   predictors_unv <- if(ready) .unv(.v(options$predictors))

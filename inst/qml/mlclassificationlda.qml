@@ -168,7 +168,9 @@ Form {
             PercentField { 
                 name: "trainingDataManual"
                 text: qsTr("Data used for training:")       
-                defaultValue: 80    
+                defaultValue: 80   
+                min: 5
+                max: 95  
             }
 
             DropDown {

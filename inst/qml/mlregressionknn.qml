@@ -136,6 +136,8 @@ Form {
                 text: qsTr("Data used for training:")       
                 defaultValue: 80
                 enabled: validationManual.checked 
+                min: 5
+                max: 95 
             }
 
             DropDown {
