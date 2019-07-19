@@ -125,7 +125,6 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	regressionResult <- list()
 	regressionResult[["formula"]]     <- formula
 	regressionResult[["model"]]       <- kfit
-	regressionResult[['confTable']]   <- table('Pred' = kfit$fitted.values, 'Real' = test[,.v(options[["target"]])])
 	regressionResult[['mse']]         <- mean( (kfit$fitted.values -  test[,.v(options[["target"]])])^2 )
 	regressionResult[["nn"]]          <- nn
 	regressionResult[["weights"]]     <- weights

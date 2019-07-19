@@ -72,10 +72,13 @@
     
     if(type == "knn"){
       regressionResult <- .knnRegression(dataset, options, jaspResults)
-    } 
+    } else if(type == "regularized"){
+      regressionResult <- .regularizedRegression(dataset, options, jaspResults)
+    }
     jaspResults[["regressionResult"]] <- createJaspState(regressionResult)
     jaspResults[["regressionResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid"))
+                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
+                                                              "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda"))
   }
 
 }
@@ -85,17 +88,24 @@
   if(!is.null(jaspResults[["regressionTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
   title <- base::switch(type,
-                      "knn" = "K-Nearest Neighbors Regression")
+                      "knn" = "K-Nearest Neighbors Regression",
+                      "regularized" = "Regularized Linear Regression")
 
   regressionTable <- createJaspTable(title)
   regressionTable$position <- 1
   regressionTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid"))
+                                          "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
+                                          "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda"))
 
   if(type == "knn"){
     regressionTable$addColumnInfo(name = 'nn', title = 'Nearest neighbors', type = 'integer')
     regressionTable$addColumnInfo(name = 'weights', title = 'Weights', type = 'string')
     regressionTable$addColumnInfo(name = 'distance', title = 'Distance', type = 'string')
+  } else if(type == "regularized"){
+    regressionTable$addColumnInfo(name = 'penalty', title = 'Penalty', type = 'string')
+    if(options[["penalty"]] == "elasticNet")
+      regressionTable$addColumnInfo(name = 'alpha', title = '\u03B1', type = 'number')
+    regressionTable$addColumnInfo(name = 'lambda', title = '\u03BB', type = 'number')
   }
   regressionTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   regressionTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
@@ -120,6 +130,17 @@
     distance  <- ifelse(regressionResult[["distance"]] == 1, yes = "Manhattan", no = "Euclidian")    
     row <- data.frame(nn = regressionResult[["nn"]], weights = regressionResult[["weights"]], distance = distance, ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
     regressionTable$addRows(row)
+
+  } else if(type == "regularized"){
+
+    if (regressionResult[["lambda"]] == 0)
+      regressionTable$addFootnote("When \u03BB is set to 0 linear regression is performed.", symbol="<i>Note.</i>") 
+
+    row <- data.frame(penalty = regressionResult[["penalty"]], lambda = regressionResult[["lambda"]], ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
+    if(options[["penalty"]] == "elasticNet")
+      row <- cbind(row, alpha = regressionResult[["alpha"]])
+    regressionTable$addRows(row)
+
   }
 }
 
@@ -167,7 +188,8 @@
   predictedPerformancePlot <- createJaspPlot(plot = NULL, title = "Predicted Performance Plot", width = 400, height = 300)
   predictedPerformancePlot$position <- position
   predictedPerformancePlot$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot"))
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot",
+                                                            "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda"))
   jaspResults[["predictedPerformancePlot"]] <- predictedPerformancePlot
 
   if(!ready) return()

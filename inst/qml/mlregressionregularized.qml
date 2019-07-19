@@ -51,7 +51,7 @@ Form {
         title: qsTr("Tables")
 
         CheckBox { 
-            name: "regRegCoefTable"
+            name: "coefTable"
             text: qsTr("Regression coefficients")
         }
     }
@@ -60,27 +60,27 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
-            name: "plotPredPerf"
+            name: "predictedPerformancePlot"
             text: qsTr("Predictive performance") 
         }
 
         CheckBox { 
-            name: "plotLars"    
+            name: "variableTrace"    
             text: qsTr("Variable trace")
 
             CheckBox { 
-                name: "legendLars"
+                name: "variableTraceLegend"
                 text: qsTr("Legend")
                 checked: true          
             }
         }
 
         CheckBox { 
-            name: "plotCVLambda"
+            name: "lambdaEvaluation"
             text: qsTr("\u03BB evaluation")
 
             CheckBox { 
-                name: "legendCVLambda"
+                name: "lambdaEvaluationLegend"
                 text: qsTr("Legend")
                 checked: true      
             }
@@ -133,7 +133,7 @@ Form {
             }
 
             PercentField { 
-                name: "dataTrain"  
+                name: "trainingDataManual"  
                 text: qsTr("Data used for training:")   
                 defaultValue: 80   
                 min: 5
@@ -191,30 +191,30 @@ Form {
         }
     }
 
-    Section {
-        text: qsTr("Predictions")
-        debug: true
+    // Section {
+    //     text: qsTr("Predictions")
+    //     debug: true
 
-        RadioButtonGroup
-        {
-            name: "applyModel"
-            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-        }
+    //     RadioButtonGroup
+    //     {
+    //         name: "applyModel"
+    //         RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //         RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //         RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //     }
 
-        VariablesForm {
-            visible: applyIndicator.checked
-            height: 150
-            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-            AssignedVariablesList {
-                name: "indicator"
-                title: qsTr("Apply indicator")
-                singleVariable: true
-                allowedColumns: ["nominal"]
-            }
-        }
-    }
+    //     VariablesForm {
+    //         visible: applyIndicator.checked
+    //         height: 150
+    //         AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //         AssignedVariablesList {
+    //             name: "indicator"
+    //             title: qsTr("Apply indicator")
+    //             singleVariable: true
+    //             allowedColumns: ["nominal"]
+    //         }
+    //     }
+    // }
 
     Item 
     {
@@ -228,7 +228,10 @@ Form {
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 1 && target.count > 0
-            onClicked:      { }
+            onClicked:      
+            {
+
+             }
             debug: true	
         }
     }
