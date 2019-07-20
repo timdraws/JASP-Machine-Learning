@@ -206,34 +206,27 @@ Form {
         }
     }
 
-    //   Section {
-    //     text: qsTr("Predictions")
-    //     debug: true
-
-    //         RadioButtonGroup
-    //         {
-    //             name: "applyModel"
-    //             RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-    //             RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-    //             RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-    //         }
-
-    //         VariablesForm {
-    //         visible: applyIndicator.checked
-    //             height: 150
-    //             AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-    //             AssignedVariablesList {
-    //                         name: "indicator"
-    //                         title: qsTr("Apply indicator")
-    //                         singleVariable: true
-    //                         allowedColumns: ["nominal"]
-    //                     }
-    //         }
-    //   }
     Item {
-        height: 			saveModel.height
+        height: 			addClusters.height*2
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
+
+        CheckBox {
+            id: addClusters
+            name: "addClusters"
+            text: qsTr("Add clusters to data")
+            enabled:    predictors.count > 1
+            anchors.top: parent.top
+
+            ComputedColumnField { 
+                id: 		clusterColumn
+                name: 		"clusterColumn"
+                text: 		"Name: "
+                fieldWidth: 120
+                visible:    addClusters.checked
+            }
+
+        }
 
         Button 
         {

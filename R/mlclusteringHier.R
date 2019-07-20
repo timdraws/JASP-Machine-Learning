@@ -24,13 +24,16 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   # Check if analysis is ready to run
   ready  <- .clusterAnalysesReady(options)
   
-    # Run the analysis and save the results in the state
+  # Run the analysis and save the results in the state
   .clustering(dataset, options, jaspResults, ready, type = "hierarchical")
+
+  # If the user wants to add the clusters to the data set
+  .clusteringAddClustersToData(options, jaspResults, ready)
   
-  # create the model summary table
+  # Create the model summary table
   .clusteringTable(options, jaspResults, ready, type = "hierarchical")
   
-  # create the cluster information table
+  # Create the cluster information table
   .clusterInformationTable(options, jaspResults, ready, type = "hierarchical")
 
   # Create the within sum of squares plot
@@ -41,6 +44,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
 
   # Create the cluster plot
   .tsneClusterPlot(dataset, options, jaspResults, ready, type = "hierarchical", position = 5)
+  
 }
 
 .hierarchicalClustering <- function(dataset, options, jaspResults){

@@ -338,3 +338,17 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
   optimPlot$plotObject <- p
 
 }
+
+.clusteringAddClustersToData <- function(options, jaspResults, ready){
+  if(!ready || !options[["addClusters"]] || options[["clusterColumn"]] == "")  return()
+
+  clusterResult <- jaspResults[["clusterResult"]]$object
+
+  if(is.null(jaspResults[["clusterColumn"]])){
+    clusterColumn <- clusterResult[["pred.values"]]
+    jaspResults[["clusterColumn"]] <- createJaspColumn(columnName=options[["clusterColumn"]])
+    jaspResults[["clusterColumn"]]$dependOn(options = c("clusterColumn", "predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+                                                        "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
+    jaspResults[["clusterColumn"]]$setNominal(clusterColumn)
+  }  
+}

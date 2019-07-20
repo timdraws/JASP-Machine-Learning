@@ -17,27 +17,31 @@
 
 MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
     
-    # Preparatory work
-    dataset <- .readDataClusteringAnalyses(dataset, options)
-    .errorHandlingClusteringAnalyses(dataset, options)
-    
-    # Check if analysis is ready to run
-    ready  <- .clusterAnalysesReady(options)
-    
-    # Run the analysis and save the results in the state
-    .clustering(dataset, options, jaspResults, ready, type = "kmeans")
-    
-    # create the model summary table
-    .clusteringTable(options, jaspResults, ready, type = "kmeans")
-    
-    # create the cluster information table
-    .clusterInformationTable(options, jaspResults, ready, type = "kmeans")
+  # Preparatory work
+  dataset <- .readDataClusteringAnalyses(dataset, options)
+  .errorHandlingClusteringAnalyses(dataset, options)
+  
+  # Check if analysis is ready to run
+  ready  <- .clusterAnalysesReady(options)
+  
+  # Run the analysis and save the results in the state
+  .clustering(dataset, options, jaspResults, ready, type = "kmeans")
 
-    # Create the within sum of squares plot
-    .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+  # If the user wants to add the clusters to the data set
+  .clusteringAddClustersToData(options, jaspResults, ready)
+  
+  # Create the model summary table
+  .clusteringTable(options, jaspResults, ready, type = "kmeans")
+  
+  # Create the cluster information table
+  .clusterInformationTable(options, jaspResults, ready, type = "kmeans")
 
-    # Create the cluster plot
-    .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 4)
+  # Create the within sum of squares plot
+  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+
+  # Create the cluster plot
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 4)
+  
 }
 
 .kMeansClustering <- function(dataset, options, jaspResults, ready){

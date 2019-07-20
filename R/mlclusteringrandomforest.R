@@ -17,31 +17,34 @@
 
 MLClusteringRandomForest <- function(jaspResults, dataset, options, ...) {
 
-# Preparatory work
-dataset <- .readDataClusteringAnalyses(dataset, options)
-.errorHandlingClusteringAnalyses(dataset, options)
+  # Preparatory work
+  dataset <- .readDataClusteringAnalyses(dataset, options)
+  .errorHandlingClusteringAnalyses(dataset, options)
 
-# Check if analysis is ready to run
-ready  <- .clusterAnalysesReady(options)
+  # Check if analysis is ready to run
+  ready  <- .clusterAnalysesReady(options)
 
-# Run the analysis and save the results in the state
-.clustering(dataset, options, jaspResults, ready, type = "randomForest")
+  # Run the analysis and save the results in the state
+  .clustering(dataset, options, jaspResults, ready, type = "randomForest")
 
-# create the model summary table
-.clusteringTable(options, jaspResults, ready, type = "randomForest")
+  # If the user wants to add the clusters to the data set
+  .clusteringAddClustersToData(options, jaspResults, ready)
 
-# create the cluster information table
-.clusterInformationTable(options, jaspResults, ready, type = "randomForest")
+  # Create the model summary table
+  .clusteringTable(options, jaspResults, ready, type = "randomForest")
 
-# create the variable importance table
-.randomForestClusteringVarImpTable(options, jaspResults, ready)
+  # Create the cluster information table
+  .clusterInformationTable(options, jaspResults, ready, type = "randomForest")
 
-# Create the within sum of squares plot
-.clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
+  # Create the variable importance table
+  .randomForestClusteringVarImpTable(options, jaspResults, ready)
 
-# Create the cluster plot
-.tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 5)
+  # Create the within sum of squares plot
+  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
 
+  # Create the cluster plot
+  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 5)
+  
 }
 
 .randomForestClustering <- function(dataset, options, jaspResults){
