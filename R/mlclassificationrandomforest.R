@@ -213,9 +213,13 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   yBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["error"]], min.n = 4)
   
   p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
-        ggplot2::geom_line() +
-        ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
-        ggplot2::scale_y_continuous(name = "OOB Classification Error", labels = yBreaks, breaks = yBreaks)
+        JASPgraphs::geom_line()
+  if(max(treesMSE[["trees"]]) <= 25)
+    p <- p + JASPgraphs::geom_point()
+
+   p <- p + ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
+            ggplot2::scale_y_continuous(name = "OOB Classification Error", labels = yBreaks, breaks = yBreaks)
   p <- JASPgraphs::themeJasp(p)
+
   plotTreesVsModelError$plotObject <- p
 }

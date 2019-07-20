@@ -55,7 +55,6 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 9, type = "boosting")
 }
 
-# Compute results
 .boostingClassification <- function(dataset, options, jaspResults) {
   
   dataset                 <- na.omit(dataset)
@@ -63,7 +62,6 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   train                   <- dataset[train.index, ]
   test                    <- dataset[!train.index, ]
 
-  # Prepare Boosting
   formula <- jaspResults[["formula"]]$object
 
   if(options[["modelValid"]] == "validationManual"){

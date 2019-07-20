@@ -328,7 +328,9 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
   yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
    
   p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) +
-    JASPgraphs::geom_point()
+        JASPgraphs::geom_line()
+  if(options[["maxClusters"]] <= 25)
+    p <- p + JASPgraphs::geom_point()
    
   p <- p + ggplot2::scale_x_continuous(name = "Cluster", breaks = xBreaks, limits = range(xBreaks))
   p <- p + ggplot2::scale_y_continuous(name = "Within Sum of Squares", breaks = yBreaks, limits = range(yBreaks))
