@@ -65,7 +65,7 @@ Form {
                 name: "modelOpt"
                 
                 RadioButton { 
-                    text: qsTr("Mean squared error")          
+                    text: qsTr("Test set mean squared error")          
                     name: "optimizationError"
                     checked: true 
                 }

@@ -55,7 +55,7 @@
 .regressionFormula <- function(options, jaspResults){
   predictors <- .v(options[["predictors"]])
   target <- .v(options[["target"]])
-  formula <- paste(target, "~", paste(predictors, collapse=" + "))
+  formula <- formula(paste(target, "~", paste(predictors, collapse=" + ")))
   jaspResults[["formula"]] <- createJaspState(formula)
   jaspResults[["formula"]]$dependOn(options = c("predictors", "target"))
 }
@@ -76,11 +76,14 @@
       regressionResult <- .regularizedRegression(dataset, options, jaspResults)
     } else if(type == "randomForest"){
       regressionResult <- .randomForestRegression(dataset, options, jaspResults)
+    } else if(type == "boosting"){
+      regressionResult <- .boostingRegression(dataset, options, jaspResults)
     }
     jaspResults[["regressionResult"]] <- createJaspState(regressionResult)
     jaspResults[["regressionResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
-                                                              "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac"))
+                                                              "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
+                                                              "intDepth", "nNode", "distance"))
   }
 }
 
@@ -91,29 +94,44 @@
   title <- base::switch(type,
                       "knn" = "K-Nearest Neighbors Regression",
                       "regularized" = "Regularized Linear Regression",
-                      "randomForest" = "Random Forest Regression")
+                      "randomForest" = "Random Forest Regression",
+                      "boosting" = "Boosting Regression")
 
   regressionTable <- createJaspTable(title)
   regressionTable$position <- 1
   regressionTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", 
-                                          "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac"))
+                                          "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac", "intDepth", "nNode", "distance"))
 
   if(type == "knn"){
+
     regressionTable$addColumnInfo(name = 'nn', title = 'Nearest neighbors', type = 'integer')
     regressionTable$addColumnInfo(name = 'weights', title = 'Weights', type = 'string')
     regressionTable$addColumnInfo(name = 'distance', title = 'Distance', type = 'string')
+
   } else if(type == "regularized"){
+
     regressionTable$addColumnInfo(name = 'penalty', title = 'Penalty', type = 'string')
     if(options[["penalty"]] == "elasticNet")
       regressionTable$addColumnInfo(name = 'alpha', title = '\u03B1', type = 'number')
     regressionTable$addColumnInfo(name = 'lambda', title = '\u03BB', type = 'number')
+
   } else if(type == "randomForest"){
+
     regressionTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
     regressionTable$addColumnInfo(name = 'preds', title = 'Predictors per split', type = 'integer')
   
+  } else if(type == "boosting"){
+
+    regressionTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
+    regressionTable$addColumnInfo(name = 'depth', title = 'Interaction depth', type = 'integer')
+    regressionTable$addColumnInfo(name = 'shrinkage', title = 'Shrinkage', type = 'number')
+    regressionTable$addColumnInfo(name = "minObs",  title = "Min. Obs. Node", type = "integer")
+    regressionTable$addColumnInfo(name = 'distribution', title = 'Loss function', type = 'integer')
+
   }
+
   regressionTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
   regressionTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
   regressionTable$addColumnInfo(name = 'mse', title = 'Test set MSE', type = 'number', format = 'dp:3')
@@ -155,6 +173,12 @@
   } else if(type == "randomForest"){
 
     row <- data.frame(trees = regressionResult[["noOfTrees"]], preds = regressionResult[["predPerSplit"]], ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]], oob = regressionResult[["oobError"]])
+    regressionTable$addRows(row)
+
+  } else if(type == "boosting"){
+
+    distribution <- base::switch(options[["distance"]], "tdist" = "t", "gaussian" = "Gaussian", "laplace" = "Laplace")
+    row <- data.frame(trees = regressionResult[["noOfTrees"]], depth = options[["intDepth"]], shrinkage = options[["shrinkage"]], minObs = options[["nNode"]], distribution = distribution, ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
     regressionTable$addRows(row)
 
   }
@@ -201,7 +225,8 @@
   predictedPerformancePlot$position <- position
   predictedPerformancePlot$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot",
-                                                            "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac"))
+                                                            "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
+                                                            "intDepth", "nNode", "distance"))
   jaspResults[["predictedPerformancePlot"]] <- predictedPerformancePlot
 
   if(!ready) return()
