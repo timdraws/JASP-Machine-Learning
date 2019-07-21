@@ -50,6 +50,11 @@ Form {
     GroupBox {
         title: qsTr("Tables")
 
+        CheckBox {
+            text: qsTr("Evaluation metrics")
+            name: "validationMeasures"
+        }  
+
         CheckBox { 
             name: "coefTable"
             text: qsTr("Regression coefficients")

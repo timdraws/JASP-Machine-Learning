@@ -30,6 +30,9 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	# create the results table
 	.regressionMachineLearningTable(options, jaspResults, ready, type = "knn")
 
+	# Create the evaluation metrics table
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+
 	# Create the predicted performance plot
 	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 3)
 		

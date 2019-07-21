@@ -39,6 +39,16 @@ Form {
             allowedColumns: ["scale", "nominal", "ordinal"] 
         }
     }
+
+    GroupBox {
+        title: qsTr("Tables")
+
+        CheckBox {
+            text: qsTr("Evaluation metrics")
+            name: "validationMeasures"
+        }  
+
+    }
     
     GroupBox {
         title: qsTr("Plots")

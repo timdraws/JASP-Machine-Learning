@@ -184,6 +184,44 @@
   }
 }
 
+.regressionEvaluationMetrics <- function(dataset, options, jaspResults, ready){
+
+  if(!is.null(jaspResults[["validationMeasures"]]) || !options[["validationMeasures"]]) return()
+  
+  validationMeasures <- createJaspTable(title = "Evaluation Metrics")
+  validationMeasures$position <- 2
+  validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
+                                                              "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
+                                                              "intDepth", "nNode", "distance"))
+
+  validationMeasures$addColumnInfo(name = "measures", title = "Metric", type = "string")
+  validationMeasures$addColumnInfo(name = "values", title = "", type = "string")
+
+  measures <- c("MSE", "RMSE", "MAE", "MAPE", "R\u00B2")
+  validationMeasures[["measures"]] <- measures
+  
+  jaspResults[["validationMeasures"]] <- validationMeasures
+
+  if(!ready)  return()
+
+  regressionResult <- jaspResults[["regressionResult"]]$object
+
+  obs <- regressionResult[["x"]]
+  pred <- regressionResult[["y"]]
+
+  mse <- round(regressionResult[["mse"]], 3)
+  rmse <- round(sqrt(mse), 3)
+  mae <- round(mean(abs(obs - pred)), 3)
+  mape <- paste0(round(mean( abs((obs - pred) / obs) ) * 100, 2), "%")
+  r_squared <- round(cor(obs, pred)^2, 3)
+
+  values <- c(mse, rmse, mae, mape, r_squared)
+
+  validationMeasures[["values"]] <- values
+  
+}
+
 .regressionErrorPlot <- function(dataset, options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["plotErrorVsK"]]) || !options[["plotErrorVsK"]] || options[["modelOpt"]] != "optimizationError") return()

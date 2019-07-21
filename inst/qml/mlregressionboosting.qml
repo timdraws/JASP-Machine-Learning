@@ -43,6 +43,11 @@ Form {
     GroupBox {
         title: qsTr("Tables")
 
+        CheckBox {
+            text: qsTr("Evaluation metrics")
+            name: "validationMeasures"
+        }  
+
         CheckBox { 
             name: "classBoostRelInfTable"
             text: qsTr("Relative influence")            

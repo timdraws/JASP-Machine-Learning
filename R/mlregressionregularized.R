@@ -30,6 +30,9 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
 	# create the results table
 	.regressionMachineLearningTable(options, jaspResults, ready, type = "regularized")
 
+  # Create the evaluation metrics table
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+
   # Create the regression coefficients table
   .regressionRegularizedCoefTable(options, jaspResults, ready)
 
@@ -134,7 +137,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   if(!is.null(jaspResults[["coefTable"]]) || !options[["coefTable"]]) return() #The options for this table didn't change so we don't need to rebuild it
 
   coefTable <- createJaspTable("Regression Coefficients")
-  coefTable$position <- 2
+  coefTable$position <- 3
   coefTable$dependOn(options =c("coefTable","trainingDataManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda"))

@@ -30,6 +30,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # create the results table
 	.regressionMachineLearningTable(options, jaspResults, ready, type = "boosting")
 
+  # Create the evaluation metrics table
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+
   # Create the relative influence table
   .boostingRelativeInfluenceTable(options, jaspResults, ready, purpose = "regression")
 
