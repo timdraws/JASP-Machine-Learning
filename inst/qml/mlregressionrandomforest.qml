@@ -23,8 +23,7 @@ import JASP.Theme 1.0
 
 Form {
 
-    VariablesForm
-    {
+    VariablesForm {
         AvailableVariablesList { name: "allVariablesList" }
         AssignedVariablesList  { 
             id: target
@@ -44,69 +43,163 @@ Form {
     GroupBox {
         title: qsTr("Tables")
 
-        CheckBox { name: "regRanForVarImpTable"; text: qsTr("Variable importance") }
+        CheckBox { 
+            name: "tableVariableImportance"
+            text: qsTr("Variable importance") 
+        }
     }
 
     GroupBox {
         title: qsTr("Plots")
 
-        CheckBox { name: "plotVarImpAcc"        ; text: qsTr("Mean decrease in accuracy")     }
-        CheckBox { name: "plotVarImpPur"        ; text: qsTr("Total increase in node purity") }
-        CheckBox { name: "plotTreesVsModelError"; text: qsTr("Trees vs. model error")         }
-        CheckBox { name: "plotPredPerf"         ; text: qsTr("Predictive performance")	      }
+        CheckBox { 
+            name: "plotTreesVsModelError"
+            text: qsTr("Trees vs. model error")         
+        }
+
+        CheckBox { 
+            name: "predictedPerformancePlot"         
+            text: qsTr("Predictive performance")	      
+        }
+
+        CheckBox { 
+            name: "plotDecreaseAccuracy"        
+            text: qsTr("Mean decrease in accuracy")     
+        }
+
+        CheckBox { 
+            name: "plotIncreasePurity"        
+            text: qsTr("Total increase in node purity") 
+        }
 
     }
 
-    Section
-    {
+    Section {
         title: qsTr("Training Parameters")
 
         RadioButtonGroup {
-            title: qsTr("Predictors considered per split")
-            name: "noOfPredictors"
-            RadioButton { name: "auto"  ; text: qsTr("Auto")   ; checked: true}
-            RadioButton { name: "manual"; text: qsTr("Manual") ; childrenOnSameRow: true
-                IntegerField { name: "numberOfPredictors"; min: 1; max: 999999; defaultValue: 1; fieldWidth: 60 }
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
+
+            RadioButton { 
+                text: qsTr("Out-of-bag mean squared error")              
+                name: "optimizationError" 
+                checked: true
+            }
+
+            RadioButton { 
+                id: optimizationManual
+                text: qsTr("Manual")                      
+                name: "optimizationManual" 
             }
         }
 
         GroupBox {
-            IntegerField { name: "noOfTrees"     ; text: qsTr("No. of trees for training:")  ; defaultValue: 500 ; min: 1; max: 999999; fieldWidth: 60 }
-            PercentField { name: "dataTrain"     ; text: qsTr("Data used for training:")     ; defaultValue: 80                                        }
-            PercentField { name: "bagFrac"       ; text: qsTr("Training data used per tree:"); defaultValue: 50                                        }
-            CheckBox { name: "seedBox"; text: qsTr("Set seed:"); childrenOnSameRow: true
-                DoubleField  { name: "seed"; defaultValue: 1; min: -999999; max: 999999; fieldWidth: 60 }
+
+            IntegerField { 
+                name: "noOfTrees"
+                text: qsTr("No. of trees for training:") 
+                defaultValue: 500 
+                min: 1
+                max: 999999
+                fieldWidth: 60
+                enabled: optimizationManual.checked 
+            }
+
+            IntegerField { 
+                name: "maxTrees"
+                text: qsTr("Max. no. of trees for training:") 
+                defaultValue: 500 
+                min: 1
+                max: 999999
+                fieldWidth: 60
+                enabled: !optimizationManual.checked 
+            }
+
+            PercentField { 
+                name: "trainingDataManual"     
+                text: qsTr("Data used for training:")     
+                defaultValue: 80                                        
+            }
+
+            PercentField { 
+                name: "bagFrac"       
+                text: qsTr("Training data used per tree:")
+                defaultValue: 50                                        
+            }
+
+            RowLayout {
+
+                DropDown {
+                    id: noOfPredictors
+                    name: "noOfPredictors"
+                    indexDefaultValue: 0
+                    label: qsTr("Predictors considered per split:")
+                    values:
+                    [
+                        { label: "Auto", value: "auto"},
+                        { label: "Manual", value: "manual"}
+                    ]
+                } 
+
+                IntegerField  { 
+                    name: "numberOfPredictors"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    visible: noOfPredictors.currentIndex == 1 
+                }
+            }
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+                checked: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
             }
         }
     }
 
-    Section {
-        text: qsTr("Predictions")
-        debug: true
+    // Section {
+    //   text: qsTr("Predictions")
+    //   debug: true
+      
+    //       RadioButtonGroup
+    //       {
+    //           name: "applyModel"
+    //           RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
+    //           RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
+    //           RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
+    //       }
+      
+    //       VariablesForm {
+    //       visible: applyIndicator.checked
+    //           height: 150
+    //           AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
+    //           AssignedVariablesList {
+    //                       name: "indicator"
+    //                       title: qsTr("Apply indicator")
+    //                       singleVariable: true
+    //                       allowedColumns: ["nominal"]
+    //           }
+    //       }  
+    // }
 
-        RadioButtonGroup
-        {
-            name: "applyModel"
-            RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-            RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-            RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-        }
-
-        VariablesForm {
-        visible: applyIndicator.checked
-            height: 150
-            AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-            AssignedVariablesList {
-                        name: "indicator"
-                        title: qsTr("Apply indicator")
-                        singleVariable: true
-                        allowedColumns: ["nominal"]
-            }
-        }
-    }
-
-    Item 
-    {
+    Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true
         Layout.columnSpan: 2
@@ -117,9 +210,11 @@ Form {
             anchors.right: 	parent.right
             text: 			qsTr("<b>Save Model</b>")
             enabled: 		predictors.count > 1 && target.count > 0
-            onClicked:      { }
+            onClicked:      
+            {
+                
+             }
             debug: true	
         }
     }
-
 }

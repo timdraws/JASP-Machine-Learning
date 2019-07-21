@@ -91,11 +91,11 @@ Form {
         text: qsTr("Training Parameters")
 
         RadioButtonGroup {
-            title: qsTr("\u03BB Optimization")
+            title: qsTr("Model Optimization")
             name: "shrinkage"
 
             RadioButton { 
-                text: qsTr("Minimum CV MSE")               
+                text: qsTr("Cross-validated mean squared error")               
                 name: "optMin"
                 checked: true             
             }
