@@ -95,8 +95,14 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
     noOfTrees <- optimTrees
   }
 
+  trainingFit <- randomForest::randomForest(x = predictors, y = target, xtest = predictors, ytest = target,
+                                    ntree = noOfTrees, mtry = noOfPredictors,
+                                    sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                    importance = TRUE, keep.forest = TRUE)
+
   classificationResult <- list()
   classificationResult[["rfit"]]          <- rfit
+  classificationResult[["trainingFit"]]   <- trainingFit
   classificationResult[["train"]]         <- train
   classificationResult[["test"]]          <- test
   classificationResult[["noOfTrees"]]     <- noOfTrees

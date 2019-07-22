@@ -64,7 +64,7 @@ Form {
 
         CheckBox { 
             name: "plotTreesVsModelError"
-            text: qsTr("Trees vs. model error")         
+            text: qsTr("Out-of-bag error")         
         }
 
         CheckBox { 

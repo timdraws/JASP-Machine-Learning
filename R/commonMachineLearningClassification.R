@@ -448,7 +448,8 @@
     rocCurve$position <- position
     rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                     "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
-                                    "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights"))
+                                    "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
+                                    "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
     jaspResults[["rocCurve"]] <- rocCurve
 
     if(!ready) return()

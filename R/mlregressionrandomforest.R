@@ -36,11 +36,11 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   # Create the variable importance table
   .randomForestVariableImportance(options, jaspResults, ready, purpose = "regression")
 
-  # Create the trees vs model error plot
-  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 5, purpose = "regression")
-
   # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 5)
+
+  # Create the trees vs model error plot
+  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 6, purpose = "regression")
 
   # Create the mean decrease in accuracy plot
   .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7, purpose = "regression")
@@ -90,8 +90,14 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
     noOfTrees <- optimTrees
   }
 
+  trainingFit <- randomForest::randomForest(x = predictors, y = target, xtest = predictors, ytest = target,
+                                      ntree = noOfTrees, mtry = noOfPredictors,
+                                      sampsize = ceiling(options[["bagFrac"]]*nrow(dataset)),
+                                      importance = TRUE, keep.forest = TRUE)
+
   regressionResult <- list()
   regressionResult[["rfit"]]          <- rfit
+  regressionResult[["trainingFit"]]   <- trainingFit
   regressionResult[["train"]]         <- train
   regressionResult[["test"]]          <- test
   regressionResult[["noOfTrees"]]     <- noOfTrees
@@ -145,7 +151,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["plotTreesVsModelError"]]) || !options[["plotTreesVsModelError"]]) return()
 
-  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = "Trees vs. Out-of-bag Error", width = 500, height = 300)
+  plotTreesVsModelError <- createJaspPlot(plot = NULL, title = "Out-of-bag Error Plot", width = 500, height = 300)
   plotTreesVsModelError$position <- position
   plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors"))
@@ -154,31 +160,39 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   if(!ready) return()
 
   result <- base::switch(purpose,
-                        "classification" = jaspResults[["classificationResult"]]$object,
-                        "regression" = jaspResults[["regressionResult"]]$object)
-  values <- base::switch(purpose,
-                          "classification" = result[["rfit"]]$err.rate[,1],
-                          "regression" = result[["rfit"]]$mse)
+                  "classification" = jaspResults[["classificationResult"]]$object,
+                  "regression" = jaspResults[["regressionResult"]]$object)
   xTitle <- base::switch(purpose,
-                          "classification" = "OOB Classification Error",
-                          "regression" = "OOB Mean Squared Error")
+                          "classification" = "Out-of-bag \nClassification Error",
+                          "regression" = "Out-of-bag \nMean Squared Error")
 
-  treesMSE <- dplyr::tibble(
-    trees = 1:length(values),
-    error = values
+  values <- base::switch(purpose,
+                        "classification" = result[["rfit"]]$err.rate[,1],
+                        "regression" = result[["rfit"]]$mse)
+
+  values2 <- base::switch(purpose,
+                          "classification" = result[["trainingFit"]]$err.rate[,1],
+                          "regression" = result[["trainingFit"]]$mse)
+  values <- c(values, values2)
+
+  treesMSE <- data.frame(
+    trees = rep(1:length(values2), 2),
+    error = values, 
+    type = rep(c("Test set", "Training set"), each = length(values2))
   )
 
   xBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["trees"]], min.n = 4)
   yBreaks <- JASPgraphs::getPrettyAxisBreaks(treesMSE[["error"]], min.n = 4)
   
-  p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error)) +
+  p <- ggplot2::ggplot(data = treesMSE, mapping = ggplot2::aes(x = trees, y = error, linetype = type)) +
         JASPgraphs::geom_line()
   if(max(treesMSE[["trees"]]) <= 25)
     p <- p + JASPgraphs::geom_point()
 
-   p <- p + ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
-            ggplot2::scale_y_continuous(name = xTitle, labels = yBreaks, breaks = yBreaks)
-  p <- JASPgraphs::themeJasp(p)
+  p <- p + ggplot2::scale_x_continuous(name = "Number of Trees", labels = xBreaks, breaks = xBreaks) +
+            ggplot2::scale_y_continuous(name = xTitle, labels = yBreaks, breaks = yBreaks) +
+            ggplot2::labs(linetype = "")
+  p <- JASPgraphs::themeJasp(p, legend.position = "top")
 
   plotTreesVsModelError$plotObject <- p
 }
