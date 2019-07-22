@@ -222,39 +222,6 @@
   
 }
 
-.regressionErrorPlot <- function(dataset, options, jaspResults, ready, position){
-
-  if(!is.null(jaspResults[["plotErrorVsK"]]) || !options[["plotErrorVsK"]] || options[["modelOpt"]] != "optimizationError") return()
-
-  plotErrorVsK <- createJaspPlot(plot = NULL, title = "Mean Squared Error Plot", width = 500, height = 300)
-  plotErrorVsK$position <- position
-  plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid"))
-  jaspResults[["plotErrorVsK"]] <- plotErrorVsK
-
-  if(!ready) return()
-
-  regressionResult <- jaspResults[["regressionResult"]]$object  
-  
-  xvalues <- 1:options[["maxK"]]
-  yvalues <- regressionResult[["errorStore"]]      
-  d <- data.frame(x = xvalues, y = yvalues)
-  xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
-  yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
-    
-  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) + 
-        JASPgraphs::geom_line()
-  if(options[["maxK"]] <= 25)
-    p <- p + JASPgraphs::geom_point()
-
-  p <- p + ggplot2::scale_x_continuous(name = "Nearest neighbors", breaks = xBreaks, limits = range(xBreaks)) + 
-            ggplot2::scale_y_continuous(name = "Mean squared error", breaks = yBreaks, limits = range(yBreaks)) + 
-            JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = regressionResult[["nn"]], y = yvalues[regressionResult[["nn"]]]), fill = "red")
-  p <- JASPgraphs::themeJasp(p)
-
-  plotErrorVsK$plotObject <- p
-}
-
 .regressionPredictedPerformancePlot <- function(options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["predictedPerformancePlot"]]) || !options[["predictedPerformancePlot"]]) return()
