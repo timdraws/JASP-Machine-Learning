@@ -111,7 +111,7 @@ Form {
 
             DoubleField { 
                 name: "eps"
-                text: qsTr("eps:") 
+                text: qsTr("Epsilon neighborhood size:") 
                 decimals: 2
                 defaultValue: 2 
                 min: 0.001
@@ -122,7 +122,7 @@ Form {
 
             DoubleField { 
                 name: "minPts"
-                text: qsTr("minPts:") 
+                text: qsTr("Minimum no. of core points:") 
                 decimals: 2
                 defaultValue: 3 
                 min: 2

@@ -75,7 +75,7 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
-            text: qsTr("Within sum of squares")  
+            text: qsTr("Elbow method")  
             name: "withinssPlot" 
             enabled: !validationManual.checked
         }

@@ -40,7 +40,7 @@ MLClusteringRandomForest <- function(jaspResults, dataset, options, ...) {
   .randomForestClusteringVarImpTable(options, jaspResults, ready)
 
   # Create the within sum of squares plot
-  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 4)
+  .elbowCurvePlot(dataset, options, jaspResults, ready, position = 4)
 
   # Create the cluster plot
   .tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 5)

@@ -151,9 +151,10 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   knnDims <- dim(knnDist)
   knnValues <- seq(from = 1, to = knnDims[1] * (knnDims[2]-1), by = 1)
   p <- ggplot2::ggplot() + 
-        ggplot2::geom_line(ggplot2::aes(x = knnValues , y = sort(knnDist[,2:options[['minPts']]]))) +
+        JASPgraphs::geom_line(ggplot2::aes(x = knnValues , y = sort(knnDist[,2:options[['minPts']]]))) +
         ggplot2::xlab('Points sorted by distance') + 
-        ggplot2::ylab('K-nn distance')
+        ggplot2::ylab(paste0(options[['minPts']], '-nearest neighbors \ndistance')) +
+        ggplot2::geom_hline(yintercept = options[["eps"]], linetype = 2)
   p <- JASPgraphs::themeJasp(p)
 
   kdistPlot$plotObject <- p

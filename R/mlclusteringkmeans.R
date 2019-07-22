@@ -37,7 +37,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
   .clusterInformationTable(options, jaspResults, ready, type = "kmeans")
 
   # Create the within sum of squares plot
-  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+  .elbowCurvePlot(dataset, options, jaspResults, ready, position = 3)
 
   # Create the cluster plot
   .tsneClusterPlot(dataset, options, jaspResults, ready, type = "kmeans", position = 4)

@@ -37,7 +37,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   .clusterInformationTable(options, jaspResults, ready, type = "hierarchical")
 
   # Create the within sum of squares plot
-  .clusterOptimizationPlot(dataset, options, jaspResults, ready, position = 3)
+  .elbowCurvePlot(dataset, options, jaspResults, ready, position = 3)
   
   # Create dendrogram
   .hierarchicalClusteringDendogram(dataset, options, jaspResults, ready, position = 4)

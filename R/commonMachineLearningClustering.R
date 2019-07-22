@@ -118,7 +118,7 @@
 
   clusteringTable$addCitation("Hartigan, J. A., & Wong, M. A. (1979). Algorithm AS 136: A k-means clustering algorithm. Journal of the Royal Statistical Society. Series C (Applied Statistics), 28(1), 100-108.")
 
-  if(!ready) clusteringTable$addFootnote(message="Please provide at least two variables.", symbol="<i>Note.</i>")
+  if(!ready) clusteringTable$addFootnote(message="Please provide at least 2 variables.", symbol="<i>Note.</i>")
 
   jaspResults[["clusteringTable"]]      <- clusteringTable
 
@@ -306,11 +306,11 @@
   
 }
 
-.clusterOptimizationPlot <- function(dataset, options, jaspResults, ready, position){
+.elbowCurvePlot <- function(dataset, options, jaspResults, ready, position){
 
 if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options[["modelOpt"]] == "validationManual") return()
 
-  optimPlot <- createJaspPlot(plot = NULL, title = "Within Sum of Squares Plot", width = 500, height = 300)
+  optimPlot <- createJaspPlot(plot = NULL, title = "Elbow Method Plot", width = 500, height = 300)
   optimPlot$position <- position
   optimPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
@@ -321,21 +321,36 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
 
   clusterResult <- jaspResults[["clusterResult"]]$object  
 
-  values <- clusterResult[['wssStore']]
-  d <- data.frame(x = 2:options[["maxClusters"]], y = values)
+  wss <- clusterResult[['wssStore']]
+  aic <- clusterResult[['aicStore']]
+  bic <- clusterResult[['bicStore']]
+
+  values <- c(wss, aic, bic)
+  type <- rep(c("Within Sum of Squares", "AIC", "BIC"), each = length(wss))
+
+  requiredPoint <- base::switch(options[["modelOpt"]], 
+                                  "validationAIC" = "AIC", 
+                                  "validationBIC" = "BIC", 
+                                  "validationSilh" = "Within Sum of Squares")
+
+  d <- data.frame(x = rep(2:options[["maxClusters"]], 3), y = values, type = type)
        
   xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
   yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
+
+  yVals <- values[type == requiredPoint]
+  pointData <- data.frame(x = clusterResult[['clusters']], 
+                          y = yVals[clusterResult[['clusters']] - 1],
+                          type = requiredPoint)
    
-  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) +
-        JASPgraphs::geom_line()
-  if(options[["maxClusters"]] <= 25)
-    p <- p + JASPgraphs::geom_point()
-   
-  p <- p + ggplot2::scale_x_continuous(name = "Cluster", breaks = xBreaks, limits = range(xBreaks))
-  p <- p + ggplot2::scale_y_continuous(name = "Within Sum of Squares", breaks = yBreaks, limits = range(yBreaks))
-  p <- p + JASPgraphs::geom_point(data = data.frame(x = clusterResult[['clusters']], y = values[clusterResult[['clusters']] - 1]), ggplot2::aes(x = x, y = y), fill = "red")
-  p <- JASPgraphs::themeJasp(p)
+  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y, linetype = type)) +
+        JASPgraphs::geom_line() + 
+        ggplot2::scale_x_continuous(name = "Number of Clusters", breaks = xBreaks, labels = xBreaks) +
+        ggplot2::scale_y_continuous(name = "", breaks = yBreaks, labels = yBreaks) +
+        ggplot2::labs(linetype = "") +
+        ggplot2::scale_linetype_manual(values = c(3, 2, 1)) + 
+        JASPgraphs::geom_point(data = pointData, ggplot2::aes(x = x, y = y, linetype = type), fill = "red")
+  p <- JASPgraphs::themeJasp(p, legend.position = "top")
 
   optimPlot$plotObject <- p
 
