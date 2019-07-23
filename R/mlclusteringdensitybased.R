@@ -150,11 +150,19 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   }
   knnDims <- dim(knnDist)
   knnValues <- seq(from = 1, to = knnDims[1] * (knnDims[2]-1), by = 1)
-  p <- ggplot2::ggplot() + 
-        JASPgraphs::geom_line(ggplot2::aes(x = knnValues , y = sort(knnDist[,2:options[['minPts']]]))) +
-        ggplot2::xlab('Points sorted by distance') + 
-        ggplot2::ylab(paste0(options[['minPts']], '-nearest neighbors \ndistance')) +
-        ggplot2::geom_hline(yintercept = options[["eps"]], linetype = 2)
+
+  d <- data.frame(x = knnValues, y = sort(knnDist[,2:options[['minPts']]]))
+
+  xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
+  yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
+
+  lineData <- data.frame(xstart = xBreaks[1], xend = xBreaks[length(xBreaks)], ystart = options[["eps"]], yend = options[["eps"]])
+
+  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) + 
+        JASPgraphs::geom_line() +
+        ggplot2::scale_x_continuous(name = "Points sorted by distance", breaks = xBreaks, limits = range(xBreaks)) + 
+        ggplot2::scale_y_continuous(name = paste0(options[['minPts']], '-nearest neighbors \ndistance'), breaks = yBreaks, limits = range(yBreaks)) +
+        ggplot2::geom_segment(ggplot2::aes(x = xstart, xend = xend, y = ystart, yend = yend), data = lineData, linetype = 2)
   p <- JASPgraphs::themeJasp(p)
 
   kdistPlot$plotObject <- p

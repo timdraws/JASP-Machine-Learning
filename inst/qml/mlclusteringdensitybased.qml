@@ -120,11 +120,10 @@ Form {
                 enabled: validationManual.checked 
             }
 
-            DoubleField { 
+            IntegerField { 
                 name: "minPts"
                 text: qsTr("Minimum no. of core points:") 
-                decimals: 2
-                defaultValue: 3 
+                defaultValue: 5 
                 min: 2
                 max: 999999
                 fieldWidth: 60 

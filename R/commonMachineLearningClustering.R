@@ -188,12 +188,12 @@
 
   if(type == "densitybased"){
     if(sum(size) == clusterResult[["noisePoints"]]) {
-      cluster <- 0
+      cluster <- "Noisepoints"
       withinss <- 0
     } else if(clusterResult[["noisePoints"]] > 0) {
       cluster <- c("Noisepoints", 1:(clusterResult[["clusters"]]))
-     withinss <- c(0, withinss)
-     silh_scores[1] <- 0
+      withinss <- c(0, withinss)
+      silh_scores[1] <- 0
     }
   }
 
