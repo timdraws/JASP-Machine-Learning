@@ -24,11 +24,8 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     # Check if analysis is ready to run
     ready <- .classificationAnalysesReady(options, type = "knn")
     
-    # Run the analysis
-    .classification(dataset, options, jaspResults, ready, type = "knn")
-    
-    # create the results table
-    .classificationTable(options, jaspResults, ready, type = "knn")
+    # Compute results and create the model summary table
+    .classificationTable(dataset, options, jaspResults, ready, type = "knn")
     
     # Create the confusion table
     .classificationConfusionTable(dataset, options, jaspResults, ready)

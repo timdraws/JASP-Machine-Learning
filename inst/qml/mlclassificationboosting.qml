@@ -74,13 +74,13 @@ Form {
         }
 
         CheckBox { 
-            name: "plotDeviance"
-            text: qsTr("Deviance")             
+            name: "rocCurve"
+            text: qsTr("ROC curves") 
         }
 
         CheckBox { 
-            name: "rocCurve"
-            text: qsTr("ROC curves") 
+            name: "plotDeviance"
+            text: qsTr("Deviance")             
         }
 
         CheckBox { 

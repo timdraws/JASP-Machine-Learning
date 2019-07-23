@@ -23,15 +23,12 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
   
   # Check if analysis is ready to run
   ready  <- .clusterAnalysesReady(options)
-  
-  # Run the analysis and save the results in the state
-  .clustering(dataset, options, jaspResults, ready, type = "densitybased")
+
+  # Compute results and create the model summary table
+  .clusteringTable(dataset, options, jaspResults, ready, type = "densitybased")
 
   # If the user wants to add the clusters to the data set
   .clusteringAddClustersToData(options, jaspResults, ready)
-  
-  # Create the model summary table
-  .clusteringTable(options, jaspResults, ready, type = "densitybased")
   
   # Create the cluster information table
   .clusterInformationTable(options, jaspResults, ready, type = "densitybased")

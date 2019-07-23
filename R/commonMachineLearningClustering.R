@@ -93,7 +93,7 @@
   }
 }
 
-.clusteringTable <- function(options, jaspResults, ready, type){
+.clusteringTable <- function(dataset, options, jaspResults, ready, type){
 
   if(!is.null(jaspResults[["clusteringTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
@@ -124,12 +124,14 @@
 
   if(!ready) return()
 
+  .clustering(dataset, options, jaspResults, ready, type = type)
+
+  clusterResult <- jaspResults[["clusterResult"]]$object
+
   if(options[["modelOpt"]] != "validationManual"){
     criterion <- base::switch(options[["modelOpt"]], "validationAIC" = "AIC", "validationBIC" = "BIC", "validationSilh" = "silhouette")
     clusteringTable$addFootnote(message = paste0("The model is optimized with respect to the <i>", criterion, "</i> value."), symbol="<i>Note.</i>")
   }
-
-  clusterResult <- jaspResults[["clusterResult"]]$object
     
   if(clusterResult[["clusters"]] == options[["maxClusters"]] && options[["modelOpt"]] != "validationManual"){
     message <- "The optimum number of clusters is the maximum number of clusters. You might want to adjust the range of optimization."

@@ -88,7 +88,7 @@
   }
 }
 
-.classificationTable <- function(options, jaspResults, ready, type){
+.classificationTable <- function(dataset, options, jaspResults, ready, type){
 
   if(!is.null(jaspResults[["classificationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
@@ -143,6 +143,9 @@
   jaspResults[["classificationTable"]] <- classificationTable
   
   if(!ready)  return()
+
+  # Run the analysis
+  .classification(dataset, options, jaspResults, ready, type = type)
 
   classificationResult <- jaspResults[["classificationResult"]]$object
   
@@ -362,7 +365,7 @@
       bfit <- gbm::gbm(formula = formula, data = dataset, n.trees = classificationResult[["noOfTrees"]],
                         shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                         cv.folds = classificationResult[["noOfFolds"]], bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
-                        distribution = "multinomial")
+                        distribution = "multinomial", n.cores=1) #multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
       probabilities <- gbm::predict.gbm(bfit, newdata = grid, n.trees = classificationResult[["noOfTrees"]], type = "response")
       preds <- colnames(probabilities)[apply(probabilities, 1, which.max)]
     }
@@ -469,7 +472,7 @@
         bfit <- gbm::gbm(formula = formula, data = dataset, n.trees = classificationResult[["noOfTrees"]],
                     shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                     cv.folds = classificationResult[["noOfFolds"]], bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
-                    distribution = "bernoulli")
+                    distribution = "bernoulli", n.cores=1) #multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
         score <- predict(bfit, newdata = dataset, n.trees = classificationResult[["noOfTrees"]], type = "response")
 
       } else if(type == "randomForest"){

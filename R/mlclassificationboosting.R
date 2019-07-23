@@ -24,11 +24,8 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Check if analysis is ready to run
   ready <- .classificationAnalysesReady(options, type = "boosting")
 
-  # Run the analysis
-  .classification(dataset, options, jaspResults, ready, type = "boosting")
-
-  # create the results table
-  .classificationTable(options, jaspResults, ready, type = "boosting")
+  # Compute results and create the model summary table
+  .classificationTable(dataset, options, jaspResults, ready, type = "boosting")
 
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)
@@ -42,11 +39,11 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Create the OOB improvement plot
   .boostingOOBimprovementPlot(options, jaspResults, ready, position = 5, purpose = "classification")
 
-  # Create the deviance plot
-  .boostingDeviancePlot(options, jaspResults, ready, position = 6, purpose = "classification")
-
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 7, type = "boosting")
+  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "boosting")
+
+  # Create the deviance plot
+  .boostingDeviancePlot(options, jaspResults, ready, position = 7, purpose = "classification")
 
   # Create the relative influence plot
   .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 8, purpose = "classification")
@@ -68,15 +65,12 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
     noOfFolds <- 0
   } else if(options[["modelValid"]] == "validationKFold"){
     noOfFolds <- options[["noOfFolds"]]
-    startProgressbar(3)
-    progressbarTick()
-    progressbarTick()
   }
 
   bfit <- gbm::gbm(formula = formula, data = train, n.trees = options[["noOfTrees"]],
                           shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                           cv.folds = noOfFolds, bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
-                          distribution = "multinomial")
+                          distribution = "multinomial", n.cores=1) #multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
 
   if(options[["modelOpt"]] == "optimizationManual"){
     
@@ -88,15 +82,12 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
     bfit <- gbm::gbm(formula = formula, data = train, n.trees = noOfTrees,
                         shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                         cv.folds = noOfFolds, bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
-                        distribution = "multinomial")
+                        distribution = "multinomial", n.cores=1) #multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
 
   }
 
   probabilities <- gbm::predict.gbm(bfit, newdata = test, n.trees = noOfTrees, type = "response")
   fitted.values <- colnames(probabilities)[apply(probabilities, 1, which.max)]
-
-  if(options[["modelValid"]] == "validationKFold")
-    progressbarTick()
 
   classificationResult <- list()
   classificationResult[["model"]]       <- bfit

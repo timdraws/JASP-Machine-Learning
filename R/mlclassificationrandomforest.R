@@ -24,11 +24,8 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   # Check if analysis is ready to run
   ready <- .classificationAnalysesReady(options, type = "randomForest")
 
-  # Run the analysis
-  .classification(dataset, options, jaspResults, ready, type = "randomForest")
-
-  # create the results table
-  .classificationTable(options, jaspResults, ready, type = "randomForest")
+  # Compute results and create the model summary table
+  .classificationTable(dataset, options, jaspResults, ready, type = "randomForest")
 
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready)

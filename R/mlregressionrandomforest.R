@@ -23,12 +23,9 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 	
 	# Check if analysis is ready to run
 	ready <- .regressionAnalysesReady(options, type = "randomForest")
-  
-  # Compute (a list of) results from which tables and plots can be created
-  .regressionMachineLearning(dataset, options, jaspResults, ready, type = "randomForest")
 
-  # create the results table
-	.regressionMachineLearningTable(options, jaspResults, ready, type = "randomForest")
+  # Compute results and create the model summary table
+	.regressionMachineLearningTable(dataset, options, jaspResults, ready, type = "randomForest")
 
   # Create the evaluation metrics table
 	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
