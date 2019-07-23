@@ -88,7 +88,7 @@
   }
 }
 
-.classificationTable <- function(dataset, options, jaspResults, ready, type){
+.classificationTable <- function(dataset, options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["classificationTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
@@ -99,7 +99,7 @@
                       "boosting" = "Boosting Classification")
 
   classificationTable <- createJaspTable(title)
-  classificationTable$position <- 1
+  classificationTable$position <- position
   classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                           "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
@@ -177,12 +177,12 @@
   }
 }
 
-.classificationConfusionTable <- function(dataset, options, jaspResults, ready){
+.classificationConfusionTable <- function(dataset, options, jaspResults, ready, position){
 
   if (!is.null(jaspResults[["confusionTable"]]) || !options[["confusionTable"]]) return()
   
   confusionTable <- createJaspTable(title = "Confusion Matrix")
-  confusionTable$position <- 2
+  confusionTable$position <- position
   confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
                                           "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
@@ -606,12 +606,12 @@
     return(out)
 }
 
-.classificationEvaluationMetrics <- function(dataset, options, jaspResults, ready){
+.classificationEvaluationMetrics <- function(dataset, options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["validationMeasures"]]) || !options[["validationMeasures"]]) return()
   
   validationMeasures <- createJaspTable(title = "Evaluation Metrics")
-  validationMeasures$position <- 3
+  validationMeasures$position <- position
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
                                                             "estimationMethod", "shrinkage", "intDepth", "nNode"))
@@ -658,13 +658,65 @@
     support[i]        <- support_tmp
   }
 
-  precision[length(precision) + 1]    <- sum(precision * support) / sum(support)
-  recall[length(recall) + 1]          <- sum(recall * support) / sum(support)
-  f1[length(f1) + 1]                  <- sum(f1 * support) / sum(support)
-  support[length(support) + 1]        <- sum(support)
+  precision[length(precision) + 1]    <- sum(precision * support, na.rm = TRUE) / sum(support, na.rm = TRUE)
+  recall[length(recall) + 1]          <- sum(recall * support, na.rm = TRUE) / sum(support, na.rm = TRUE)
+  f1[length(f1) + 1]                  <- sum(f1 * support, na.rm = TRUE) / sum(support, na.rm = TRUE)
+  support[length(support) + 1]        <- sum(support, na.rm = TRUE)
 
-  validationMeasures[["precision"]] <- precision
-  validationMeasures[["recall"]] <- recall
-  validationMeasures[["f1"]] <- f1
-  validationMeasures[["support"]] <- support
+  validationMeasures[["precision"]]   <- precision
+  validationMeasures[["recall"]]      <- recall
+  validationMeasures[["f1"]]          <- f1
+  validationMeasures[["support"]]     <- support
+}
+
+.classificationClassProportions <- function(dataset, options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["classProportionsTable"]]) || !options[["classProportionsTable"]]) return()
+  
+  classProportionsTable <- createJaspTable(title = "Class Proportions")
+  classProportionsTable$position <- position
+  classProportionsTable$dependOn(options = c("classProportionsTable", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
+                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
+
+  classProportionsTable$addColumnInfo(name = "group", title = "", type = "string")
+  classProportionsTable$addColumnInfo(name = "dataset", title = "Data Set", type = "number")
+  classProportionsTable$addColumnInfo(name = "train", title = "Training Set", type = "number")
+  classProportionsTable$addColumnInfo(name = "test", title = "Test Set", type = "number")
+
+  if(options[["target"]] != ""){
+    classProportionsTable[["group"]] <- levels(factor(dataset[, .v(options[["target"]])]))
+    Dlevels <- levels(factor(dataset[, .v(options[["target"]])]))
+  }
+  
+  jaspResults[["classProportionsTable"]] <- classProportionsTable
+
+  if(!ready)  return()
+
+  classificationResult <- jaspResults[["classificationResult"]]$object 
+
+  dataValues      <- rep(0, length(classProportionsTable[["group"]]))
+  trainingValues  <- rep(0, length(classProportionsTable[["group"]]))
+  testValues      <- rep(0, length(classProportionsTable[["group"]]))
+
+  dataTable       <- prop.table(table(dataset[,.v(options[["target"]])]))
+  trainingTable   <- prop.table(table(classificationResult[["train"]][,.v(options[["target"]])]))
+  testTable       <- prop.table(table(classificationResult[["test"]][,.v(options[["target"]])]))
+
+  for(i in 1:length(Dlevels)){
+    # Dataset
+    dataIndex                       <- which(names(dataTable) == as.character(Dlevels)[i])
+    dataValues[dataIndex]           <- as.numeric(dataTable)[dataIndex]
+    # Training data
+    trainingIndex                   <- which(names(trainingTable) == as.character(Dlevels)[i])
+    trainingValues[trainingIndex]   <- as.numeric(trainingTable)[trainingIndex]
+    # Test set
+    testIndex                       <- which(names(testTable) == as.character(Dlevels)[i])
+    testValues[testIndex]           <- as.numeric(testTable)[testIndex]
+  }
+
+  classProportionsTable[["dataset"]] <- dataValues
+  classProportionsTable[["train"]]   <- trainingValues
+  classProportionsTable[["test"]]    <- testValues
+
 }

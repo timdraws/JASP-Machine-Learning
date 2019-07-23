@@ -57,6 +57,11 @@ Form {
             }
 
             CheckBox {
+                text: qsTr("Class proportions")
+                name: "classProportionsTable"
+            }  
+
+            CheckBox {
                 text: qsTr("Evaluation metrics")
                 name: "validationMeasures"
             }  
@@ -73,16 +78,16 @@ Form {
 
             CheckBox { 
                 name: "meanTable"
-                text: qsTr("Group means training data")             
+                text: qsTr("Class means training data")             
             }
         }
 
         GroupBox {
-            title: qsTr("Assumptions")
+            title: qsTr("Assumption Checks")
 
             CheckBox { 
                 name: "manovaTable"
-                text: qsTr("Equality of group means")             
+                text: qsTr("Equality of class means")             
             }
 
             CheckBox { 

@@ -25,13 +25,13 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   ready  <- .clusterAnalysesReady(options)
 
   # Compute results and create the model summary table
-  .clusteringTable(dataset, options, jaspResults, ready, type = "hierarchical")
+  .clusteringTable(dataset, options, jaspResults, ready, position = 1, type = "hierarchical")
 
   # If the user wants to add the clusters to the data set
   .clusteringAddClustersToData(options, jaspResults, ready)
   
   # Create the cluster information table
-  .clusterInformationTable(options, jaspResults, ready, type = "hierarchical")
+  .clusterInformationTable(options, jaspResults, ready, position = 2, type = "hierarchical")
 
   # Create the within sum of squares plot
   .elbowCurvePlot(dataset, options, jaspResults, ready, position = 3)
@@ -40,7 +40,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   .hierarchicalClusteringDendogram(dataset, options, jaspResults, ready, position = 4)
 
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "hierarchical", position = 5)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, position = 5, type = "hierarchical")
   
 }
 

@@ -25,25 +25,25 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 	ready <- .regressionAnalysesReady(options, type = "randomForest")
 
   # Compute results and create the model summary table
-	.regressionMachineLearningTable(dataset, options, jaspResults, ready, type = "randomForest")
+	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "randomForest")
 
   # Create the evaluation metrics table
-	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready, position = 2)
 
   # Create the variable importance table
-  .randomForestVariableImportance(options, jaspResults, ready, purpose = "regression")
+  .randomForestVariableImportance(options, jaspResults, ready, position = 3, purpose = "regression")
 
   # Create the trees vs model error plot
-  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 5, purpose = "regression")
+  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 4, purpose = "regression")
 
   # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 5)
 
   # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7, purpose = "regression")
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 6, purpose = "regression")
 
   # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 8, purpose = "regression")
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 7, purpose = "regression")
 
 }
 
@@ -115,12 +115,12 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   return(regressionResult)
 }
 
-.randomForestVariableImportance <- function(options, jaspResults, ready, purpose){
+.randomForestVariableImportance <- function(options, jaspResults, ready, position, purpose){
 
   if(!is.null(jaspResults[["tableVariableImportance"]]) || !options[["tableVariableImportance"]]) return()
   
   tableVariableImportance <- createJaspTable(title = "Variable Importance")
-  tableVariableImportance$position <- 4
+  tableVariableImportance$position <- position
   tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors", "modelOpt", "maxTrees",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox"))
 

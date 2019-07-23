@@ -25,34 +25,38 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   ready <- .classificationAnalysesReady(options, type = "boosting")
 
   # Compute results and create the model summary table
-  .classificationTable(dataset, options, jaspResults, ready, type = "boosting")
+  .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "boosting")
 
   # Create the confusion table
-  .classificationConfusionTable(dataset, options, jaspResults, ready)
+  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 2)
 
-  # Create the evaluation metrics table
-  .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+  # Create the confusion table
+  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 3)
+
+  # Create the class proportions table
+  .classificationClassProportions(dataset, options, jaspResults, ready, position = 4)
 
   # Create the relative influence table
-  .boostingRelativeInfluenceTable(options, jaspResults, ready, purpose = "classification")
+  .boostingRelativeInfluenceTable(options, jaspResults, ready, position = 5, purpose = "classification")
 
   # Create the OOB improvement plot
-  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 5, purpose = "classification")
+  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 6, purpose = "classification")
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "boosting")
+  .rocCurve(dataset, options, jaspResults, ready, position = 7, type = "boosting")
 
   # Create the Andrews curves
-  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 7)
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 8)
 
   # Create the deviance plot
-  .boostingDeviancePlot(options, jaspResults, ready, position = 8, purpose = "classification")
+  .boostingDeviancePlot(options, jaspResults, ready, position = 9, purpose = "classification")
 
   # Create the relative influence plot
-  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 9, purpose = "classification")
+  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 10, purpose = "classification")
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "boosting")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 11, type = "boosting")
+  
 }
 
 .boostingClassification <- function(dataset, options, jaspResults) {

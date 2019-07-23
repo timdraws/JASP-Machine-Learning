@@ -25,25 +25,25 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
 	ready <- .regressionAnalysesReady(options, type = "boosting")
 
   # Compute results and create the model summary table
-	.regressionMachineLearningTable(dataset, options, jaspResults, ready, type = "boosting")
+	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "boosting")
 
   # Create the evaluation metrics table
-	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready, position = 2)
 
   # Create the relative influence table
-  .boostingRelativeInfluenceTable(options, jaspResults, ready, purpose = "regression") 
+  .boostingRelativeInfluenceTable(options, jaspResults, ready, position = 3, purpose = "regression") 
 
   # Create the OOB improvement plot
-  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 5, purpose = "regression")
+  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 4, purpose = "regression")
 
   # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 5)
 
   # Create the deviance plot
-  .boostingDeviancePlot(options, jaspResults, ready, position = 7, purpose = "regression")
+  .boostingDeviancePlot(options, jaspResults, ready, position = 6, purpose = "regression")
   
   # Create the relative influence plot
-  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 8, purpose = "regression")
+  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 7, purpose = "regression")
 
 }
 
@@ -107,7 +107,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   return(regressionResult)
 }
 
-.boostingRelativeInfluenceTable <- function(options, jaspResults, ready, purpose){
+.boostingRelativeInfluenceTable <- function(options, jaspResults, ready, position, purpose){
 
   if (!options[["classBoostRelInfTable"]] || !is.null(jaspResults[["classBoostRelInfTable"]])) return()
   

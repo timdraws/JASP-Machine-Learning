@@ -55,6 +55,11 @@ Form {
         }   
 
         CheckBox {
+            text: qsTr("Class proportions")
+            name: "classProportionsTable"
+        }  
+
+        CheckBox {
             text: qsTr("Evaluation metrics")
             name: "validationMeasures"
         }    

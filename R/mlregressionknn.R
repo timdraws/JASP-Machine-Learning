@@ -25,10 +25,10 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	ready <- .regressionAnalysesReady(options, type = "knn")		
 
 	# Compute results and create the model summary table
-	.regressionMachineLearningTable(dataset, options, jaspResults, ready, type = "knn")
+	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "knn")
 
 	# Create the evaluation metrics table
-	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready, position = 2)
 
 	# Create the mean squared error plot
 	.knnErrorPlot(dataset, options, jaspResults, ready, position = 3, purpose = "regression")

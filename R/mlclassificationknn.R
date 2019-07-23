@@ -25,25 +25,29 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     ready <- .classificationAnalysesReady(options, type = "knn")
     
     # Compute results and create the model summary table
-    .classificationTable(dataset, options, jaspResults, ready, type = "knn")
+    .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "knn")
     
     # Create the confusion table
-    .classificationConfusionTable(dataset, options, jaspResults, ready)
+    .classificationConfusionTable(dataset, options, jaspResults, ready, position = 2)
+
+    # Create the class proportions table
+    .classificationClassProportions(dataset, options, jaspResults, ready, position = 3)
 
     # Create the validation measures table
-    .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+    .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 4)
     
     # Create the classification error plot
-    .knnErrorPlot(dataset, options, jaspResults, ready, position = 4, purpose = "classification")
+    .knnErrorPlot(dataset, options, jaspResults, ready, position = 5, purpose = "classification")
 
     # Create the ROC curve
-    .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "knn")
+    .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "knn")
 
     # Create the Andrews curves
-    .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 6)
+    .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 7)
 
     # Decision boundaries
-    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 7, type = "knn")
+    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 8, type = "knn")
+    
 }
 
 .knnClassification <- function(dataset, options, jaspResults){
@@ -147,6 +151,8 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
   classificationResult[["ntest"]]       <- nrow(test)
   classificationResult[["x"]]           <- test[,.v(options[["target"]])]
   classificationResult[["y"]]           <- kfit$fitted.values
+  classificationResult[["train"]]       <- train 
+  classificationResult[["test"]]        <- test 
 
   if(options[["modelOpt"]] == "optimizationError")
     classificationResult[["errorStore"]] <- errorStore

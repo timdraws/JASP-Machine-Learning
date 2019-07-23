@@ -25,19 +25,19 @@ MLClusteringFuzzyCMeans <- function(jaspResults, dataset, options, ...) {
   ready  <- .clusterAnalysesReady(options)
 
   # Compute results and create the model summary table
-  .clusteringTable(dataset, options, jaspResults, ready, type = "cmeans")
+  .clusteringTable(dataset, options, jaspResults, ready, position = 1, type = "cmeans")
 
   # If the user wants to add the clusters to the data set
   .clusteringAddClustersToData(options, jaspResults, ready)
   
   # Create the cluster information table
-  .clusterInformationTable(options, jaspResults, ready, type = "cmeans")
+  .clusterInformationTable(options, jaspResults, ready, position = 2, type = "cmeans")
 
   # Create the within sum of squares plot
   .elbowCurvePlot(dataset, options, jaspResults, ready, position = 3)
 
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "cmeans", position = 4)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, position = 4, type = "cmeans")
   
 }
 

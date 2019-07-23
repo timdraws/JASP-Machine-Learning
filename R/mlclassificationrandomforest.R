@@ -25,34 +25,38 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   ready <- .classificationAnalysesReady(options, type = "randomForest")
 
   # Compute results and create the model summary table
-  .classificationTable(dataset, options, jaspResults, ready, type = "randomForest")
+  .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "randomForest")
 
   # Create the confusion table
-  .classificationConfusionTable(dataset, options, jaspResults, ready)
+  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 2)
+
+  # Create the class proportions table
+  .classificationClassProportions(dataset, options, jaspResults, ready, position = 3)
 
   # Create the validation measures table
-  .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 4)
 
   # Create the variable importance table
-  .randomForestVariableImportance(options, jaspResults, ready, purpose = "classification")
+  .randomForestVariableImportance(options, jaspResults, ready, position = 5, purpose = "classification")
 
   # Create the trees vs model error plot
-  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 5, purpose = "classification")
+  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 6, purpose = "classification")
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "randomForest")
+  .rocCurve(dataset, options, jaspResults, ready, position = 7, type = "randomForest")
 
   # Create the Andrews curves
-  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 7)
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 8)
 
   # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 8, purpose = "classification")
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 9, purpose = "classification")
 
   # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 9, purpose = "classification")
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 10, purpose = "classification")
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "randomForest")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 11, type = "randomForest")
+  
 }
 
 .randomForestClassification <- function(dataset, options, jaspResults){

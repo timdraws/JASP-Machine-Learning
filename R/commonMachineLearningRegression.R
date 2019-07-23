@@ -87,7 +87,7 @@
   }
 }
 
-.regressionMachineLearningTable <- function(dataset, options, jaspResults, ready, type){
+.regressionMachineLearningTable <- function(dataset, options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["regressionTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
@@ -98,7 +98,7 @@
                       "boosting" = "Boosting Regression")
 
   regressionTable <- createJaspTable(title)
-  regressionTable$position <- 1
+  regressionTable$position <- position
   regressionTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", 
@@ -186,12 +186,12 @@
   }
 }
 
-.regressionEvaluationMetrics <- function(dataset, options, jaspResults, ready){
+.regressionEvaluationMetrics <- function(dataset, options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["validationMeasures"]]) || !options[["validationMeasures"]]) return()
   
   validationMeasures <- createJaspTable(title = "Evaluation Metrics")
-  validationMeasures$position <- 2
+  validationMeasures$position <- position
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
                                                               "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",

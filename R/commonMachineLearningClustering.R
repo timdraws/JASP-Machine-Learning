@@ -93,7 +93,7 @@
   }
 }
 
-.clusteringTable <- function(dataset, options, jaspResults, ready, type){
+.clusteringTable <- function(dataset, options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["clusteringTable"]])) return() #The options for this table didn't change so we don't need to rebuild it
 
@@ -105,7 +105,7 @@
                         "randomForest" = "Random Forest Clustering")
 
   clusteringTable                       <- createJaspTable(title)
-  clusteringTable$position <- 1
+  clusteringTable$position <- position
   clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
                                                       "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
 
@@ -150,7 +150,7 @@
   clusteringTable$addRows(row)
 }
 
-.clusterInformationTable <- function(options, jaspResults, ready, type){
+.clusterInformationTable <- function(options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["clusterInfoTable"]]) || !options[["tableClusterInformation"]]) return()
 
@@ -159,7 +159,7 @@
                                         "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette",
                                         "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS", "minPts", "eps",
                                         "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance", "noOfTrees"))
-  clusterInfoTable$position               <- 2
+  clusterInfoTable$position               <- position
   clusterInfoTable$transpose              <- TRUE
 
   clusterInfoTable$addColumnInfo(name = 'cluster', title = 'Cluster', type = 'integer')
@@ -226,7 +226,7 @@
   }
 }
 
-.tsneClusterPlot <- function(dataset, options, jaspResults, ready, type, position){
+.tsneClusterPlot <- function(dataset, options, jaspResults, ready, position, type){
 
   if(!is.null(jaspResults[["plot2dCluster"]]) || !options[["plot2dCluster"]]) return()
 

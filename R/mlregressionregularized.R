@@ -25,13 +25,13 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
 	ready <- .regressionAnalysesReady(options, type = "regularized")	
 
 	# Compute results and create the model summary table
-	.regressionMachineLearningTable(dataset, options, jaspResults, ready, type = "regularized")
+	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "regularized")
 
   # Create the evaluation metrics table
-	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
+	.regressionEvaluationMetrics(dataset, options, jaspResults, ready, position = 2)
 
   # Create the regression coefficients table
-  .regressionRegularizedCoefTable(options, jaspResults, ready)
+  .regressionRegularizedCoefTable(options, jaspResults, ready, position = 3)
 
   # Create the predicted performance plot
 	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 4)
@@ -41,6 +41,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
 
   # Create the lambda evaluation plot
   .regressionRegularizedLambdaEvaluation(options, jaspResults, ready, position = 6)
+  
 }
 
 # Read dataset
@@ -129,12 +130,12 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   return(regressionResult)
 }
 
-.regressionRegularizedCoefTable <- function(options, jaspResults, ready){
+.regressionRegularizedCoefTable <- function(options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["coefTable"]]) || !options[["coefTable"]]) return() #The options for this table didn't change so we don't need to rebuild it
 
   coefTable <- createJaspTable("Regression Coefficients")
-  coefTable$position <- 3
+  coefTable$position <- position
   coefTable$dependOn(options =c("coefTable","trainingDataManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda"))

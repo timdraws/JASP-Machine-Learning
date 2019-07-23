@@ -25,22 +25,22 @@ MLClusteringRandomForest <- function(jaspResults, dataset, options, ...) {
   ready  <- .clusterAnalysesReady(options)
 
   # Compute results and create the model summary table
-  .clusteringTable(dataset, options, jaspResults, ready, type = "randomForest")
+  .clusteringTable(dataset, options, jaspResults, ready, position = 1, type = "randomForest")
 
   # If the user wants to add the clusters to the data set
   .clusteringAddClustersToData(options, jaspResults, ready)
 
   # Create the cluster information table
-  .clusterInformationTable(options, jaspResults, ready, type = "randomForest")
+  .clusterInformationTable(options, jaspResults, ready, position = 2, type = "randomForest")
 
   # Create the variable importance table
-  .randomForestClusteringVarImpTable(options, jaspResults, ready)
+  .randomForestClusteringVarImpTable(options, jaspResults, ready, position = 3)
 
   # Create the within sum of squares plot
   .elbowCurvePlot(dataset, options, jaspResults, ready, position = 4)
 
   # Create the cluster plot
-  .tsneClusterPlot(dataset, options, jaspResults, ready, type = "randomForest", position = 5)
+  .tsneClusterPlot(dataset, options, jaspResults, ready, position = 5, type = "randomForest")
   
 }
 
@@ -167,13 +167,13 @@ if(options[["modelOpt"]] == "validationManual"){
   return(clusterResult)
 }
 
-.randomForestClusteringVarImpTable <- function(options, jaspResults, ready){
+.randomForestClusteringVarImpTable <- function(options, jaspResults, ready, position){
 
   if (!is.null(jaspResults[["importanceTable"]]) || !options[["importanceTable"]]) return()
   
   # Create table
   importanceTable <- createJaspTable(title = "Variable Importance")
-  importanceTable$position <- 3
+  importanceTable$position <- position
   importanceTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
                                                       "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees", "importanceTable"))
   
