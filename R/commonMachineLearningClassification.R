@@ -505,6 +505,74 @@
     rocCurve$plotObject <- p
 }
 
+.classificationAndrewsCurves <- function(dataset, options, jaspResults, ready, position){
+
+  if(!is.null(jaspResults[["andrewsCurve"]]) || !options[["andrewsCurve"]]) return()
+
+  andrewsCurve <- createJaspPlot(plot = NULL, title = "Andrews Curves Plot", width = 500, height = 300)
+  andrewsCurve$position <- position
+  andrewsCurve$dependOn(options = c("andrewsCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
+                                  "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
+                                  "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
+                                  "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+  jaspResults[["andrewsCurve"]] <- andrewsCurve
+
+  if(!ready) return()
+
+  predictors <- dataset[, .v(options[["predictors"]])]
+  target <- dataset[,.v(options[["target"]])]
+
+  n <- nrow(predictors)
+  m <- ncol(predictors)
+
+  npts <- 100
+
+  xpts <- seq(0 - pi, 0 + pi, length = npts)
+  Y <- matrix(NA, nrow = n, ncol = npts)
+
+  for (i in 1:n) {
+    xs <- as.numeric(predictors[i, ])
+    ypts <- c()
+    for (p in xpts) {
+      y <- xs[1]
+      for (j in 2:m) {
+        if (j%%2 == 1) {
+          y <- y + xs[j] * sin((j%/%2) * p)
+        }
+        else {
+          y <- y + xs[j] * cos((j%/%2) * p)
+        }
+      }
+      ypts <- c(ypts, y)
+    }
+    Y[i, ] <- as.numeric(ypts)
+  }
+
+  Yvec <- NULL
+  for(i in 1:nrow(Y)){
+    Yvec <- c(Yvec, Y[i, ])
+  }
+
+  d <- data.frame(x = rep(xpts, n),
+                  y = Yvec,
+                  target = rep(target, each = length(xpts)),
+                  observation = rep(1:n, each = length(xpts)))
+
+  xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
+  yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
+
+  p <- ggplot2::ggplot(data = d, mapping = ggplot2::aes(x = x, y = y, color = target, group = observation)) +
+        JASPgraphs::geom_line(size = 0.2) +
+        ggplot2::scale_x_continuous(name = "", breaks = xBreaks, labels = xBreaks) + 
+        ggplot2::scale_y_continuous(name = "", breaks = yBreaks, labels = yBreaks) +
+        ggplot2::labs(color = options[["target"]]) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 1)))
+  p <- JASPgraphs::themeJasp(p, legend.position = "right")
+
+  andrewsCurve$plotObject <- p
+
+}
+
 .boxM <- function (data, grouping){
   # Taken from the R package "biotools", thanks!
     dname <- deparse(substitute(data))

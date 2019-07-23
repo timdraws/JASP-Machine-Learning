@@ -79,6 +79,11 @@ Form {
         }
 
         CheckBox { 
+            name: "andrewsCurve"
+            text: qsTr("Andrews curves") 
+        }
+
+        CheckBox { 
             name: "plotDecreaseAccuracy"
             text: qsTr("Mean decrease in accuracy") 
         }

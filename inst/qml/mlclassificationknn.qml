@@ -75,6 +75,11 @@ Form {
         }
 
         CheckBox { 
+            name: "andrewsCurve"
+            text: qsTr("Andrews curves") 
+        }
+
+        CheckBox { 
             name: "decisionBoundary"
             text: qsTr("Decision boundary matrix")
 

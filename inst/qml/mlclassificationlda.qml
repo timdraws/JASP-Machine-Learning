@@ -106,6 +106,11 @@ Form {
         }
 
         CheckBox { 
+            name: "andrewsCurve"
+            text: qsTr("Andrews curves") 
+        }
+
+        CheckBox { 
             name: "matrixplot"
             text: qsTr("Linear discriminant matrix")
 

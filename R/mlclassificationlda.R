@@ -54,11 +54,14 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Create the ROC curve
   .rocCurve(dataset, options, jaspResults, ready, position = 9, type = "lda")
 
+  # Create the Andrews curves
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 10)
+
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 10)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 11)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 11, type = "lda")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 12, type = "lda")
 }
 
 # Error handling 

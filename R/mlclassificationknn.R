@@ -39,8 +39,11 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     # Create the ROC curve
     .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "knn")
 
+    # Create the Andrews curves
+    .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 6)
+
     # Decision boundaries
-    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 6, type = "knn")
+    .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 7, type = "knn")
 }
 
 .knnClassification <- function(dataset, options, jaspResults){

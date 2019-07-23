@@ -42,14 +42,17 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Create the ROC curve
   .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "boosting")
 
+  # Create the Andrews curves
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 7)
+
   # Create the deviance plot
-  .boostingDeviancePlot(options, jaspResults, ready, position = 7, purpose = "classification")
+  .boostingDeviancePlot(options, jaspResults, ready, position = 8, purpose = "classification")
 
   # Create the relative influence plot
-  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 8, purpose = "classification")
+  .boostingRelativeInfluencePlot(options, jaspResults, ready, position = 9, purpose = "classification")
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 9, type = "boosting")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "boosting")
 }
 
 .boostingClassification <- function(dataset, options, jaspResults) {

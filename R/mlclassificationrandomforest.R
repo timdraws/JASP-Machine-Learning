@@ -42,14 +42,17 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   # Create the ROC curve
   .rocCurve(dataset, options, jaspResults, ready, position = 6, type = "randomForest")
 
+  # Create the Andrews curves
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 7)
+
   # Create the mean decrease in accuracy plot
-  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7, purpose = "classification")
+  .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 8, purpose = "classification")
 
   # Create the total increase in node purity plot
-  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 8, purpose = "classification")
+  .randomForestPlotIncreasePurity(options, jaspResults, ready, position = 9, purpose = "classification")
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 9, type = "randomForest")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 10, type = "randomForest")
 }
 
 .randomForestClassification <- function(dataset, options, jaspResults){
