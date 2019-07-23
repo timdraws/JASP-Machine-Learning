@@ -519,8 +519,14 @@
 
   if(!ready) return()
 
-  predictors <- dataset[, .v(options[["predictors"]])]
-  target <- dataset[,.v(options[["target"]])]
+  if(nrow(dataset)> 500){
+    sample <- sample(1:nrow(dataset), size = 500, replace = FALSE) # Sample to prevent crazy long loading times with big data
+  } else {
+    sample <- 1:nrow(dataset)
+  }
+
+  predictors <- dataset[sample, .v(options[["predictors"]])]
+  target <- dataset[sample, .v(options[["target"]])]
 
   n <- nrow(predictors)
   m <- ncol(predictors)
