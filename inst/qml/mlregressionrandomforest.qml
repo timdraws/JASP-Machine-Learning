@@ -58,13 +58,13 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
-            name: "predictedPerformancePlot"         
-            text: qsTr("Predictive performance")	      
+            name: "plotTreesVsModelError"
+            text: qsTr("Out-of-bag error")         
         }
 
         CheckBox { 
-            name: "plotTreesVsModelError"
-            text: qsTr("Out-of-bag error")         
+            name: "predictedPerformancePlot"         
+            text: qsTr("Predictive performance")	      
         }
 
         CheckBox { 

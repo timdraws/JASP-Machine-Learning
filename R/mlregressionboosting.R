@@ -34,13 +34,13 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
 	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
 
   # Create the relative influence table
-  .boostingRelativeInfluenceTable(options, jaspResults, ready, purpose = "regression")
-
-  # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 5) # position = 4 + 1 because position of relative influence table is set to 4
+  .boostingRelativeInfluenceTable(options, jaspResults, ready, purpose = "regression") 
 
   # Create the OOB improvement plot
-  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 6, purpose = "regression")
+  .boostingOOBimprovementPlot(options, jaspResults, ready, position = 5, purpose = "regression")
+
+  # Create the predicted performance plot
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
 
   # Create the deviance plot
   .boostingDeviancePlot(options, jaspResults, ready, position = 7, purpose = "regression")

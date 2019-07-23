@@ -226,7 +226,7 @@
 
   if(!is.null(jaspResults[["predictedPerformancePlot"]]) || !options[["predictedPerformancePlot"]]) return()
 
-  predictedPerformancePlot <- createJaspPlot(plot = NULL, title = "Predicted Performance Plot", width = 400, height = 300)
+  predictedPerformancePlot <- createJaspPlot(plot = NULL, title = "Predictive Performance Plot", width = 400, height = 300)
   predictedPerformancePlot$position <- position
   predictedPerformancePlot$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot",

@@ -238,39 +238,6 @@
   
 }
 
-.classificationErrorPlot <- function(dataset, options, jaspResults, ready, position){
-
-  if(!is.null(jaspResults[["plotErrorVsK"]]) || !options[["plotErrorVsK"]] || options[["modelOpt"]] != "optimizationError") return()
-
-  plotErrorVsK <- createJaspPlot(plot = NULL, title = "Classification Error Plot", width = 500, height = 300)
-  plotErrorVsK$position <- position
-  plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
-                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
-  jaspResults[["plotErrorVsK"]] <- plotErrorVsK
-
-  if(!ready) return()
-
-  classificationResult <- jaspResults[["classificationResult"]]$object  
-  
-  xvalues <- 1:options[["maxK"]]
-  yvalues <- classificationResult[["errorStore"]]      
-  d <- data.frame(x = xvalues, y = yvalues)
-  xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
-  yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
-    
-  p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y)) +
-        JASPgraphs::geom_line()
-  if(options[["maxK"]] <= 25)
-    p <- p + JASPgraphs::geom_point()
-  p <- p + ggplot2::scale_x_continuous(name = "Nearest neighbors", breaks = xBreaks, limits = range(xBreaks)) + 
-          ggplot2::scale_y_continuous(name = "Classification error", breaks = yBreaks, limits = range(yBreaks)) +
-          JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = classificationResult[["nn"]], y = yvalues[classificationResult[["nn"]]]), fill = "red")
-  p <- JASPgraphs::themeJasp(p)
-
-  plotErrorVsK$plotObject <- p
-}
-
 .classificationDecisionBoundaries <- function(dataset, options, jaspResults, ready, position, type){
 
   if (!is.null(jaspResults[["decisionBoundary"]]) || !options[["decisionBoundary"]]) return()

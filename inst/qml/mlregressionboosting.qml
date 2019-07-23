@@ -58,13 +58,13 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
-            text: qsTr("Predicted performance") 
-            name: "predictedPerformancePlot"
+            name: "plotOOBChangeDev"
+            text: qsTr("Out-of-bag improvement")      
         }
 
         CheckBox { 
-            name: "plotOOBChangeDev"
-            text: qsTr("Out-of-bag improvement")      
+            text: qsTr("Predictive performance") 
+            name: "predictedPerformancePlot"
         }
 
         CheckBox { 

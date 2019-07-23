@@ -201,7 +201,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
         ggplot2::scale_x_continuous("\u03BB", breaks = xBreaks, labels = xBreaks) +
         ggplot2::scale_y_continuous("Coefficients", breaks = yBreaks, labels = yBreaks) + 
         ggplot2::scale_color_manual(values = colorspace::qualitative_hcl(n = length(options[["predictors"]]))) +
-        ggplot2::labs(color = "Predictor")
+        ggplot2::labs(color = "")
 
   if(options[["variableTraceLegend"]]){
     p <- JASPgraphs::themeJasp(p, legend.position = "right")
@@ -236,7 +236,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
         ggplot2::geom_ribbon(data = regressionResult[["cvMSELambda"]], mapping = ggplot2::aes(ymin = MSE - sd, ymax = MSE + sd), fill = "grey90") +
         JASPgraphs::geom_line() +
         ggplot2::scale_x_continuous("\u03BB", breaks = xBreaks, labels = xBreaks) +
-        ggplot2::scale_y_continuous("CV Mean Squared Error", breaks = yBreaks, labels = yBreaks) +
+        ggplot2::scale_y_continuous("Cross-Validated \nMean Squared Error", breaks = yBreaks, labels = yBreaks) +
         ggplot2::geom_vline(ggplot2::aes(xintercept = regressionResult[["model"]]$lambda.min, color = "lambdaMin"), linetype = "dashed") +
         ggplot2::geom_vline(ggplot2::aes(xintercept = regressionResult[["model"]]$lambda.1se, color = "lambda1se"), linetype = "dashed") +
         ggplot2::scale_color_manual(name = "", values = c(lambdaMin = "#14a1e3", lambda1se = "#99c454"), labels = c(lambdaMin = "Min. CV MSE", lambda1se = "\u03BB 1 SE"))

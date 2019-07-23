@@ -36,11 +36,11 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   # Create the variable importance table
   .randomForestVariableImportance(options, jaspResults, ready, purpose = "regression")
 
-  # Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 5)
-
   # Create the trees vs model error plot
-  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 6, purpose = "regression")
+  .randomForestTreesErrorPlot(options, jaspResults, ready, position = 5, purpose = "regression")
+
+  # Create the predicted performance plot
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 6)
 
   # Create the mean decrease in accuracy plot
   .randomForestPlotDecreaseAccuracy(options, jaspResults, ready, position = 7, purpose = "regression")

@@ -33,11 +33,12 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	# Create the evaluation metrics table
 	.regressionEvaluationMetrics(dataset, options, jaspResults, ready)
 
-	# Create the predicted performance plot
-	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 3)
-		
 	# Create the mean squared error plot
-	.regressionKnnErrorPlot(dataset, options, jaspResults, ready, position = 4)
+	.knnErrorPlot(dataset, options, jaspResults, ready, position = 3, purpose = "regression")
+
+	# Create the predicted performance plot
+	.regressionPredictedPerformancePlot(options, jaspResults, ready, position = 4)
+
 }
 
 .knnRegression <- function(dataset, options, jaspResults, ready){
@@ -66,7 +67,6 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 			errorStore[i] <- mean( (kfit_tmp$fitted.values -  test[,.v(options[["target"]])])^2 )
 			kfit_tmp2 <- kknn::kknn(formula = formula, train = train, test = train, k = i, 
 				distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
-			errorStore[i] <- mean( (kfit_tmp$fitted.values -  test[,.v(options[["target"]])])^2 )
 			trainErrorStore[i] <- mean( (kfit_tmp2$fitted.values -  train[,.v(options[["target"]])])^2 )
 			progressbarTick()
 		}
@@ -150,11 +150,13 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	return(regressionResult)
 }
 
-.regressionKnnErrorPlot <- function(dataset, options, jaspResults, ready, position){
+.knnErrorPlot <- function(dataset, options, jaspResults, ready, position, purpose){
 
   if(!is.null(jaspResults[["plotErrorVsK"]]) || !options[["plotErrorVsK"]] || options[["modelOpt"]] != "optimizationError") return()
 
-  plotErrorVsK <- createJaspPlot(plot = NULL, title = "Mean Squared Error Plot", width = 500, height = 300)
+  plotTitle <- base::switch(purpose, "classification" = "Classification Error Plot", "regression" = "Mean Squared Error Plot")
+
+  plotErrorVsK <- createJaspPlot(plot = NULL, title = plotTitle, width = 500, height = 300)
   plotErrorVsK$position <- position
   plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid"))
@@ -162,13 +164,19 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 
   if(!ready) return()
 
-  regressionResult <- jaspResults[["regressionResult"]]$object  
+  result <- base::switch(purpose,
+  						"classification" = jaspResults[["classificationResult"]]$object,
+						"regression" = jaspResults[["regressionResult"]]$object)
+
+  ylabel <- base::switch(purpose,
+  							"classification" = "Classification Error",
+							"regression" = "Mean Squared Error")
 
   if(options[["modelOpt"]] == "optimizationError" && options[["modelValid"]] == "validationManual"){
 
     xvalues <- rep(1:options[["maxK"]], 2)
-    yvalues1 <- regressionResult[["errorStore"]]  
-    yvalues2 <- regressionResult[["trainErrorStore"]] 
+    yvalues1 <- result[["errorStore"]]  
+    yvalues2 <- result[["trainErrorStore"]] 
     yvalues <- c(yvalues1, yvalues2)
     type <- rep(c("Test set", "Training set"), each = length(yvalues1))
     d <- data.frame(x = xvalues, y = yvalues, type = type)
@@ -176,8 +184,8 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
     xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
     yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
 
-    pointData <- data.frame(x = rep(regressionResult[["nn"]], 2), 
-                            y = c(yvalues1[regressionResult[["nn"]]], yvalues2[regressionResult[["nn"]]]),
+    pointData <- data.frame(x = rep(result[["nn"]], 2), 
+                            y = c(yvalues1[result[["nn"]]], yvalues2[result[["nn"]]]),
                             type = c("Test set", "Training set"))
 
     p <- ggplot2::ggplot(data = d, ggplot2::aes(x = x, y = y, linetype = type)) + 
@@ -185,8 +193,8 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
     if(options[["maxK"]] <= 10)
       p <- p + JASPgraphs::geom_point()
 
-    p <- p + ggplot2::scale_x_continuous(name = "Nearest neighbors", breaks = xBreaks, limits = range(xBreaks)) + 
-              ggplot2::scale_y_continuous(name = "Mean squared error", breaks = yBreaks, limits = range(yBreaks)) +
+    p <- p + ggplot2::scale_x_continuous(name = "Number of Nearest Neighbors", breaks = xBreaks, labels = xBreaks) + 
+              ggplot2::scale_y_continuous(name = ylabel, breaks = yBreaks, labels = yBreaks) +
               ggplot2::labs(linetype = "")
     p <- p + JASPgraphs::geom_point(data = pointData, ggplot2::aes(x = x, y = y, linetype = type), fill = "red")
     p <- JASPgraphs::themeJasp(p, legend.position = "top")
@@ -194,7 +202,7 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
   } else {
 
     xvalues <- 1:options[["maxK"]]
-    yvalues <- regressionResult[["errorStore"]]      
+    yvalues <- result[["errorStore"]]      
     d <- data.frame(x = xvalues, y = yvalues)
     xBreaks <- JASPgraphs::getPrettyAxisBreaks(d$x, min.n = 4)
     yBreaks <- JASPgraphs::getPrettyAxisBreaks(d$y, min.n = 4)
@@ -204,9 +212,9 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
     if(options[["maxK"]] <= 10)
       p <- p + JASPgraphs::geom_point()
 
-    p <- p + ggplot2::scale_x_continuous(name = "Nearest neighbors", breaks = xBreaks, limits = range(xBreaks)) + 
-              ggplot2::scale_y_continuous(name = "Mean squared error", breaks = yBreaks, limits = range(yBreaks)) + 
-              JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = regressionResult[["nn"]], y = yvalues[regressionResult[["nn"]]]), fill = "red")
+    p <- p + ggplot2::scale_x_continuous(name = "Number of Nearest Neighbors", breaks = xBreaks, labels = xBreaks) + 
+              ggplot2::scale_y_continuous(name = ylabel, breaks = yBreaks, labels = yBreaks) + 
+              JASPgraphs::geom_point(ggplot2::aes(x = x, y = y), data = data.frame(x = result[["nn"]], y = yvalues[result[["nn"]]]), fill = "red")
     p <- JASPgraphs::themeJasp(p)
 
   }

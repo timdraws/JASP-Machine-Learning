@@ -52,16 +52,16 @@ Form {
     
     GroupBox {
         title: qsTr("Plots")
-        
-        CheckBox { 
-            text: qsTr("Predicted performance") 
-            name: "predictedPerformancePlot"
-        }
 
         CheckBox { 
             text: qsTr("Mean squared error") 
             name: "plotErrorVsK"
             enabled: !optimizationManual.checked 
+        }
+        
+        CheckBox { 
+            text: qsTr("Predictive performance") 
+            name: "predictedPerformancePlot"
         }
     }
     

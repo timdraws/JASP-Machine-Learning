@@ -37,7 +37,7 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     .classificationEvaluationMetrics(dataset, options, jaspResults, ready)
     
     # Create the classification error plot
-    .classificationErrorPlot(dataset, options, jaspResults, ready, position = 4)
+    .knnErrorPlot(dataset, options, jaspResults, ready, position = 4, purpose = "classification")
 
     # Create the ROC curve
     .rocCurve(dataset, options, jaspResults, ready, position = 5, type = "knn")
@@ -64,11 +64,15 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     } else { 
       nnRange <- 1:options[["maxK"]]
       errorStore <- numeric(length(nnRange))
+      trainErrorStore <- numeric(length(nnRange))
       startProgressbar(length(nnRange))
       for(i in nnRange){
           kfit_tmp <- kknn::kknn(formula = formula, train = train, test = test, k = i, 
               distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
           errorStore[i] <- 1 - sum(diag(prop.table(table(kfit_tmp$fitted.values, test[,.v(options[["target"]])]))))
+          kfit_tmp2 <- kknn::kknn(formula = formula, train = train, test = train, k = i, 
+				      distance = options[['distanceParameterManual']], kernel = options[['weights']], scale = FALSE)
+			    trainErrorStore[i] <- 1 - sum(diag(prop.table(table(kfit_tmp2$fitted.values, train[,.v(options[["target"]])]))))
           progressbarTick()
       }
       nn <- base::switch(options[["modelOpt"]],
@@ -146,6 +150,8 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
 
   if(options[["modelOpt"]] == "optimizationError")
     classificationResult[["errorStore"]] <- errorStore
+  if(options[["modelOpt"]] == "optimizationError" && options[["modelValid"]] == "validationManual")
+		classificationResult[["trainErrorStore"]] <- trainErrorStore
 
   return(classificationResult)
 }
