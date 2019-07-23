@@ -242,7 +242,7 @@
 
   if (!is.null(jaspResults[["decisionBoundary"]]) || !options[["decisionBoundary"]]) return()
   
-  decisionBoundary <- createJaspPlot(title = "Decision Boundary Plots", height = 400, width = 300)
+  decisionBoundary <- createJaspPlot(title = "Decision Boundary Matrix", height = 400, width = 300)
   decisionBoundary$position <- position
   decisionBoundary$dependOn(options = c("decisionBoundary", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 

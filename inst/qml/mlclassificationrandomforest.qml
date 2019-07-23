@@ -90,7 +90,7 @@ Form {
 
         CheckBox { 
             name: "decisionBoundary"
-            text: qsTr("Decision boundaries")
+            text: qsTr("Decision boundary matrix")
 
             RowLayout {
 

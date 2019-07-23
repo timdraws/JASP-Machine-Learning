@@ -107,7 +107,7 @@ Form {
 
         CheckBox { 
             name: "matrixplot"
-            text: qsTr("Discriminant matrix")
+            text: qsTr("Linear discriminant matrix")
 
             RowLayout {
 
@@ -127,7 +127,7 @@ Form {
 
         CheckBox { 
             name: "decisionBoundary"
-            text: qsTr("Decision boundaries")
+            text: qsTr("Decision boundary matrix")
 
             RowLayout {
 

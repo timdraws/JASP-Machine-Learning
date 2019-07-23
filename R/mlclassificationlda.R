@@ -201,7 +201,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if (!is.null(jaspResults[["matrixplot"]]) || !options[["matrixplot"]]) return()
   
-  matrixplot <- createJaspPlot(title = "Discriminant Matrix Plot", height = 400, width = 300)
+  matrixplot <- createJaspPlot(title = "Linear Discriminant Matrix", height = 400, width = 300)
   matrixplot$position <- position
   matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
