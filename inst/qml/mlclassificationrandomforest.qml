@@ -16,10 +16,11 @@
 // <http://www.gnu.org/licenses/>.
 //
 
-import QtQuick 2.8
-import QtQuick.Layouts 1.3
-import JASP.Controls 1.0
-import JASP.Theme 1.0
+import QtQuick			2.8
+import QtQuick.Layouts	1.3
+import JASP.Controls	1.0
+import JASP.Widgets		1.0
+import JASP.Theme		1.0
 
 Form {
 
@@ -162,14 +163,6 @@ Form {
             }
 
             PercentField { 
-                name: "trainingDataManual"     
-                text: qsTr("Data used for training:")     
-                defaultValue: 80      
-                min: 5
-                max: 95                                   
-            }
-
-            PercentField { 
                 name: "bagFrac"       
                 text: qsTr("Training data used per tree:")
                 defaultValue: 50 
@@ -196,6 +189,16 @@ Form {
                     max: 999999
                     visible: noOfPredictors.currentIndex == 1 
                 }
+            }
+
+            Divider { }
+
+            PercentField { 
+                name: "trainingDataManual"     
+                text: qsTr("Data used for training:")     
+                defaultValue: 80      
+                min: 5
+                max: 95                                   
             }
 
             CheckBox { 

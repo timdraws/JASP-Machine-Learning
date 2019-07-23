@@ -16,10 +16,11 @@
 // <http://www.gnu.org/licenses/>.
 //
 
-import QtQuick 2.8
-import QtQuick.Layouts 1.3
-import JASP.Controls 1.0
-import JASP.Theme 1.0
+import QtQuick			2.8
+import QtQuick.Layouts	1.3
+import JASP.Controls	1.0
+import JASP.Widgets		1.0
+import JASP.Theme		1.0
 
 Form {
 
@@ -81,6 +82,8 @@ Form {
                 text: qsTr("Class means training data")             
             }
         }
+
+        Divider { }
 
         GroupBox {
             title: qsTr("Assumption Checks")
@@ -175,14 +178,6 @@ Form {
 
         GroupBox {
 
-            PercentField { 
-                name: "trainingDataManual"
-                text: qsTr("Data used for training:")       
-                defaultValue: 80   
-                min: 5
-                max: 95  
-            }
-
             DropDown {
                 name: "estimationMethod"
                 indexDefaultValue: 0
@@ -194,6 +189,16 @@ Form {
                     { label: "MVE", value: "covMve"},
                     { label: "t", value: "t"},
                 ]
+            }
+
+            Divider { }
+
+            PercentField { 
+                name: "trainingDataManual"
+                text: qsTr("Data used for training:")       
+                defaultValue: 80   
+                min: 5
+                max: 95  
             }
 
             CheckBox { 

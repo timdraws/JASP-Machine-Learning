@@ -46,9 +46,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   .ldaClassificationMeans(options, jaspResults, ready, position = 7)
 
   # Create the test of equality of means table
-  .ldaEqualityOfGroupMeans(dataset, options, jaspResults, ready, position = 8)
+  .ldaEqualityOfClassMeans(dataset, options, jaspResults, ready, position = 8)
 
-  # Create the test of equality of movariance matrices table
+  # Create the test of equality of covariance matrices table
   .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready, position = 9)
 
   # Create the multicollinearity table
@@ -374,11 +374,11 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   return(p)
 }
 
-.ldaEqualityOfGroupMeans <- function(dataset, options, jaspResults, ready, position){
+.ldaEqualityOfClassMeans <- function(dataset, options, jaspResults, ready, position){
 
   if(!is.null(jaspResults[["manovaTable"]]) || !options[["manovaTable"]]) return()
   
-  manovaTable <- createJaspTable(title = "Tests of Equality of Group Means")
+  manovaTable <- createJaspTable(title = "Tests of Equality of Class Means")
   manovaTable$position <- position
   manovaTable$dependOn(options = c("manovaTable", "scaleEqualSD", "target", "predictors"))
   manovaTable$addColumnInfo(name = "model", title = "", type = "string")
@@ -387,7 +387,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   manovaTable$addColumnInfo(name = "df2", title = "df2", type = "integer")
   manovaTable$addColumnInfo(name = "p", title = "p", type = "pvalue")
 
-  manovaTable$addFootnote(message= "The null hypothesis specifies equal group means." , symbol="<i>Note.</i>")
+  manovaTable$addFootnote(message= "The null hypothesis specifies equal class means." , symbol="<i>Note.</i>")
   
   jaspResults[["manovaTable"]] <- manovaTable
 
@@ -449,7 +449,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 
   if(!is.null(jaspResults[["multicolTable"]]) || !options[["multicolTable"]]) return()
   
-  multicolTable <- createJaspTable(title = "Pooled Within-Group Matrices Correlations")
+  multicolTable <- createJaspTable(title = "Pooled Within-Class Matrices Correlations")
   multicolTable$position <- position
   multicolTable$dependOn(options = c("multicolTable", "scaleEqualSD", "target", "predictors"))
   

@@ -15,10 +15,12 @@
 // License along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 //
-import QtQuick 2.8
-import QtQuick.Layouts 1.3
-import JASP.Controls 1.0
-import JASP.Widgets 1.0
+
+import QtQuick			2.8
+import QtQuick.Layouts	1.3
+import JASP.Controls	1.0
+import JASP.Widgets		1.0
+import JASP.Theme		1.0
 
 Form {
 
@@ -87,6 +89,8 @@ Form {
                 }
             }
 
+            Divider { }
+
             RadioButtonGroup {
                 title: qsTr("Cross-Validation")
                 name: "modelValid"
@@ -124,7 +128,7 @@ Form {
 
             IntegerField { 
                 name: "noOfNearestNeighbours"
-                text: qsTr("No. of nearest neighbors:") 
+                text: qsTr("Nearest neighbors:") 
                 defaultValue: 3 
                 min: 1; max: 999999
                 fieldWidth: 60
@@ -141,26 +145,6 @@ Form {
                 enabled: !optimizationManual.checked 
             }
 
-            PercentField { 
-                name: "trainingDataManual"
-                text: qsTr("Data used for training:")       
-                defaultValue: 80
-                enabled: validationManual.checked 
-                min: 5
-                max: 95 
-            }
-
-            DropDown {
-                name: "distanceParameterManual"
-                indexDefaultValue: 0
-                label: qsTr("Distance:")
-                values:
-                [
-                    { label: "Euclidian", value: "2"},
-                    { label: "Manhattan", value: "1"}
-                ]
-            }
-            
             DropDown {
                 name: "weights"
                 indexDefaultValue: 0
@@ -177,6 +161,28 @@ Form {
                     { label: "Rank", value: "rank"},
                     { label: "Optimal", value: "optimal"}
                 ]
+            }
+
+            DropDown {
+                name: "distanceParameterManual"
+                indexDefaultValue: 0
+                label: qsTr("Distance:")
+                values:
+                [
+                    { label: "Euclidian", value: "2"},
+                    { label: "Manhattan", value: "1"}
+                ]
+            }
+
+            Divider { }
+            
+            PercentField { 
+                name: "trainingDataManual"
+                text: qsTr("Data used for training:")       
+                defaultValue: 80
+                enabled: validationManual.checked 
+                min: 5
+                max: 95 
             }
 
             CheckBox { 

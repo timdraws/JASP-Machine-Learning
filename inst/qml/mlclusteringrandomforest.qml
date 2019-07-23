@@ -15,12 +15,15 @@
 // License along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 //
-import QtQuick 2.8
-import QtQuick.Layouts 1.3
-import JASP.Controls 1.0
-import JASP.Widgets 1.0
+
+import QtQuick			2.8
+import QtQuick.Layouts	1.3
+import JASP.Controls	1.0
+import JASP.Widgets		1.0
+import JASP.Theme		1.0
 
 Form {
+
     VariablesForm {
         AvailableVariablesList {name: "variables"}
         AssignedVariablesList {
@@ -157,6 +160,8 @@ Form {
                 max: 999999
                 fieldWidth: 60 
             }
+
+            Divider { }
 
             CheckBox { 
                 text: qsTr("Scale variables") 

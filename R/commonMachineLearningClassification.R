@@ -650,8 +650,8 @@
   for(i in 1:length(lvls)){
 
     TP                <- length(which(pred == lvls[i] & real == lvls[i]))
-    FP                <- length(which(pred != lvls[i] & real == lvls[i]))
-    FN                <- length(which(pred != lvls[i] & real != lvls[i]))
+    FN                <- length(which(pred != lvls[i] & real == lvls[i]))
+    FP                <- length(which(pred == lvls[i] & real != lvls[i]))
 
     precision_tmp     <- TP / (TP + FP)
     recall_tmp        <- TP / (TP + FN)
