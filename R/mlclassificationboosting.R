@@ -30,11 +30,11 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   # Create the confusion table
   .classificationConfusionTable(dataset, options, jaspResults, ready, position = 2)
 
-  # Create the confusion table
-  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 3)
-
   # Create the class proportions table
-  .classificationClassProportions(dataset, options, jaspResults, ready, position = 4)
+  .classificationClassProportions(dataset, options, jaspResults, ready, position = 3)
+
+  # Create the validation measures table
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 4)
 
   # Create the relative influence table
   .boostingRelativeInfluenceTable(options, jaspResults, ready, position = 5, purpose = "classification")
