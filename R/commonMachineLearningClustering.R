@@ -144,6 +144,9 @@
     if(clusterResult[["oneMark"]] == 1)
       clusteringTable$addFootnote(message = "Your cluster model contains 1 cluster and 0 Noisepoints. You could change the Eps and MinPts parameters.", symbol="<i>Note.</i>") 
   }
+
+  if(!options[["scaleEqualSD"]])
+    clusteringTable$addFootnote(message = "The variables in the model are <b>unstandardized</b>.", symbol="<i>Note.</i>")
   
   row <- data.frame(clusters = clusterResult[['clusters']], measure = clusterResult[['BSS']]/clusterResult[['TSS']], aic = round(clusterResult[['AIC']], 2),
                     bic = round(clusterResult[['BIC']], 2), Silh = round(clusterResult[['Silh_score']], 2), n = clusterResult[["N"]])
