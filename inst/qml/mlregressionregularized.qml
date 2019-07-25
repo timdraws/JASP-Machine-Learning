@@ -100,6 +100,23 @@ Form {
             name: "shrinkage"
 
             RadioButton { 
+                id: validationManual
+                text: qsTr("Manual")                       
+                name: "manual"  
+                childrenOnSameRow: true
+
+                DoubleField { 
+                    name: "lambda"
+                    label: "\u03BB:"
+                    defaultValue: 1 
+                    min: 0
+                    max: 999999
+                    fieldWidth: 60 
+                    visible: validationManual.checked             
+                }
+            }
+
+            RadioButton { 
                 text: qsTr("Cross-validated mean squared error")               
                 name: "optMin"
                 checked: true             
@@ -109,23 +126,10 @@ Form {
                 text: qsTr("Largest \u03BB within 1 SE of min.")
                 name: "opt1SE"                            
             }
-
-            RadioButton { 
-                text: qsTr("Manual")                       
-                name: "manual"  
-                childrenOnSameRow: true
-
-                DoubleField { 
-                    name: "lambda"
-                    defaultValue: 1 
-                    min: 0
-                    max: 999999
-                    fieldWidth: 60              
-                }
-            }
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             DoubleField { 
                 name: "thresh"     
@@ -144,8 +148,8 @@ Form {
                 label: qsTr("Penalty:")
                 values:
                 [
-                    { label: "Ridge", value: "ridge"},
                     { label: "Lasso", value: "lasso"},
+                    { label: "Ridge", value: "ridge"},
                     { label: "Elastic net", value: "elasticNet"}
                 ]
             }

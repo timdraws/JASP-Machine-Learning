@@ -109,6 +109,12 @@ Form {
             name: "modelOpt"
 
             RadioButton { 
+                id: validationManual 
+                text: qsTr("Manual")                         
+                name: "validationManual"
+            }
+
+            RadioButton { 
                 text: qsTr("AIC")                             
                 name: "validationAIC" 
             }
@@ -123,15 +129,10 @@ Form {
                 text: qsTr("Silhouette")                      
                 name: "validationSilh"  
             }
-
-            RadioButton { 
-                id: validationManual 
-                text: qsTr("Manual")                         
-                name: "validationManual"
-            }
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             IntegerField { 
                 name: "noOfClusters"
@@ -170,10 +171,10 @@ Form {
                 label: qsTr("Linkage:")
                 values:
                 [
-                    { label: "average", value: "average"},
-                    { label: "single", value: "single"},
-                    { label: "complete", value: "complete"},
-                    { label: "centroid", value: "centroid"}
+                    { label: "Average", value: "average"},
+                    { label: "Single", value: "single"},
+                    { label: "Complete", value: "complete"},
+                    { label: "Centroid", value: "centroid"}
                 ]
             }   
 

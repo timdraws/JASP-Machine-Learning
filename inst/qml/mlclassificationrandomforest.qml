@@ -128,23 +128,24 @@ Form {
             name: "modelOpt"
 
             RadioButton { 
-                text: qsTr("Out-of-bag classification error")              
-                name: "optimizationError" 
-                checked: true
-            }
-
-            RadioButton { 
                 id: optimizationManual
                 text: qsTr("Manual")                      
                 name: "optimizationManual" 
             }
+
+            RadioButton { 
+                text: qsTr("Out-of-bag classification error")              
+                name: "optimizationError" 
+                checked: true
+            }
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             IntegerField { 
                 name: "noOfTrees"
-                text: qsTr("No. of trees for training:") 
+                text: qsTr("Trees:") 
                 defaultValue: 500 
                 min: 1
                 max: 999999
@@ -154,7 +155,7 @@ Form {
 
             IntegerField { 
                 name: "maxTrees"
-                text: qsTr("Max. no. of trees for training:") 
+                text: qsTr("Max. trees:") 
                 defaultValue: 500 
                 min: 1
                 max: 999999
@@ -174,7 +175,7 @@ Form {
                     id: noOfPredictors
                     name: "noOfPredictors"
                     indexDefaultValue: 0
-                    label: qsTr("Predictors considered per split:")
+                    label: qsTr("Predictors per split:")
                     values:
                     [
                         { label: "Auto", value: "auto"},

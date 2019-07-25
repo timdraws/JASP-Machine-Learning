@@ -177,11 +177,12 @@ Form {
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             DropDown {
                 name: "estimationMethod"
                 indexDefaultValue: 0
-                label: qsTr("Estimation method")
+                label: qsTr("Estimation method:")
                 values:
                 [
                     { label: "Moment", value: "moment"},

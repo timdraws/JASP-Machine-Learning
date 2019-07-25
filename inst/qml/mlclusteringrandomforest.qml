@@ -109,6 +109,12 @@ Form {
             name: "modelOpt"
 
             RadioButton { 
+                id: validationManual
+                text: qsTr("Manual")                          
+                name: "validationManual" 
+            }
+
+            RadioButton { 
                 text: qsTr("AIC")                             
                 name: "validationAIC" 
             }
@@ -123,14 +129,10 @@ Form {
                 text: qsTr("Silhouette")                      
                 name: "validationSilh" 
             }
-            RadioButton { 
-                id: validationManual
-                text: qsTr("Manual")                          
-                name: "validationManual" 
-            }
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             IntegerField { 
                 name: "noOfClusters"

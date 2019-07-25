@@ -75,17 +75,17 @@ Form {
             RadioButtonGroup {
                 title: qsTr("Model Optimization")
                 name: "modelOpt"
-                
-                RadioButton { 
-                    text: qsTr("Test set mean squared error")          
-                    name: "optimizationError"
-                    checked: true 
-                }
 
                 RadioButton { 
                     id: optimizationManual 
                     text: qsTr("Manual")                        
                     name: "optimizationManual"
+                }
+                
+                RadioButton { 
+                    text: qsTr("Validation set mean squared error")          
+                    name: "optimizationError"
+                    checked: true 
                 }
             }
 
@@ -94,26 +94,6 @@ Form {
             RadioButtonGroup {
                 title: qsTr("Cross-Validation")
                 name: "modelValid"
-                
-                RadioButton { 
-                    id: validationLeaveOneOut 
-                    text: qsTr("Leave-one-out")        
-                    name: "validationLeaveOneOut"
-                }
-
-                RadioButton { 
-                    name: "validationKFold"
-                    childrenOnSameRow: true
-
-                    IntegerField {
-                        name: "noOfFolds"
-                        afterLabel: qsTr("-fold")
-                        defaultValue: 3
-                        min: 2
-                        max: 15
-                        fieldWidth: 25
-                    }
-                }
 
                 RadioButton { 
                     id: validationManual 
@@ -121,10 +101,39 @@ Form {
                     name: "validationManual"
                     checked: true
                 }
+
+                RowLayout {
+                    spacing: 0
+                    
+                    RadioButton { 
+                        id: validationKFold
+                        name: "validationKFold"
+                        childrenOnSameRow: true
+                        text: qsTr("K-fold")
+                    }
+
+                    IntegerField {
+                        name: "noOfFolds"
+                        afterLabel: qsTr("folds")
+                        label: qsTr("with")
+                        defaultValue: 5
+                        min: 2
+                        max: 999
+                        fieldWidth: 30
+                        visible: validationKFold.checked
+                    } 
+                }
+
+                RadioButton { 
+                    id: validationLeaveOneOut 
+                    text: qsTr("Leave-one-out")        
+                    name: "validationLeaveOneOut"
+                }
             }
         }
     
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             IntegerField { 
                 name: "noOfNearestNeighbours"

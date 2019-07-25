@@ -109,6 +109,12 @@ Form {
             name: "modelOpt"
 
             RadioButton { 
+                id: validationManual 
+                text: qsTr("Manual")                          
+                name: "validationManual"
+            }
+
+            RadioButton { 
                 text: qsTr("AIC")                             
                 name: "validationAIC" 
             }
@@ -123,15 +129,10 @@ Form {
                 text: qsTr("Silhouette")                      
                 name: "validationSilh" 
             }
-
-            RadioButton { 
-                id: validationManual 
-                text: qsTr("Manual")                          
-                name: "validationManual"
-            }
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             IntegerField { 
                 name: "noOfClusters"
@@ -155,7 +156,7 @@ Form {
 
             IntegerField { 
                 name: "noOfIterations"
-                text: qsTr("Iterations:") 
+                text: qsTr("Max. iterations:") 
                 defaultValue: 25 
                 min: 1
                 max: 999999

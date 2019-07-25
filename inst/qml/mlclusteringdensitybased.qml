@@ -110,6 +110,7 @@ Form {
         }
 
         GroupBox {
+            title: qsTr("Algorithmic Settings")
 
             DoubleField { 
                 name: "eps"
@@ -124,7 +125,7 @@ Form {
 
             IntegerField { 
                 name: "minPts"
-                text: qsTr("Minimum no. of core points:") 
+                text: qsTr("Min. core points:") 
                 defaultValue: 5 
                 min: 2
                 max: 999999
