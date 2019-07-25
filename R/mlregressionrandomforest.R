@@ -50,9 +50,9 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 .randomForestRegression <- function(dataset, options, jaspResults){
   
   dataset                 <- na.omit(dataset)
-  train.index             <- sample(c(TRUE,FALSE),nrow(dataset), replace = TRUE, prob = c(options[['trainingDataManual']], 1-options[['trainingDataManual']]))
+  train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
   train                   <- dataset[train.index, ]
-  test                    <- dataset[!train.index, ]
+  test                    <- dataset[-train.index, ]
 
   predictors <- train[, .v(options[["predictors"]])]
   target <- train[, .v(options[["target"]])]
