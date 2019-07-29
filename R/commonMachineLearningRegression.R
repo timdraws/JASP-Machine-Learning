@@ -161,6 +161,17 @@
   .regressionMachineLearning(dataset, options, jaspResults, ready, type = type)
 
   regressionResult <- jaspResults[["regressionResult"]]$object
+
+  # Adjust train and test numbers for cross-validation
+  nTrain <- regressionResult[["ntrain"]]
+  nValid <- regressionResult[["nvalid"]]
+  if(options[["modelValid"]] == "validationKFold"){
+    nValid <- floor(nValid / options[["noOfFolds"]])
+    nTrain <- nTrain - nValid
+  } else if(options[["modelValid"]] == "validationLeaveOneOut"){
+    nValid <- 1
+    nTrain <- nTrain - 1
+  }
   
   if(type == "knn"){
 
@@ -172,8 +183,8 @@
     row <- data.frame(nn = regressionResult[["nn"]], 
                       weights = regressionResult[["weights"]], 
                       distance = distance, 
-                      ntrain = regressionResult[["ntrain"]], 
-                      nvalid = regressionResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = regressionResult[["ntest"]], 
                       validMSE = regressionResult[["validMSE"]],
                       testMSE = regressionResult[["testMSE"]])
@@ -186,8 +197,8 @@
 
     row <- data.frame(penalty = regressionResult[["penalty"]], 
                       lambda = regressionResult[["lambda"]], 
-                      ntrain = regressionResult[["ntrain"]], 
-                      nvalid = regressionResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = regressionResult[["ntest"]], 
                       validMSE = regressionResult[["validMSE"]],
                       testMSE = regressionResult[["testMSE"]])
@@ -199,8 +210,8 @@
 
     row <- data.frame(trees = regressionResult[["noOfTrees"]], 
                       preds = regressionResult[["predPerSplit"]], 
-                      ntrain = regressionResult[["ntrain"]], 
-                      nvalid = regressionResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = regressionResult[["ntest"]], 
                       validMSE = regressionResult[["validMSE"]], 
                       testMSE = regressionResult[["testMSE"]], 
@@ -213,8 +224,8 @@
     row <- data.frame(trees = regressionResult[["noOfTrees"]], 
                       shrinkage = options[["shrinkage"]], 
                       distribution = distribution, 
-                      ntrain = regressionResult[["ntrain"]], 
-                      nvalid = regressionResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = regressionResult[["ntest"]], 
                       validMSE = regressionResult[["validMSE"]],
                       testMSE = regressionResult[["testMSE"]])

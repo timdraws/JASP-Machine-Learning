@@ -158,6 +158,17 @@
   .classification(dataset, options, jaspResults, ready, type = type)
 
   classificationResult <- jaspResults[["classificationResult"]]$object
+
+  # Adjust train and test numbers for cross-validation
+  nTrain <- classificationResult[["ntrain"]]
+  nValid <- classificationResult[["nvalid"]]
+  if(options[["modelValid"]] == "validationKFold"){
+    nValid <- floor(nValid / options[["noOfFolds"]])
+    nTrain <- nTrain - nValid
+  } else if(options[["modelValid"]] == "validationLeaveOneOut"){
+    nValid <- 1
+    nTrain <- nTrain - 1
+  }
   
   if(type == "knn"){
 
@@ -169,8 +180,8 @@
     row <- data.frame(nn = classificationResult[["nn"]], 
                       weights = classificationResult[["weights"]], 
                       distance = distance, 
-                      ntrain = classificationResult[["ntrain"]], 
-                      nvalid = classificationResult[["nvalid"]], 
+                      ntrain = nTrain, 
+                      nvalid = nValid, 
                       ntest = classificationResult[["ntest"]], 
                       validAcc = classificationResult[["validAcc"]], 
                       testAcc = classificationResult[["testAcc"]])
@@ -181,8 +192,8 @@
     method <- base::switch(options[["estimationMethod"]], "moment" = "Moment", "mle" = "MLE", "covMve" = "MVE","t" = "t")
     row <- data.frame(lda = ncol(classificationResult[["scaling"]]), 
                       method = method, 
-                      ntrain = classificationResult[["ntrain"]], 
-                      nvalid = classificationResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = classificationResult[["ntest"]], 
                       validAcc = classificationResult[["validAcc"]],
                       testAcc = classificationResult[["testAcc"]])
@@ -192,8 +203,8 @@
 
     row <- data.frame(trees = classificationResult[["noOfTrees"]], 
                       preds = classificationResult[["predPerSplit"]], 
-                      ntrain = classificationResult[["ntrain"]], 
-                      nvalid = classificationResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = classificationResult[["ntest"]], 
                       validAcc = classificationResult[["validAcc"]],
                       testAcc = classificationResult[["testAcc"]], 
@@ -204,8 +215,8 @@
 
     row <- data.frame(trees = classificationResult[["noOfTrees"]], 
                       shrinkage = options[["shrinkage"]], 
-                      ntrain = classificationResult[["ntrain"]], 
-                      nvalid = classificationResult[["nvalid"]],
+                      ntrain = nTrain, 
+                      nvalid = nValid,
                       ntest = classificationResult[["ntest"]], 
                       validAcc = classificationResult[["validAcc"]],
                       testAcc = classificationResult[["testAcc"]])
