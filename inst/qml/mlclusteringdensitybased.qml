@@ -114,7 +114,7 @@ Form {
 
             IntegerField { 
                 name: "minPts"
-                text: qsTr("Min. core points:") 
+                text: qsTr("Minimium core points:") 
                 defaultValue: 5 
                 min: 2
                 max: 999999
@@ -132,8 +132,6 @@ Form {
                 ]
             }
 
-            Divider { }
-
             CheckBox { 
                 text: qsTr("Scale variables") 
                 name: "scaleEqualSD"
@@ -144,7 +142,6 @@ Form {
                 name: "seedBox"
                 text: qsTr("Set seed:")
                 childrenOnSameRow: true
-                checked: true
 
                 DoubleField { 
                     name: "seed"
@@ -159,10 +156,11 @@ Form {
         RadioButtonGroup {
             title: qsTr("Model Optimization")
             name: "modelOpt"
+            visible: false
 
             RadioButton { 
                 id: validationManual 
-                text: qsTr("Manual")                          
+                text: qsTr("Fixed")                          
                 name: "validationManual"
             }
         }

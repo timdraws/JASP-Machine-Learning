@@ -101,7 +101,7 @@ if(options[["modelOpt"]] == "validationManual"){
     progressbarTick()
   }
 
-  clusters <- base::switch(options[["modelOpt"]],
+  clusters <- base::switch(options[["optimizationCriterion"]],
                             "validationSilh" = clusterRange[which.max(avg_silh)],
                             "validationAIC" = clusterRange[which.min(aicStore)],
                             "validationBIC" = clusterRange[which.min(bicStore)])
@@ -174,7 +174,7 @@ if(options[["modelOpt"]] == "validationManual"){
   # Create table
   importanceTable <- createJaspTable(title = "Variable Importance")
   importanceTable$position <- position
-  importanceTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+  importanceTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", "optimizationCriterion",
                                                       "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees", "importanceTable"))
   
   # Add column info

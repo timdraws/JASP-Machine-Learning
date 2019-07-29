@@ -67,10 +67,10 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
   formula <- jaspResults[["formula"]]$object
   
   dataset                   <- na.omit(dataset)
-  if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
     train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else{
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+  } else {
+    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
   }
   trainAndValid           <- dataset[train.index, ]
   valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
@@ -87,7 +87,9 @@ MLClassificationBoosting <- function(jaspResults, dataset, options, ...) {
     valid <- trainAndValid
   }
 
-  bfit <- gbm::gbm(formula = formula, data = train, n.trees = options[["noOfTrees"]],
+  trees <- base::switch(options[["modelOpt"]], "optimizationManual" = options[["noOfTrees"]], "optimizationOOB" = options[["maxTrees"]])
+
+  bfit <- gbm::gbm(formula = formula, data = train, n.trees = trees,
                           shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                           cv.folds = noOfFolds, bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
                           distribution = "multinomial", n.cores = 1, keep.data = TRUE) # Multiple cores breaks modules in JASP, see: INTERNAL-jasp#372

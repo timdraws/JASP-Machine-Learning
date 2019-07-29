@@ -89,7 +89,7 @@
     }
     jaspResults[["clusterResult"]] <- createJaspState(clusterResult)
     jaspResults[["clusterResult"]]$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
+                                                      "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees", "optimizationCriterion"))
   }
 }
 
@@ -106,7 +106,7 @@
 
   clusteringTable                       <- createJaspTable(title)
   clusteringTable$position <- position
-  clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
+  clusteringTable$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", "optimizationCriterion",
                                                       "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
 
   clusteringTable$addColumnInfo(name = 'clusters', title = 'Clusters', type = 'integer')
@@ -129,7 +129,7 @@
   clusterResult <- jaspResults[["clusterResult"]]$object
 
   if(options[["modelOpt"]] != "validationManual"){
-    criterion <- base::switch(options[["modelOpt"]], "validationAIC" = "AIC", "validationBIC" = "BIC", "validationSilh" = "silhouette")
+    criterion <- base::switch(options[["optimizationCriterion"]], "validationAIC" = "AIC", "validationBIC" = "BIC", "validationSilh" = "silhouette")
     clusteringTable$addFootnote(message = paste0("The model is optimized with respect to the <i>", criterion, "</i> value."), symbol="<i>Note.</i>")
   }
     
@@ -159,7 +159,7 @@
 
     clusterInfoTable                        <- createJaspTable("Cluster Information")
     clusterInfoTable$dependOn(options =c("tableClusterInformation","predictors", "modelOpt", "noOfIterations",
-                                        "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette",
+                                        "noOfClusters","noOfRandomSets", "tableClusterInfoSize", "tableClusterInfoSilhouette", "optimizationCriterion",
                                         "tableClusterInfoSumSquares", "tableClusterInfoCentroids", "scaleEqualSD", "tableClusterInfoWSS", "minPts", "eps",
                                         "tableClusterInfoBetweenSumSquares", "tableClusterInfoTotalSumSquares", "maxClusters", "m", "linkage", "distance", "noOfTrees"))
   clusterInfoTable$position               <- position
@@ -237,7 +237,7 @@
   clusterPlot$position <- position
   clusterPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "labels", "noOfTrees", "legend"))
+                                          "linkage", "m", "labels", "noOfTrees", "legend", "optimizationCriterion"))
   jaspResults[["plot2dCluster"]] <- clusterPlot
 
   if(!ready) return()
@@ -319,7 +319,7 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
   optimPlot$position <- position
   optimPlot$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "withinssPlot", "noOfTrees"))
+                                          "linkage", "m", "withinssPlot", "noOfTrees", "optimizationCriterion"))
   jaspResults[["optimPlot"]] <- optimPlot
 
   if(!ready) return()
@@ -333,7 +333,7 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
   values <- c(wss, aic, bic)
   type <- rep(c("Within Sum of Squares", "AIC", "BIC"), each = length(wss))
 
-  requiredPoint <- base::switch(options[["modelOpt"]], 
+  requiredPoint <- base::switch(options[["optimizationCriterion"]], 
                                   "validationAIC" = "AIC", 
                                   "validationBIC" = "BIC", 
                                   "validationSilh" = "Within Sum of Squares")
@@ -370,7 +370,7 @@ if(!is.null(jaspResults[["optimPlot"]]) || !options[["withinssPlot"]] || options
     clusterColumn <- clusterResult[["pred.values"]]
     jaspResults[["clusterColumn"]] <- createJaspColumn(columnName=options[["clusterColumn"]])
     jaspResults[["clusterColumn"]]$dependOn(options = c("clusterColumn", "predictors", "noOfClusters","noOfRandomSets", "noOfIterations", "algorithm", "modelOpt", "seed", 
-                                                        "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees"))
+                                                        "maxClusters", "seedBox", "scaleEqualSD", "m", "distance", "linkage", "eps", "minPts", "noOfTrees", "optimizationCriterion"))
     jaspResults[["clusterColumn"]]$setNominal(clusterColumn)
   }  
 }

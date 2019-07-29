@@ -87,7 +87,7 @@ MLClusteringKMeans <- function(jaspResults, dataset, options, ...) {
       progressbarTick()
   }
 
-  clusters <- base::switch(options[["modelOpt"]],
+  clusters <- base::switch(options[["optimizationCriterion"]],
                             "validationSilh" = clusterRange[which.max(avg_silh)],
                             "validationAIC" = clusterRange[which.min(aicStore)],
                             "validationBIC" = clusterRange[which.min(bicStore)])

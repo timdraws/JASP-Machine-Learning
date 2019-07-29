@@ -55,10 +55,10 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   formula <- jaspResults[["formula"]]$object
 
   dataset                   <- na.omit(dataset)
-  if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
     train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else{
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+  } else {
+    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
   }
   trainAndValid           <- dataset[train.index, ]
   valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
@@ -74,7 +74,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
     valid <- trainAndValid
   }
 
-  bfit <- gbm::gbm(formula = formula, data = train, n.trees = options[["noOfTrees"]],
+  trees <- base::switch(options[["modelOpt"]], "optimizationManual" = options[["noOfTrees"]], "optimizationOOB" = options[["maxTrees"]])
+
+  bfit <- gbm::gbm(formula = formula, data = train, n.trees = trees,
                                shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                                cv.folds = noOfFolds, bag.fraction = options[["bagFrac"]],
                                n.minobsinnode = options[["nNode"]], distribution = options[["distance"]], n.cores = 1) # Multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
@@ -83,7 +85,7 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
     
     noOfTrees <- options[["noOfTrees"]]
 
-  } else if(options[["modelOpt"]] == "optimizationError"){
+  } else if(options[["modelOpt"]] == "optimizationOOB"){
 
     noOfTrees <- gbm::gbm.perf(bfit, plot.it = FALSE, method = "OOB")[1]
     bfit <- gbm::gbm(formula = formula, data = train, n.trees = noOfTrees,
@@ -131,7 +133,8 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   classBoostRelInfTable$position <- position
   classBoostRelInfTable$dependOn(options = c("classBoostRelInfTable", "target", "predictors", "modelOpt", "maxTrees", "intDepth", "shrinkage",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox", "modelValid", 
-                                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                                "holdoutData", "testDataManual"))
   
   classBoostRelInfTable$addColumnInfo(name = "predictor",  title = "", type = "string")
   classBoostRelInfTable$addColumnInfo(name = "relIn",  title = "Relative Influence", type = "number")
@@ -156,7 +159,8 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   plotOOBChangeDev$position <- position
   plotOOBChangeDev$dependOn(options = c("plotOOBChangeDev", "target", "predictors", "modelOpt", "maxTrees", "intDepth", "shrinkage",
                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox", "modelValid", 
-                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                "holdoutData", "testDataManual"))
   jaspResults[["plotOOBChangeDev"]] <- plotOOBChangeDev
 
   if(!ready) return()
@@ -200,7 +204,8 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   plotDeviance$position <- position
   plotDeviance$dependOn(options = c("plotDeviance", "target", "predictors", "modelOpt", "maxTrees", "intDepth", "shrinkage",
                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox", "modelValid", 
-                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                "holdoutData", "testDataManual"))
   jaspResults[["plotDeviance"]] <- plotDeviance
 
   if(!ready) return()
@@ -248,7 +253,8 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   plotRelInf$position <- position
   plotRelInf$dependOn(options = c("plotRelInf", "target", "predictors", "modelOpt", "maxTrees", "intDepth", "shrinkage",
                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox", "modelValid", 
-                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                "holdoutData", "testDataManual"))
   jaspResults[["plotRelInf"]] <- plotRelInf
 
   if(!ready) return()

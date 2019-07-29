@@ -88,31 +88,27 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
 .ldaClassification <- function(dataset, options, jaspResults){
 
   formula <- jaspResults[["formula"]]$object
-  
-  if(options[["modelOpt"]] == "optimizationManual"){
 
-    dataset                   <- na.omit(dataset)
-    if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
-      train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-    } else{
-      train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
-    }
-    trainAndValid           <- dataset[train.index, ]
-    valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
-    test                    <- dataset[-train.index, ]
-    valid                   <- trainAndValid[valid.index, ]
-    train                   <- trainAndValid[-valid.index, ]
-
-    method <- base::switch(options[["estimationMethod"]], 
-                            "moment" = "moment",
-                            "mle" = "mle",
-                            "covMve" = "mve",
-                            "t" = "t")
-    ldafit      <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
-    pred_valid  <- stats::predict(ldafit, newdata = valid)
-    pred_test   <- stats::predict(ldafit, newdata = test)
-
+  dataset                   <- na.omit(dataset)
+  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
+    train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
+  } else {
+    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
   }
+  trainAndValid           <- dataset[train.index, ]
+  valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
+  test                    <- dataset[-train.index, ]
+  valid                   <- trainAndValid[valid.index, ]
+  train                   <- trainAndValid[-valid.index, ]
+
+  method <- base::switch(options[["estimationMethod"]], 
+                          "moment" = "moment",
+                          "mle" = "mle",
+                          "covMve" = "mve",
+                          "t" = "t")
+  ldafit      <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
+  pred_valid  <- stats::predict(ldafit, newdata = valid)
+  pred_test   <- stats::predict(ldafit, newdata = test)
 
   # Calculate AUC
   lvls <- levels(factor(test[, .v(options[["target"]])]))
@@ -176,7 +172,8 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   coefficientsTable$position <- position
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                          "holdoutData", "testDataManual"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
   
   jaspResults[["coefficientsTable"]] <- coefficientsTable
@@ -203,7 +200,8 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   priorTable$position <- position
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                          "holdoutData", "testDataManual"))
 
   priorTable$addColumnInfo(name = "typeprob", title = "", type = "string")
   priorTable$addColumnInfo(name = "prior", title = "Prior", type = "number")
@@ -229,7 +227,8 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   meanTable <- createJaspTable(title = "Class Means in Training Data")
   meanTable$position <- position
   meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
+                                          "holdoutData", "testDataManual"))
 
   meanTable$addColumnInfo(name = "target_level", title = "", type = "string")
   for (i in options[["predictors"]]){
@@ -254,7 +253,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   
   matrixplot <- createJaspPlot(title = "Linear Discriminant Matrix", height = 400, width = 300)
   matrixplot$position <- position
-  matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
+  matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt", "holdoutData", "testDataManual",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
   jaspResults[["matrixplot"]] <- matrixplot 
 

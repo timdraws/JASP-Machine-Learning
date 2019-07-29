@@ -46,10 +46,10 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 	formula <- jaspResults[["formula"]]$object
 
   	dataset                   <- na.omit(dataset)
-	if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+	if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
 		train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-	} else{
-		train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+	} else {
+		train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
 	}
 	trainAndValid           <- dataset[train.index, ]
 	valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
@@ -202,7 +202,7 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
   plotErrorVsK$position <- position
   plotErrorVsK$dependOn(options = c("plotErrorVsK","noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
-															"testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+															"testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
   jaspResults[["plotErrorVsK"]] <- plotErrorVsK
 
   if(!ready) return()

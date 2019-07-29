@@ -42,19 +42,15 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
 }
 
 .densityBasedClustering <- function(dataset, options, jaspResults){
-
-  if(options[["modelOpt"]] == "validationManual"){
-      
-    if (options[["distance"]] == "Correlated densities") {
-      dfit <- dbscan::dbscan(as.dist(1-cor(t(as.data.frame(dataset[, .v(options[["predictors"]])])), method = "pearson")), eps = options[['eps']], minPts = options[['minPts']])
-    } else {
-      dfit <- dbscan::dbscan(as.data.frame(dataset[, .v(options[["predictors"]])]), eps = options[['eps']], minPts = options[['minPts']])
-    }
-
-    noisePoints <- length(dfit$cluster[dfit$cluster == 0])
-    clusters <- ifelse(noisePoints > 0, yes = length(table(dfit$cluster)) - 1, no = length(table(dfit$cluster)))
-
+ 
+  if (options[["distance"]] == "Correlated densities") {
+    dfit <- dbscan::dbscan(as.dist(1-cor(t(as.data.frame(dataset[, .v(options[["predictors"]])])), method = "pearson")), eps = options[['eps']], minPts = options[['minPts']])
+  } else {
+    dfit <- dbscan::dbscan(as.data.frame(dataset[, .v(options[["predictors"]])]), eps = options[['eps']], minPts = options[['minPts']])
   }
+
+  noisePoints <- length(dfit$cluster[dfit$cluster == 0])
+  clusters <- ifelse(noisePoints > 0, yes = length(table(dfit$cluster)) - 1, no = length(table(dfit$cluster)))
 
   m <- dim(as.data.frame(dataset[, .v(options[["predictors"]])]))[2]
   
@@ -159,7 +155,7 @@ MLClusteringDensityBased <- function(jaspResults, dataset, options, ...) {
         JASPgraphs::geom_line() +
         ggplot2::scale_x_continuous(name = "Points sorted by distance", breaks = xBreaks, limits = range(xBreaks)) + 
         ggplot2::scale_y_continuous(name = paste0(options[['minPts']], '-nearest neighbors \ndistance'), breaks = yBreaks, limits = range(yBreaks)) +
-        ggplot2::geom_segment(ggplot2::aes(x = xstart, xend = xend, y = ystart, yend = yend), data = lineData, linetype = 2)
+        ggplot2::geom_segment(ggplot2::aes(x = xstart, xend = xend, y = ystart, yend = yend), data = lineData, linetype = 2, color = "darkgray")
   p <- JASPgraphs::themeJasp(p)
 
   kdistPlot$plotObject <- p

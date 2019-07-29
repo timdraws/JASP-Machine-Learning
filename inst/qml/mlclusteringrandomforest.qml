@@ -108,26 +108,6 @@ Form {
             title: qsTr("Algorithmic Settings")
 
             IntegerField { 
-                name: "noOfClusters"
-                text: qsTr("Clusters:") 
-                defaultValue: 3 
-                min: 2
-                max: 999999
-                fieldWidth: 60
-                enabled: validationManual.checked 
-            }
-
-            IntegerField { 
-                name: "maxClusters"
-                text: qsTr("Max. clusters:") 
-                defaultValue: 10 
-                min: 2
-                max: 999999
-                fieldWidth: 60
-                enabled: !validationManual.checked 
-            }
-
-            IntegerField { 
                 name: "noOfTrees"
                 text: qsTr("Trees:") 
                 defaultValue: 1000 
@@ -135,8 +115,6 @@ Form {
                 max: 999999
                 fieldWidth: 60 
             }
-
-            Divider { }
 
             CheckBox { 
                 text: qsTr("Scale variables") 
@@ -148,7 +126,6 @@ Form {
                 name: "seedBox"
                 text: qsTr("Set seed:")
                 childrenOnSameRow: true
-                checked: true
 
                 DoubleField  { 
                     name: "seed"
@@ -161,29 +138,53 @@ Form {
         }
 
         RadioButtonGroup {
-            title: qsTr("Model Optimization")
+            title: qsTr("Cluster Determination")
             name: "modelOpt"
 
             RadioButton { 
-                id: validationManual
-                text: qsTr("Manual")                          
-                name: "validationManual" 
+                id: validationManual 
+                text: qsTr("Fixed")                          
+                name: "validationManual"
+
+                IntegerField { 
+                    name: "noOfClusters"
+                    text: qsTr("Clusters:") 
+                    defaultValue: 3 
+                    min: 2
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: validationManual.checked 
+                }
             }
 
             RadioButton { 
-                text: qsTr("AIC")                             
-                name: "validationAIC" 
+                text: qsTr("Optimized according to")                             
+                name: "validationOptimized" 
+                childrenOnSameRow: true
+                checked: true
+
+                DropDown {
+                    name: "optimizationCriterion"
+                    indexDefaultValue: 1
+                    
+                    values:
+                    [
+                        { label: "AIC", value: "validationAIC"},
+                        { label: "BIC", value: "validationBIC"},
+                        { label: "Silhouette", value: "validationSilh"}
+                    ]
+                } 
             }
 
-            RadioButton { 
-                text: qsTr("BIC")                             
-                name: "validationBIC" 
-                checked: true 
-            }
-
-            RadioButton { 
-                text: qsTr("Silhouette")                      
-                name: "validationSilh" 
+            IntegerField { 
+                name: "maxClusters"
+                text: qsTr("Max. clusters:") 
+                defaultValue: 10 
+                min: 2
+                max: 999999
+                fieldWidth: 60
+                enabled: !validationManual.checked 
+                Layout.leftMargin: 20
             }
         }
     }

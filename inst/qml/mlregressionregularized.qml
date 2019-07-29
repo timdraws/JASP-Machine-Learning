@@ -99,134 +99,170 @@ Form {
     }
 
     Section {
-        text: qsTr("Training Parameters")
+        title: qsTr("Data Split Preferences")
 
-        ColumnLayout {
+        RadioButtonGroup {
+            title: qsTr("Holdout Test Data")
+            name: "holdoutData"
 
-            GroupBox {
-                title: qsTr("Algorithmic Settings")
+            RadioButton {
+                id: holdoutManual
+                name: "holdoutManual"
+                childrenOnSameRow: true
+                text: qsTr("Sample")
 
-                DoubleField { 
-                    name: "thresh"     
-                    text: qsTr("Convergence threshold:")    
-                    defaultValue: 1e-7
-                    min: 1e-999
-                    max: 1
-                    fieldWidth: 60
-                    visible: false              
-                }
+                RowLayout {
+                
+                    PercentField {    
+                        name: "testDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95 
+                    }
 
-                DropDown {
-                    id: penalty
-                    name: "penalty"
-                    indexDefaultValue: 0
-                    label: qsTr("Penalty:")
-                    values:
-                    [
-                        { label: "Lasso", value: "lasso"},
-                        { label: "Ridge", value: "ridge"},
-                        { label: "Elastic net", value: "elasticNet"}
-                    ]
-                }
-
-                DoubleField { 
-                    name: "alpha"      
-                    text: qsTr("Elastic net parameter (α):")
-                    defaultValue: 0.5 
-                    min: 0     
-                    max: 1
-                    visible: penalty.currentIndex == 2 
-                }
-
-                CheckBox { 
-                    name: "intercept"  
-                    text: qsTr("Fit intercept")             
-                    checked: true                                                                        
+                    Text {
+                        text: qsTr("of all data")
+                        enabled: true
+                    }
                 }
             }
 
-            Divider { }
+            CheckBox {        
+                name: "addIndicator"
+                text: qsTr("Add indicator to data")
+                Layout.leftMargin: 20
+                enabled: holdoutManual.checked
+            }
 
-            GroupBox {
-                title: qsTr("Data Split Preferences")
+            RadioButton {
+                id: testSetIndicator
+                name: "testSetIndicator"
+                label: qsTr("Test set indicator:")
+                childrenOnSameRow: true
 
-                CheckBox {
-                    id: testSetIndicator
-                    name: "testSetIndicator"
-                    label: qsTr("Test set indicator:")
-                    childrenOnSameRow: true
-
-                    DropDown {
-                        name: "testSetIndicatorVariable"
-                        showVariableTypeIcon: true
-                        addEmptyValue: true
-                        placeholderText: qsTr("None")
-                    }
-                }
-
-                PercentField { 
-                    name: "trainingDataManual"
-                    text: qsTr("Data used for training:")
-                    defaultValue: 80
-                    min: 5
-                    max: 95 
-                    enabled: !testSetIndicator.checked
-                }
-
-                PercentField { 
-                    name: "validationDataManual"
-                    text: qsTr("Training data used for validation:")
-                    defaultValue: 20
-                    min: 5
-                    max: 95 
-                }
-
-                CheckBox { 
-                    text: qsTr("Scale variables") 
-                    name: "scaleEqualSD"
-                    checked: true
-                }
-
-                CheckBox { 
-                    name: "seedBox"
-                    text: qsTr("Set seed:")
-                    childrenOnSameRow: true
-                    checked: true
-
-                    DoubleField { 
-                        name: "seed"
-                        defaultValue: 1
-                        min: -999999
-                        max: 999999
-                        fieldWidth: 60 
-                    }
+                DropDown {
+                    name: "testSetIndicatorVariable"
+                    showVariableTypeIcon: true
+                    addEmptyValue: true
+                    placeholderText: qsTr("None")
                 }
             }
         }
 
         RadioButtonGroup {
-            title: qsTr("Model Optimization")
+            title: qsTr("Training and Validation Data")
+            name: "modelValid"
+
+            RadioButton {
+                name: "validationManual"
+                childrenOnSameRow: true
+                checked: true
+                text: qsTr("Sample")
+
+                RowLayout {
+
+                    PercentField {     
+                        name: "validationDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95
+                    }
+
+                    Text {
+                        text: qsTr("for validation data")
+                        enabled: true
+                    }
+                }
+            }
+        }
+    }
+
+    Section {
+        text: qsTr("Training Parameters")
+
+        GroupBox {
+            title: qsTr("Algorithmic Settings")
+
+            DoubleField { 
+                name: "thresh"     
+                text: qsTr("Convergence threshold:")    
+                defaultValue: 1e-7
+                min: 1e-999
+                max: 1
+                fieldWidth: 60
+                visible: false              
+            }
+
+            DropDown {
+                id: penalty
+                name: "penalty"
+                indexDefaultValue: 0
+                label: qsTr("Penalty:")
+                values:
+                [
+                    { label: "Lasso", value: "lasso"},
+                    { label: "Ridge", value: "ridge"},
+                    { label: "Elastic net", value: "elasticNet"}
+                ]
+            }
+
+            DoubleField { 
+                name: "alpha"      
+                text: qsTr("Elastic net parameter (α):")
+                defaultValue: 0.5 
+                min: 0     
+                max: 1
+                visible: penalty.currentIndex == 2 
+            }
+
+            CheckBox { 
+                name: "intercept"  
+                text: qsTr("Fit intercept")             
+                checked: true                                                                        
+            }
+
+            CheckBox { 
+                text: qsTr("Scale variables") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+
+                DoubleField { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Lambda (\u03BB)")
             name: "shrinkage"
 
             RadioButton { 
                 id: validationManual
-                text: qsTr("Manual")                       
+                text: qsTr("Fixed")                       
                 name: "manual"  
-                childrenOnSameRow: true
 
                 DoubleField { 
                     name: "lambda"
-                    label: "\u03BB:"
+                    label: "\u03BB = "
                     defaultValue: 1 
                     min: 0
                     max: 999999
-                    fieldWidth: 60 
-                    visible: validationManual.checked             
+                    fieldWidth: 60             
                 }
             }
 
             RadioButton { 
-                text: qsTr("Cross-validated mean squared error")               
+                text: qsTr("Optimized")               
                 name: "optMin"
                 checked: true             
             }

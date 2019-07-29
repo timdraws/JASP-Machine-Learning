@@ -127,177 +127,196 @@ Form {
     }
 
     Section {
-        title: qsTr("Training Parameters")
+        title: qsTr("Data Split Preferences")
 
-        ColumnLayout {
+        RadioButtonGroup {
+            title: qsTr("Holdout Test Data")
+            name: "holdoutData"
 
-            GroupBox {
-                title: qsTr("Algorithmic Settings")
+            RadioButton {
+                id: holdoutManual
+                name: "holdoutManual"
+                childrenOnSameRow: true
+                text: qsTr("Sample")
 
-                IntegerField { 
-                    name: "noOfTrees"
-                    text: qsTr("Trees:") 
-                    defaultValue: 100 
-                    min: 1
-                    max: 999999
-                    fieldWidth: 60
-                    enabled: optimizationManual.checked 
-                }
+                RowLayout {
+                
+                    PercentField {    
+                        name: "testDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95 
+                    }
 
-                IntegerField { 
-                    name: "maxTrees"
-                    text: qsTr("Max. trees:") 
-                    defaultValue: 100 
-                    min: 1
-                    max: 999999
-                    fieldWidth: 60
-                    enabled: !optimizationManual.checked 
-                }
-
-                DoubleField  { 
-                    name: "shrinkage"
-                    text: qsTr("Shrinkage:")                    
-                    defaultValue: 0.1 
-                    min: 0
-                    max: 1     
-                    fieldWidth: 60 
-                }
-
-                IntegerField { 
-                    name: "intDepth" 
-                    text: qsTr("Interaction depth:")            
-                    defaultValue: 1   
-                    min: 1
-                    max: 99    
-                    fieldWidth: 60 
-                }
-
-                IntegerField { 
-                    name: "nNode"    
-                    text: qsTr("Min. observations in node:")
-                    defaultValue: 10  
-                    min: 1
-                    max: 999999
-                    fieldWidth: 60 
-                }
-
-                PercentField { 
-                    name: "bagFrac"  
-                    text: qsTr("Training data used per tree:")  
-                    defaultValue: 50                                        
+                    Text {
+                        text: qsTr("of all data")
+                        enabled: true
+                    }
                 }
             }
 
-            Divider { }
+            CheckBox {        
+                name: "addIndicator"
+                text: qsTr("Add indicator to data")
+                Layout.leftMargin: 20
+                enabled: holdoutManual.checked
+            }
 
-            GroupBox {
-                title: qsTr("Data Split Preferences")
+            RadioButton {
+                id: testSetIndicator
+                name: "testSetIndicator"
+                label: qsTr("Test set indicator:")
+                childrenOnSameRow: true
 
-                CheckBox {
-                    id: testSetIndicator
-                    name: "testSetIndicator"
-                    label: qsTr("Test set indicator:")
-                    childrenOnSameRow: true
-
-                    DropDown {
-                        name: "testSetIndicatorVariable"
-                        showVariableTypeIcon: true
-                        addEmptyValue: true
-                        placeholderText: qsTr("None")
-                    }
-                }
-
-                PercentField { 
-                    name: "trainingDataManual"
-                    text: qsTr("Data used for training:")
-                    defaultValue: 80
-                    min: 5
-                    max: 95 
-                    enabled: !testSetIndicator.checked
-                }
-
-                PercentField { 
-                    name: "validationDataManual"
-                    text: qsTr("Training data used for validation:")
-                    defaultValue: 20
-                    enabled: validationManual.checked 
-                    min: 5
-                    max: 95 
-                }
-
-                CheckBox { 
-                    text: qsTr("Scale predictors") 
-                    name: "scaleEqualSD"
-                    checked: true
-                }
-
-                CheckBox { 
-                    name: "seedBox"     
-                    text: qsTr("Set seed:")                  
-                    childrenOnSameRow: true
-                    checked: true
-
-                    DoubleField { 
-                        name: "seed"
-                        defaultValue: 1
-                        min: -999999
-                        max: 999999
-                        fieldWidth: 60 
-                    }
+                DropDown {
+                    name: "testSetIndicatorVariable"
+                    showVariableTypeIcon: true
+                    addEmptyValue: true
+                    placeholderText: qsTr("None")
                 }
             }
         }
 
-        ColumnLayout{
+        RadioButtonGroup {
+            title: qsTr("Training and Validation Data")
+            name: "modelValid"
 
-            RadioButtonGroup {
-                title: qsTr("Model Optimization")
-                name: "modelOpt"
-
-                RadioButton { 
-                    id: optimizationManual
-                    text: qsTr("Manual")                    
-                    name: "optimizationManual" 
-                }
-
-                RadioButton { 
-                    text: qsTr("Out-of-bag accuracy")             
-                    name: "optimizationOOB"    
-                    checked: true             
-                }
-            }
-
-            RadioButtonGroup {
-                title: qsTr("Cross-Validation")
-                name: "modelValid"
-
-                RadioButton { 
-                    id: validationManual
-                    text: qsTr("None")                    
-                    name: "validationManual" 
-                    checked: true
-                }
+            RadioButton {
+                name: "validationManual"
+                childrenOnSameRow: true
+                checked: true
+                text: qsTr("Sample")
 
                 RowLayout {
-                    spacing: 0
-                    
-                    RadioButton { 
-                        id: validationKFold
-                        name: "validationKFold"
-                        childrenOnSameRow: true
-                        text: qsTr("K-fold")
+
+                    PercentField {     
+                        name: "validationDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95
                     }
+
+                    Text {
+                        text: qsTr("for validation data")
+                        enabled: true
+                    }
+                }
+            }
+    
+            RadioButton { 
+                name: "validationKFold"
+                childrenOnSameRow: true
+                text: qsTr("K-fold with")
+
+                RowLayout {
 
                     IntegerField {
                         name: "noOfFolds"
-                        afterLabel: qsTr("folds")
-                        label: qsTr("with")
                         defaultValue: 5
                         min: 2
                         max: 999
                         fieldWidth: 30
-                        visible: validationKFold.checked
                     } 
+
+                    Text {
+                        text: qsTr("folds")
+                        enabled: true
+                    }
+                }
+            }
+        }
+    }
+
+    Section {
+        title: qsTr("Training Parameters")
+  
+        GroupBox {
+            title: qsTr("Algorithmic Settings")
+
+            DoubleField  { 
+                name: "shrinkage"
+                text: qsTr("Shrinkage:")                    
+                defaultValue: 0.1 
+                min: 0
+                max: 1     
+                fieldWidth: 60 
+            }
+
+            IntegerField { 
+                name: "intDepth" 
+                text: qsTr("Interaction depth:")            
+                defaultValue: 1   
+                min: 1
+                max: 99    
+                fieldWidth: 60 
+            }
+
+            IntegerField { 
+                name: "nNode"    
+                text: qsTr("Min. observations in node:")
+                defaultValue: 10  
+                min: 1
+                max: 999999
+                fieldWidth: 60 
+            }
+
+            PercentField { 
+                name: "bagFrac"  
+                text: qsTr("Training data used per tree:")  
+                defaultValue: 50                                        
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+
+                DoubleField  { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Number of Trees")
+            name: "modelOpt"
+
+            RadioButton { 
+                text: qsTr("Fixed")                     
+                name: "optimizationManual" 
+
+                IntegerField { 
+                    name: "noOfTrees"
+                    text: qsTr("Trees:")
+                    defaultValue: 100
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                }
+            }
+            
+            RadioButton { 
+                text: qsTr("Optimized")
+                name: "optimizationOOB"
+                checked: true 
+
+                IntegerField { 
+                    name: "maxTrees"
+                    text: qsTr("Max. trees:") 
+                    defaultValue: 100
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
                 }
             }
         }

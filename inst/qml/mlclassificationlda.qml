@@ -166,95 +166,121 @@ Form {
     }
 
     Section {
-        title: qsTr("Training Parameters")
+        title: qsTr("Data Split Preferences")
 
-        ColumnLayout {
+        RadioButtonGroup {
+            title: qsTr("Holdout Test Data")
+            name: "holdoutData"
 
-            GroupBox {
-                title: qsTr("Algorithmic Settings")
+            RadioButton {
+                id: holdoutManual
+                name: "holdoutManual"
+                childrenOnSameRow: true
+                text: qsTr("Sample")
 
-                DropDown {
-                    name: "estimationMethod"
-                    indexDefaultValue: 0
-                    label: qsTr("Estimation method:")
-                    values:
-                    [
-                        { label: "Moment", value: "moment"},
-                        { label: "MLE", value: "mle"},
-                        { label: "MVE", value: "covMve"},
-                        { label: "t", value: "t"},
-                    ]
+                RowLayout {
+                
+                    PercentField {    
+                        name: "testDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95 
+                    }
+
+                    Text {
+                        text: qsTr("of all data")
+                        enabled: true
+                    }
                 }
             }
 
-            Divider { }
+            CheckBox {        
+                name: "addIndicator"
+                text: qsTr("Add indicator to data")
+                Layout.leftMargin: 20
+                enabled: holdoutManual.checked
+            }
 
-            GroupBox {
-                title: qsTr("Data Split Preferences")
+            RadioButton {
+                id: testSetIndicator
+                name: "testSetIndicator"
+                label: qsTr("Test set indicator:")
+                childrenOnSameRow: true
 
-                CheckBox {
-                    id: testSetIndicator
-                    name: "testSetIndicator"
-                    label: qsTr("Test set indicator:")
-                    childrenOnSameRow: true
-
-                    DropDown {
-                        name: "testSetIndicatorVariable"
-                        showVariableTypeIcon: true
-                        addEmptyValue: true
-                        placeholderText: qsTr("None")
-                    }
-                }
-
-                PercentField { 
-                    name: "trainingDataManual"
-                    text: qsTr("Data used for training:")
-                    defaultValue: 80
-                    min: 5
-                    max: 95 
-                    enabled: !testSetIndicator.checked
-                }
-
-                PercentField { 
-                    name: "validationDataManual"
-                    text: qsTr("Training data used for validation:")
-                    defaultValue: 20
-                    enabled: validationManual.checked 
-                    min: 5
-                    max: 95 
-                }
-
-                CheckBox { 
-                    text: qsTr("Scale predictors") 
-                    name: "scaleEqualSD"
-                    checked: true
-                }
-
-                CheckBox { 
-                    name: "seedBox"
-                    text: qsTr("Set seed: ")
-                    childrenOnSameRow: true
-                    checked: true
-
-                    DoubleField  { 
-                        name: "seed"
-                        defaultValue: 1
-                        min: -999999
-                        max: 999999
-                        fieldWidth: 60 
-                    } 
+                DropDown {
+                    name: "testSetIndicatorVariable"
+                    showVariableTypeIcon: true
+                    addEmptyValue: true
+                    placeholderText: qsTr("None")
                 }
             }
         }
 
         RadioButtonGroup {
-            title: qsTr("Model Optimization")
-            name: "modelOpt"
+            title: qsTr("Training and Validation Data")
+            name: "modelValid"
 
-            RadioButton { 
-                text: qsTr("Manual") 
-                name: "optimizationManual"
-                checked: true 
+            RadioButton {
+                name: "validationManual"
+                childrenOnSameRow: true
+                checked: true
+                text: qsTr("Sample")
+
+                RowLayout {
+
+                    PercentField {     
+                        name: "validationDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95
+                    }
+
+                    Text {
+                        text: qsTr("for validation data")
+                        enabled: true
+                    }
+                }
+            }
+        }
+    }
+
+    Section {
+        title: qsTr("Training Parameters")
+
+        GroupBox {
+            title: qsTr("Algorithmic Settings")
+
+            DropDown {
+                name: "estimationMethod"
+                indexDefaultValue: 0
+                label: qsTr("Estimation method:")
+                values:
+                [
+                    { label: "Moment", value: "moment"},
+                    { label: "MLE", value: "mle"},
+                    { label: "MVE", value: "covMve"},
+                    { label: "t", value: "t"},
+                ]
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed: ")
+                childrenOnSameRow: true
+
+                DoubleField  { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                } 
             }
         }
     }

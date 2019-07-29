@@ -74,21 +74,189 @@ Form {
     }
     
     Section {
-        title: qsTr("Training Parameters")
+        title: qsTr("Data Split Preferences")
 
-        ColumnLayout {
+        RadioButtonGroup {
+            title: qsTr("Holdout Test Data")
+            name: "holdoutData"
+
+            RadioButton {
+                id: holdoutManual
+                name: "holdoutManual"
+                childrenOnSameRow: true
+                text: qsTr("Sample")
+
+                RowLayout {
+                
+                    PercentField {    
+                        name: "testDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95 
+                    }
+
+                    Text {
+                        text: qsTr("of all data")
+                        enabled: true
+                    }
+                }
+            }
+
+            CheckBox {        
+                name: "addIndicator"
+                text: qsTr("Add indicator to data")
+                Layout.leftMargin: 20
+                enabled: holdoutManual.checked
+            }
+
+            RadioButton {
+                id: testSetIndicator
+                name: "testSetIndicator"
+                label: qsTr("Test set indicator:")
+                childrenOnSameRow: true
+
+                DropDown {
+                    name: "testSetIndicatorVariable"
+                    showVariableTypeIcon: true
+                    addEmptyValue: true
+                    placeholderText: qsTr("None")
+                }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Training and Validation Data")
+            name: "modelValid"
+
+            RadioButton {
+                name: "validationManual"
+                childrenOnSameRow: true
+                checked: true
+                text: qsTr("Sample")
+
+                RowLayout {
+
+                    PercentField {     
+                        name: "validationDataManual"
+                        defaultValue: 20
+                        min: 5
+                        max: 95
+                    }
+
+                    Text {
+                        text: qsTr("for validation data")
+                        enabled: true
+                    }
+                }
+            }
     
-            GroupBox {
-                title: qsTr("Algorithmic Settings")
+            RadioButton { 
+                name: "validationKFold"
+                childrenOnSameRow: true
+                text: qsTr("K-fold with")
+
+                RowLayout {
+
+                    IntegerField {
+                        name: "noOfFolds"
+                        defaultValue: 5
+                        min: 2
+                        max: 999
+                        fieldWidth: 30
+                    } 
+
+                    Text {
+                        text: qsTr("folds")
+                        enabled: true
+                    }
+                }
+            }
+
+            RadioButton { 
+                text: qsTr("Leave-one-out")                 
+                name: "validationLeaveOneOut"
+            }
+        }
+    }
+    
+    Section {
+        title: qsTr("Training Parameters")
+  
+        GroupBox {
+            title: qsTr("Algorithmic Settings")
+
+            DropDown {
+                name: "weights"
+                indexDefaultValue: 0
+                label: qsTr("Weights:")
+                values:
+                [
+                    { label: "Rectangular", value: "rectangular"},
+                    { label: "Epanechnikov", value: "epanechnikov"},
+                    { label: "Biweight", value: "biweight"},
+                    { label: "Triweight", value: "triweight"},
+                    { label: "Cosine", value: "cos"},
+                    { label: "Inverse", value: "inv"},
+                    { label: "Gaussian", value: "gaussian"},
+                    { label: "Rank", value: "rank"},
+                    { label: "Optimal", value: "optimal"}
+                ]
+            }
+
+            DropDown {
+                name: "distanceParameterManual"
+                indexDefaultValue: 0
+                label: qsTr("Distance:")
+                values:
+                [
+                    { label: "Euclidian", value: "2"},
+                    { label: "Manhattan", value: "1"}
+                ]
+            }
+
+            CheckBox { 
+                text: qsTr("Scale predictors") 
+                name: "scaleEqualSD"
+                checked: true
+            }
+
+            CheckBox { 
+                name: "seedBox"
+                text: qsTr("Set seed:")
+                childrenOnSameRow: true
+
+                DoubleField  { 
+                    name: "seed"
+                    defaultValue: 1
+                    min: -999999
+                    max: 999999
+                    fieldWidth: 60 
+                }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Number of Nearest Neighbors")
+            name: "modelOpt"
+
+            RadioButton { 
+                text: qsTr("Fixed")                     
+                name: "optimizationManual" 
 
                 IntegerField { 
                     name: "noOfNearestNeighbours"
-                    text: qsTr("Nearest neighbors:") 
-                    defaultValue: 3 
-                    min: 1; max: 999999
+                    text: qsTr("Nearest neighbors:")
+                    defaultValue: 3
+                    min: 1
+                    max: 999999
                     fieldWidth: 60
-                    enabled: optimizationManual.checked 
                 }
+            }
+            
+            RadioButton { 
+                text: qsTr("Optimized")
+                name: "optimizationError"
+                checked: true 
 
                 IntegerField { 
                     name: "maxK"
@@ -97,155 +265,6 @@ Form {
                     min: 1
                     max: 999999
                     fieldWidth: 60
-                    enabled: !optimizationManual.checked 
-                }
-
-                DropDown {
-                    name: "weights"
-                    indexDefaultValue: 0
-                    label: qsTr("Weights:")
-                    values:
-                    [
-                        { label: "Rectangular", value: "rectangular"},
-                        { label: "Epanechnikov", value: "epanechnikov"},
-                        { label: "Biweight", value: "biweight"},
-                        { label: "Triweight", value: "triweight"},
-                        { label: "Cosine", value: "cos"},
-                        { label: "Inverse", value: "inv"},
-                        { label: "Gaussian", value: "gaussian"},
-                        { label: "Rank", value: "rank"},
-                        { label: "Optimal", value: "optimal"}
-                    ]
-                }
-
-                DropDown {
-                    name: "distanceParameterManual"
-                    indexDefaultValue: 0
-                    label: qsTr("Distance:")
-                    values:
-                    [
-                        { label: "Euclidian", value: "2"},
-                        { label: "Manhattan", value: "1"}
-                    ]
-                }
-            }
-
-            Divider { }
-
-            GroupBox {
-                title: qsTr("Data Split Preferences")
-            
-                CheckBox {
-                    id: testSetIndicator
-                    name: "testSetIndicator"
-                    label: qsTr("Test set indicator:")
-                    childrenOnSameRow: true
-
-                    DropDown {
-                        name: "testSetIndicatorVariable"
-                        showVariableTypeIcon: true
-                        addEmptyValue: true
-                        placeholderText: qsTr("None")
-                    }
-                }
-
-                PercentField { 
-                    name: "trainingDataManual"
-                    text: qsTr("Data used for training:")
-                    defaultValue: 80
-                    min: 5
-                    max: 95 
-                    enabled: !testSetIndicator.checked
-                }
-
-                PercentField { 
-                    name: "validationDataManual"
-                    text: qsTr("Training data used for validation:")
-                    defaultValue: 20
-                    enabled: validationManual.checked 
-                    min: 5
-                    max: 95 
-                }
-
-                CheckBox { 
-                    text: qsTr("Scale variables") 
-                    name: "scaleEqualSD"
-                    checked: true
-                }
-
-                CheckBox { 
-                    name: "seedBox"
-                    text: qsTr("Set seed:")
-                    childrenOnSameRow: true
-                    checked: true
-
-                    DoubleField { 
-                        name: "seed"
-                        defaultValue: 1
-                        min: -999999
-                        max: 999999
-                        fieldWidth: 60 
-                    }
-                }
-            }
-        }
-
-        ColumnLayout{
-
-            RadioButtonGroup {
-                title: qsTr("Model Optimization")
-                name: "modelOpt"
-
-                RadioButton { 
-                    id: optimizationManual 
-                    text: qsTr("Manual")                        
-                    name: "optimizationManual"
-                }
-                
-                RadioButton { 
-                    text: qsTr("Validation mean squared error")          
-                    name: "optimizationError"
-                    checked: true 
-                }
-            }
-
-            RadioButtonGroup {
-                title: qsTr("Cross-Validation")
-                name: "modelValid"
-
-                RadioButton { 
-                    id: validationManual 
-                    text: qsTr("None")                       
-                    name: "validationManual"
-                    checked: true
-                }
-
-                RowLayout {
-                    spacing: 0
-                    
-                    RadioButton { 
-                        id: validationKFold
-                        name: "validationKFold"
-                        childrenOnSameRow: true
-                        text: qsTr("K-fold")
-                    }
-
-                    IntegerField {
-                        name: "noOfFolds"
-                        afterLabel: qsTr("folds")
-                        label: qsTr("with")
-                        defaultValue: 5
-                        min: 2
-                        max: 999
-                        fieldWidth: 30
-                        visible: validationKFold.checked
-                    } 
-                }
-
-                RadioButton { 
-                    id: validationLeaveOneOut 
-                    text: qsTr("Leave-one-out")        
-                    name: "validationLeaveOneOut"
                 }
             }
         }

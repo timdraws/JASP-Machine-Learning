@@ -57,7 +57,7 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
     target                  <- options[["target"]]
   if(options[["weights"]] != "")
     weights                 <- options[["weights"]]
-  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]])
+  if(options[["testSetIndicatorVariable"]] != "" && options[["holdoutData"]] == "testSetIndicator")
     testSetIndicator        <- options[["testSetIndicatorVariable"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
@@ -78,11 +78,11 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   formula <- jaspResults[["formula"]]$object
   
   dataset                   <- na.omit(dataset)
-  if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
-    train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else{
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
-  }
+	if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
+		train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
+	} else {
+		train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
+	}
   trainAndValid           <- dataset[train.index, ]
   valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
   test                    <- dataset[-train.index, ]
@@ -164,7 +164,8 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   coefTable$dependOn(options =c("coefTable","trainingDataManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                          "holdoutData", "testDataManual"))
   
   coefTable$addColumnInfo(name = "var",  title = "", type = "string")
   coefTable$addColumnInfo(name = "coefs",  title = "Coefficient (\u03B2)", type = "number")
@@ -205,7 +206,8 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   variableTrace$dependOn(options = c("variableTrace", "variableTraceLegend" ,"trainingDataManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                          "holdoutData", "testDataManual"))
   jaspResults[["variableTrace"]] <- variableTrace
 
   if(!ready) return()
@@ -246,7 +248,8 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   lambdaEvaluation$dependOn(options = c("lambdaEvaluation", "lambdaEvaluationLegend" ,"trainingDataManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                          "holdoutData", "testDataManual"))
   jaspResults[["lambdaEvaluation"]] <- lambdaEvaluation
 
   if(!ready) return()

@@ -65,10 +65,10 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 .randomForestClassification <- function(dataset, options, jaspResults){
   
   dataset                   <- na.omit(dataset)
-  if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
     train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else{
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+  } else {
+    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
   }
   trainAndValid           <- dataset[train.index, ]
   valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))

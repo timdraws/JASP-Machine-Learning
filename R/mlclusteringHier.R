@@ -103,7 +103,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
       progressbarTick()
     }
 
-    clusters <- base::switch(options[["modelOpt"]],
+    clusters <- base::switch(options[["optimizationCriterion"]],
                               "validationSilh" = clusterRange[which.max(avg_silh)],
                               "validationAIC" = clusterRange[which.min(aicStore)],
                               "validationBIC" = clusterRange[which.min(bicStore)])
@@ -178,7 +178,7 @@ MLClusteringHier <- function(jaspResults, dataset, options, ...) {
   dendrogram$position <- position
   dendrogram$dependOn(options = c("predictors", "noOfClusters","noOfRandomSets", "algorithm", "eps", "minPts", "distance",
                                           "noOfIterations", "modelOpt", "ready", "seed", "plot2dCluster", "maxClusters", "scaleEqualSD", "seedBox",
-                                          "linkage", "m", "dendrogram"))
+                                          "linkage", "m", "dendrogram", "optimizationCriterion"))
   jaspResults[["dendrogram"]] <- dendrogram
 
   if(!ready) return()

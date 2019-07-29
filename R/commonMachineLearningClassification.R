@@ -22,7 +22,7 @@
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
-  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]])
+  if(options[["testSetIndicatorVariable"]] != "" && options[["holdoutData"]] == "testSetIndicator")
     testSetIndicator                  <- options[["testSetIndicatorVariable"]]
   variables.to.read         <- c(target, predictors, testSetIndicator)
   if (is.null(dataset)){
@@ -48,7 +48,7 @@
                        exitAnalysisIfErrors = TRUE)
 
   dataset <- na.omit(dataset)
-  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]] && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
+  if(options[["testSetIndicatorVariable"]] != "" && options[["holdoutData"]] == "testSetIndicator" && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
     JASP:::.quitAnalysis("Your test set indicator should be binary, containing only 1 (included in test set) and 0 (excluded from test set).")
   }
 }
@@ -93,7 +93,7 @@
     jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                                               "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
-                                                              "testSetIndicatorVariable", "testSetIndicator"))
+                                                              "testSetIndicatorVariable", "testSetIndicator", "holdoutData", "testDataManual"))
   }
 }
 
@@ -112,7 +112,7 @@
   classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                           "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
-                                          "testSetIndicatorVariable", "testSetIndicator"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "holdoutData", "testDataManual"))
 
   if(type == "knn"){
 
@@ -223,7 +223,7 @@
   confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
                                           "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
                                           "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
-                                          "testSetIndicatorVariable", "testSetIndicator"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "holdoutData", "testDataManual"))
   
   jaspResults[["confusionTable"]] <- confusionTable
   
@@ -289,7 +289,8 @@
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
                                           "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
                                           "plotLegend", "plotPoints", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", 
-                                          "shrinkage", "intDepth", "nNode", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "shrinkage", "intDepth", "nNode", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", 
+                                          "holdoutData", "testDataManual"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
   if(!ready || length(options[["predictors"]]) < 2)  return()
@@ -457,7 +458,7 @@
     rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
                                     "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
                                     "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
-                                    "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+                                    "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode", "holdoutData", "testDataManual"))
     jaspResults[["rocCurve"]] <- rocCurve
 
     if(!ready) return()
@@ -662,7 +663,7 @@
   validationMeasures <- createJaspTable(title = "Evaluation Metrics")
   validationMeasures$position <- position
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "holdoutData", "testDataManual",
                                                             "estimationMethod", "shrinkage", "intDepth", "nNode", "validationDataManual", "testSetIndicatorVariable", "testSetIndicator"))
 
   validationMeasures$addColumnInfo(name = "group", title = "", type = "string")
@@ -729,7 +730,7 @@
   classProportionsTable <- createJaspTable(title = "Class Proportions")
   classProportionsTable$position <- position
   classProportionsTable$dependOn(options = c("classProportionsTable", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
+                                                            "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "holdoutData", "testDataManual",
                                                             "estimationMethod", "shrinkage", "intDepth", "nNode", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
 
   classProportionsTable$addColumnInfo(name = "group", title = "", type = "string")

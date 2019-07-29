@@ -22,7 +22,7 @@
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
-  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]])
+  if(options[["testSetIndicatorVariable"]] != "" && options[["holdoutData"]] == "testSetIndicator")
     testSetIndicator                  <- options[["testSetIndicatorVariable"]]
   variables.to.read         <- c(target, predictors, testSetIndicator)
   if (is.null(dataset)){
@@ -46,7 +46,7 @@
                        exitAnalysisIfErrors = TRUE)
 
   dataset <- na.omit(dataset)
-  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]] && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
+  if(options[["testSetIndicatorVariable"]] != "" && options[["holdoutData"]] == "testSetIndicator" && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
     JASP:::.quitAnalysis("Your test set indicator should be binary, containing only 1 (included in test set) and 0 (excluded from test set).")
   }
 }
@@ -91,7 +91,8 @@
     jaspResults[["regressionResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "maxTrees",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
                                                               "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                                              "holdoutData", "testDataManual"))
   }
 }
 
@@ -111,7 +112,7 @@
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
                                           "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "maxTrees",
                                           "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac", "intDepth", "nNode", "distance",
-                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual","holdoutData", "testDataManual"))
 
   if(type == "knn"){
 
@@ -231,7 +232,8 @@
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
                                                               "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees"))
+                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees",
+                                                              "holdoutData", "testDataManual"))
 
   validationMeasures$addColumnInfo(name = "measures", title = "Metric", type = "string")
   validationMeasures$addColumnInfo(name = "values", title = "", type = "string")
@@ -269,7 +271,8 @@
   predictedPerformancePlot$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot",
                                                             "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                            "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees"))
+                                                            "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees",
+                                                            "holdoutData", "testDataManual"))
   jaspResults[["predictedPerformancePlot"]] <- predictedPerformancePlot
 
   if(!ready) return()
@@ -296,7 +299,7 @@
 
   dataSplitPlot <- createJaspPlot(plot = NULL, title = "Data Split", width = 800, height = 70)
   dataSplitPlot$position <- position
-  dataSplitPlot$dependOn(options = c("dataSplitPlot", "target", "predictors", "trainingDataManual", "modelValid", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+  dataSplitPlot$dependOn(options = c("dataSplitPlot", "target", "predictors", "trainingDataManual", "modelValid", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
   jaspResults[["dataSplitPlot"]] <- dataSplitPlot
 
   if(!ready) return()

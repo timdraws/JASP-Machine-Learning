@@ -53,10 +53,10 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
 .randomForestRegression <- function(dataset, options, jaspResults){
   
   dataset                   <- na.omit(dataset)
-  if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+  if(options[["holdoutData"]] == "testSetIndicator" && options[["testSetIndicatorVariable"]] != ""){
     train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
-  } else{
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+  } else {
+    train.index             <- sample.int(nrow(dataset), size = ceiling( (1 - options[['testDataManual']]) * nrow(dataset)))
   }
   trainAndValid           <- dataset[train.index, ]
   valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
@@ -154,7 +154,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   tableVariableImportance$position <- position
   tableVariableImportance$dependOn(options = c("tableVariableImportance", "scaleEqualSD", "target", "predictors", "modelOpt", "maxTrees",
                                                 "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "seed", "seedBox",
-                                                "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                                "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
 
   tableVariableImportance$addColumnInfo(name = "predictor",  title = " ", type = "string")
   tableVariableImportance$addColumnInfo(name = "MDiA",  title = "Mean decrease in accuracy", type = "number")
@@ -186,7 +186,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   plotTreesVsModelError$position <- position
   plotTreesVsModelError$dependOn(options = c("plotTreesVsModelError", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
   jaspResults[["plotTreesVsModelError"]] <- plotTreesVsModelError
 
   if(!ready) return()
@@ -236,7 +236,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   plotDecreaseAccuracy$position <- position
   plotDecreaseAccuracy$dependOn(options = c("plotDecreaseAccuracy", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
   jaspResults[["plotDecreaseAccuracy"]] <- plotDecreaseAccuracy
 
   if(!ready) return()
@@ -261,7 +261,7 @@ MLRegressionRandomForest <- function(jaspResults, dataset, options, ...) {
   plotIncreasePurity$position <- position
   plotIncreasePurity$dependOn(options = c("plotIncreasePurity", "trainingDataManual", "scaleEqualSD", "modelOpt", "maxTrees",
                                             "target", "predictors", "seed", "seedBox", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors",
-                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+                                            "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "holdoutData", "testDataManual"))
   jaspResults[["plotIncreasePurity"]] <- plotIncreasePurity
 
   if(!ready) return()
