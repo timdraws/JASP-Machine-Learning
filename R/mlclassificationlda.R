@@ -27,6 +27,9 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Compute results and create the model summary table
   .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "lda")
 
+  # Add test set indicator to data
+  .addTestIndicatorToData(options, jaspResults, ready, purpose = "classification")
+
   # Create the data split plot
 	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "classification", type = "lda")
 
@@ -160,6 +163,10 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   classificationResult[["train"]]               <- train
   classificationResult[["valid"]]               <- valid
   classificationResult[["test"]]                <- test
+
+  testIndicatorColumn <- rep(1, nrow(dataset))
+  testIndicatorColumn[train.index] <- 0
+  classificationResult[["testIndicatorColumn"]] <- testIndicatorColumn
   
   return(classificationResult)
 }

@@ -115,11 +115,19 @@ Form {
                 }
             }
 
-            CheckBox {        
+            CheckBox { 
+                id: addIndicator  
                 name: "addIndicator"
-                text: qsTr("Add indicator to data")
+                text: qsTr("Add generated indicator to data")
                 Layout.leftMargin: 20
                 enabled: holdoutManual.checked
+
+                ComputedColumnField { 
+                    name: 		"testIndicatorColumn"
+                    text: 		"Name: "
+                    fieldWidth: 120
+                    visible:    addIndicator.checked
+                }
             }
 
             RadioButton {
@@ -232,7 +240,7 @@ Form {
                 IntegerField { 
                     name: "noOfTrees"
                     text: qsTr("Trees:")
-                    defaultValue: 3
+                    defaultValue: 100
                     min: 1
                     max: 999999
                     fieldWidth: 60
@@ -247,7 +255,7 @@ Form {
                 IntegerField { 
                     name: "maxTrees"
                     text: qsTr("Max. trees:") 
-                    defaultValue: 10 
+                    defaultValue: 100 
                     min: 1
                     max: 999999
                     fieldWidth: 60

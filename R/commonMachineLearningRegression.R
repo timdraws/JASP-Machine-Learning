@@ -356,3 +356,22 @@
   dataSplitPlot$plotObject <- p
 
 }
+
+.addTestIndicatorToData <- function(options, jaspResults, ready, purpose){
+  if(!ready || !options[["addIndicator"]] || options[["holdoutData"]] != "holdoutManual" || options[["testIndicatorColumn"]] == "")  return()
+
+  result <- base::switch(purpose,
+          "classification" = jaspResults[["classificationResult"]]$object,
+          "regression" = jaspResults[["regressionResult"]]$object)
+
+  if(is.null(jaspResults[["testIndicatorColumn"]])){
+    testIndicatorColumn <- result[["testIndicatorColumn"]]
+    jaspResults[["testIndicatorColumn"]] <- createJaspColumn(columnName = options[["testIndicatorColumn"]])
+    jaspResults[["testIndicatorColumn"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "maxTrees",
+                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
+                                                              "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
+                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
+                                                              "holdoutData", "testDataManual", "testIndicatorColumn", "addIndicator"))
+    jaspResults[["testIndicatorColumn"]]$setNominal(testIndicatorColumn)
+  }  
+}

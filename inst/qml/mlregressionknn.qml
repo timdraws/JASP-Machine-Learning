@@ -102,11 +102,19 @@ Form {
                 }
             }
 
-            CheckBox {        
+            CheckBox { 
+                id: addIndicator  
                 name: "addIndicator"
-                text: qsTr("Add indicator to data")
+                text: qsTr("Add generated indicator to data")
                 Layout.leftMargin: 20
                 enabled: holdoutManual.checked
+
+                ComputedColumnField { 
+                    name: 		"testIndicatorColumn"
+                    text: 		"Name: "
+                    fieldWidth: 120
+                    visible:    addIndicator.checked
+                }
             }
 
             RadioButton {

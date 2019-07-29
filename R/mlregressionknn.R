@@ -26,6 +26,9 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 
 	# Compute results and create the model summary table
 	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "knn")
+
+	# Add test set indicator to data
+  	.addTestIndicatorToData(options, jaspResults, ready, purpose = "regression")
 	
 	# Create the data split plot
 	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "regression", type = "knn")
@@ -188,6 +191,10 @@ MLRegressionKNN <- function(jaspResults, dataset, options, state=NULL) {
 		regressionResult[["accuracyStore"]] <- errorStore
 	if(options[["modelOpt"]] == "optimizationError" && options[["modelValid"]] == "validationManual")
 		regressionResult[["trainAccuracyStore"]] <- trainErrorStore
+
+	testIndicatorColumn <- rep(1, nrow(dataset))
+  	testIndicatorColumn[train.index] <- 0
+  	regressionResult[["testIndicatorColumn"]] <- testIndicatorColumn
 
 	return(regressionResult)
 }

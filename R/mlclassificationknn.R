@@ -27,6 +27,9 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     # Compute results and create the model summary table
     .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "knn")
 
+    # Add test set indicator to data
+    .addTestIndicatorToData(options, jaspResults, ready, purpose = "classification")
+
     # Create the data split plot
 	  .dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "classification", type = "knn")
     
@@ -229,6 +232,10 @@ MLClassificationKNN <- function(jaspResults, dataset, options, ...) {
     classificationResult[["accuracyStore"]] <- accuracyStore
   if(options[["modelOpt"]] == "optimizationError" && options[["modelValid"]] == "validationManual")
 		classificationResult[["trainAccuracyStore"]] <- trainAccuracyStore
+
+  testIndicatorColumn <- rep(1, nrow(dataset))
+  testIndicatorColumn[train.index] <- 0
+  classificationResult[["testIndicatorColumn"]] <- testIndicatorColumn
 
   return(classificationResult)
 }

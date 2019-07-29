@@ -27,7 +27,10 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
   # Compute results and create the model summary table
   .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "randomForest")
 
-    # Create the data split plot
+  # Add test set indicator to data
+  .addTestIndicatorToData(options, jaspResults, ready, purpose = "classification")
+
+  # Create the data split plot
 	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "classification", type = "randomForest")
 
   # Create the confusion table
@@ -185,6 +188,10 @@ MLClassificationRandomForest <- function(jaspResults, dataset, options, ...) {
 
   if(options[["modelOpt"]] == "optmizationError")
    classificationResult[["oobValidStore"]] <- oobAccuracy
+
+  testIndicatorColumn <- rep(1, nrow(dataset))
+  testIndicatorColumn[train.index] <- 0
+  classificationResult[["testIndicatorColumn"]] <- testIndicatorColumn
 
   return(classificationResult)
 }

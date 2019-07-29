@@ -27,6 +27,9 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   # Compute results and create the model summary table
 	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "boosting")
 
+  # Add test set indicator to data
+  .addTestIndicatorToData(options, jaspResults, ready, purpose = "regression")
+
   # Create the data split plot
 	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "regression", type = "boosting")
 
@@ -121,6 +124,10 @@ MLRegressionBoosting <- function(jaspResults, dataset, options, ...) {
   regressionResult[["train"]]       <- train
   regressionResult[["valid"]]       <- valid
   regressionResult[["test"]]        <- test
+
+  testIndicatorColumn <- rep(1, nrow(dataset))
+  testIndicatorColumn[train.index] <- 0
+  regressionResult[["testIndicatorColumn"]] <- testIndicatorColumn
 
   return(regressionResult)
 }

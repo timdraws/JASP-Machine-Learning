@@ -27,6 +27,9 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
 	# Compute results and create the model summary table
 	.regressionMachineLearningTable(dataset, options, jaspResults, ready, position = 1, type = "regularized")
 
+  # Add test set indicator to data
+  .addTestIndicatorToData(options, jaspResults, ready, purpose = "regression")
+
   # Create the data split plot
 	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "regression", type = "regularized")
 
@@ -151,6 +154,10 @@ MLRegressionRegularized <- function(jaspResults, dataset, options, ...) {
   regressionResult[["coefTable"]]   <- coef(regfit_train, s = lambda)
   regressionResult[["cvMSE"]]       <- regfit_train[["cvm"]][regfit_train[["lambda"]] == lambda]
   regressionResult[["cvMSELambda"]] <- data.frame(lambda = regfit_train[["lambda"]], MSE = regfit_train[["cvm"]], sd = regfit_train[["cvsd"]])
+
+  testIndicatorColumn <- rep(1, nrow(dataset))
+  testIndicatorColumn[train.index] <- 0
+  regressionResult[["testIndicatorColumn"]] <- testIndicatorColumn
   
   return(regressionResult)
 }
