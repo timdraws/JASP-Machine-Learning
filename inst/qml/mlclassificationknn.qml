@@ -69,9 +69,15 @@ Form {
     
     GroupBox {
         title: qsTr("Plots")
+
+        CheckBox { 
+            text: qsTr("Data split") 
+            name: "dataSplitPlot"
+            checked: true
+        }
         
         CheckBox { 
-            text: qsTr("Classification error") 
+            text: qsTr("Classification accuracy") 
             name: "plotErrorVsK"
             enabled: !optimizationManual.checked 
         }
@@ -110,8 +116,122 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
-        GridLayout {   
-            ColumnLayout{
+          ColumnLayout {
+        
+            GroupBox {
+                title: qsTr("Algorithmic Settings")
+
+                IntegerField { 
+                    name: "noOfNearestNeighbours"
+                    text: qsTr("Nearest neighbors:")
+                    defaultValue: 3
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: optimizationManual.checked 
+                }
+
+                IntegerField { 
+                    name: "maxK"
+                    text: qsTr("Max. nearest neighbors:") 
+                    defaultValue: 10 
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: !optimizationManual.checked 
+                }
+
+                DropDown {
+                    name: "weights"
+                    indexDefaultValue: 0
+                    label: qsTr("Weights:")
+                    values:
+                    [
+                        { label: "Rectangular", value: "rectangular"},
+                        { label: "Epanechnikov", value: "epanechnikov"},
+                        { label: "Biweight", value: "biweight"},
+                        { label: "Triweight", value: "triweight"},
+                        { label: "Cosine", value: "cos"},
+                        { label: "Inverse", value: "inv"},
+                        { label: "Gaussian", value: "gaussian"},
+                        { label: "Rank", value: "rank"},
+                        { label: "Optimal", value: "optimal"}
+                    ]
+                }
+
+                DropDown {
+                    name: "distanceParameterManual"
+                    indexDefaultValue: 0
+                    label: qsTr("Distance:")
+                    values:
+                    [
+                        { label: "Euclidian", value: "2"},
+                        { label: "Manhattan", value: "1"}
+                    ]
+                }
+            } 
+
+            Divider { }
+
+            GroupBox {
+                title: qsTr("Data Split Preferences")
+
+                CheckBox {
+                    id: testSetIndicator
+                    name: "testSetIndicator"
+                    label: qsTr("Test set indicator:")
+                    childrenOnSameRow: true
+
+                    DropDown {
+                        name: "testSetIndicatorVariable"
+                        showVariableTypeIcon: true
+                        addEmptyValue: true
+                        placeholderText: qsTr("None")
+                    }
+                }
+
+                PercentField { 
+                  name: "trainingDataManual"
+                  text: qsTr("Data used for training:")
+                  defaultValue: 80
+                  min: 5
+                  max: 95 
+                  enabled: !testSetIndicator.checked
+                }
+
+                PercentField { 
+                  name: "validationDataManual"
+                  text: qsTr("Training data used for validation:")
+                  defaultValue: 20
+                  enabled: validationManual.checked 
+                  min: 5
+                  max: 95 
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale predictors") 
+                    name: "scaleEqualSD"
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "seedBox"
+                    text: qsTr("Set seed:")
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField  { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    }
+                }
+            }
+        }
+
+        ColumnLayout{
 
             RadioButtonGroup {
                 title: qsTr("Model Optimization")
@@ -124,13 +244,11 @@ Form {
                 }
               
                 RadioButton { 
-                    text: qsTr("Validation set classification error")
+                    text: qsTr("Validation accuracy")
                     name: "optimizationError"
                     checked: true 
                 }
             }
-
-            Divider { }
 
             RadioButtonGroup {
                 title: qsTr("Cross-Validation")
@@ -171,119 +289,9 @@ Form {
                     id: validationLeaveOneOut 
                 }
             }
-          }
-        
-          GroupBox {
-              title: qsTr("Algorithmic Settings")
-
-              IntegerField { 
-                  name: "noOfNearestNeighbours"
-                  text: qsTr("Nearest neighbors:")
-                  defaultValue: 3
-                  min: 1
-                  max: 999999
-                  fieldWidth: 60
-                  enabled: optimizationManual.checked 
-                }
-
-              IntegerField { 
-                  name: "maxK"
-                  text: qsTr("Max. nearest neighbors:") 
-                  defaultValue: 10 
-                  min: 1
-                  max: 999999
-                  fieldWidth: 60
-                  enabled: !optimizationManual.checked 
-                }
-
-                DropDown {
-                    name: "weights"
-                    indexDefaultValue: 0
-                    label: qsTr("Weights:")
-                    values:
-                    [
-                        { label: "Rectangular", value: "rectangular"},
-                        { label: "Epanechnikov", value: "epanechnikov"},
-                        { label: "Biweight", value: "biweight"},
-                        { label: "Triweight", value: "triweight"},
-                        { label: "Cosine", value: "cos"},
-                        { label: "Inverse", value: "inv"},
-                        { label: "Gaussian", value: "gaussian"},
-                        { label: "Rank", value: "rank"},
-                        { label: "Optimal", value: "optimal"}
-                    ]
-                }
-
-                DropDown {
-                    name: "distanceParameterManual"
-                    indexDefaultValue: 0
-                    label: qsTr("Distance:")
-                    values:
-                    [
-                        { label: "Euclidian", value: "2"},
-                        { label: "Manhattan", value: "1"}
-                    ]
-                }
-
-                Divider { }
-
-                PercentField { 
-                  name: "trainingDataManual"
-                  text: qsTr("Data used for training:")
-                  defaultValue: 80
-                  enabled: validationManual.checked 
-                  min: 5
-                  max: 95 
-                }
-
-                CheckBox { 
-                    text: qsTr("Scale predictors") 
-                    name: "scaleEqualSD"
-                    checked: true
-                }
-
-                CheckBox { 
-                    name: "seedBox"
-                    text: qsTr("Set seed:")
-                    childrenOnSameRow: true
-                    checked: true
-
-                    DoubleField  { 
-                        name: "seed"
-                        defaultValue: 1
-                        min: -999999
-                        max: 999999
-                        fieldWidth: 60 
-                    }
-                }
-            }
         }
     }
     
-    // Section {
-    //   text: qsTr("Predictions")
-    //   debug: true
-      
-    //       RadioButtonGroup
-    //       {
-    //           name: "applyModel"
-    //           RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-    //           RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-    //           RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-    //       }
-      
-    //       VariablesForm {
-    //       visible: applyIndicator.checked
-    //           height: 150
-    //           AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-    //           AssignedVariablesList {
-    //                       name: "indicator"
-    //                       title: qsTr("Apply indicator")
-    //                       singleVariable: true
-    //                       allowedColumns: ["nominal"]
-    //                   }
-    //       }  
-    // }
     Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true

@@ -104,33 +104,6 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
-        RadioButtonGroup {
-            title: qsTr("Model Optimization")
-            name: "modelOpt"
-
-            RadioButton { 
-                id: validationManual
-                text: qsTr("Manual")                          
-                name: "validationManual" 
-            }
-
-            RadioButton { 
-                text: qsTr("AIC")                             
-                name: "validationAIC" 
-            }
-
-            RadioButton { 
-                text: qsTr("BIC")                             
-                name: "validationBIC" 
-                checked: true 
-            }
-
-            RadioButton { 
-                text: qsTr("Silhouette")                      
-                name: "validationSilh" 
-            }
-        }
-
         GroupBox {
             title: qsTr("Algorithmic Settings")
 
@@ -184,6 +157,33 @@ Form {
                     max: 999999
                     fieldWidth: 60 
                 }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
+
+            RadioButton { 
+                id: validationManual
+                text: qsTr("Manual")                          
+                name: "validationManual" 
+            }
+
+            RadioButton { 
+                text: qsTr("AIC")                             
+                name: "validationAIC" 
+            }
+
+            RadioButton { 
+                text: qsTr("BIC")                             
+                name: "validationBIC" 
+                checked: true 
+            }
+
+            RadioButton { 
+                text: qsTr("Silhouette")                      
+                name: "validationSilh" 
             }
         }
     }

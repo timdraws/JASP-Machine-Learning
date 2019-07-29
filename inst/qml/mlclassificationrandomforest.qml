@@ -75,8 +75,14 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
+            text: qsTr("Data split") 
+            name: "dataSplitPlot"
+            checked: true
+        }
+
+        CheckBox { 
             name: "plotTreesVsModelError"
-            text: qsTr("Out-of-bag error")        
+            text: qsTr("Out-of-bag accuracy")        
         }
 
         CheckBox { 
@@ -123,6 +129,121 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
+        ColumnLayout {
+
+            GroupBox {
+                title: qsTr("Algorithmic Settings")
+
+                IntegerField { 
+                    name: "noOfTrees"
+                    text: qsTr("Trees:") 
+                    defaultValue: 100 
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: optimizationManual.checked 
+                }
+
+                IntegerField { 
+                    name: "maxTrees"
+                    text: qsTr("Max. trees:") 
+                    defaultValue: 100 
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: !optimizationManual.checked 
+                }
+
+                PercentField { 
+                    name: "bagFrac"       
+                    text: qsTr("Training data used per tree:")
+                    defaultValue: 50 
+                }
+
+                RowLayout {
+
+                    DropDown {
+                        id: noOfPredictors
+                        name: "noOfPredictors"
+                        indexDefaultValue: 0
+                        label: qsTr("Predictors per split:")
+                        values:
+                        [
+                            { label: "Auto", value: "auto"},
+                            { label: "Manual", value: "manual"}
+                        ]
+                    } 
+
+                    IntegerField  { 
+                        name: "numberOfPredictors"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        visible: noOfPredictors.currentIndex == 1 
+                    }
+                }
+            }
+            
+            Divider { }
+
+            GroupBox {
+                title: qsTr("Data Split Preferences")
+
+                CheckBox {
+                    id: testSetIndicator
+                    name: "testSetIndicator"
+                    label: qsTr("Test set indicator:")
+                    childrenOnSameRow: true
+
+                    DropDown {
+                        name: "testSetIndicatorVariable"
+                        showVariableTypeIcon: true
+                        addEmptyValue: true
+                        placeholderText: qsTr("None")
+                    }
+                }
+
+                PercentField { 
+                    name: "trainingDataManual"
+                    text: qsTr("Data used for training:")
+                    defaultValue: 80
+                    min: 5
+                    max: 95 
+                    enabled: !testSetIndicator.checked
+                }
+
+                PercentField { 
+                    name: "validationDataManual"
+                    text: qsTr("Training data used for validation:")
+                    defaultValue: 20
+                    enabled: validationManual.checked 
+                    min: 5
+                    max: 95 
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale predictors") 
+                    name: "scaleEqualSD"
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "seedBox"
+                    text: qsTr("Set seed:")
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    }
+                }
+            }
+        }
+
         RadioButtonGroup {
             title: qsTr("Model Optimization")
             name: "modelOpt"
@@ -134,121 +255,12 @@ Form {
             }
 
             RadioButton { 
-                text: qsTr("Out-of-bag classification error")              
+                text: qsTr("Out-of-bag accuracy")              
                 name: "optimizationError" 
                 checked: true
             }
         }
-
-        GroupBox {
-            title: qsTr("Algorithmic Settings")
-
-            IntegerField { 
-                name: "noOfTrees"
-                text: qsTr("Trees:") 
-                defaultValue: 500 
-                min: 1
-                max: 999999
-                fieldWidth: 60
-                enabled: optimizationManual.checked 
-            }
-
-            IntegerField { 
-                name: "maxTrees"
-                text: qsTr("Max. trees:") 
-                defaultValue: 500 
-                min: 1
-                max: 999999
-                fieldWidth: 60
-                enabled: !optimizationManual.checked 
-            }
-
-            PercentField { 
-                name: "bagFrac"       
-                text: qsTr("Training data used per tree:")
-                defaultValue: 50 
-            }
-
-            RowLayout {
-
-                DropDown {
-                    id: noOfPredictors
-                    name: "noOfPredictors"
-                    indexDefaultValue: 0
-                    label: qsTr("Predictors per split:")
-                    values:
-                    [
-                        { label: "Auto", value: "auto"},
-                        { label: "Manual", value: "manual"}
-                    ]
-                } 
-
-                IntegerField  { 
-                    name: "numberOfPredictors"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    visible: noOfPredictors.currentIndex == 1 
-                }
-            }
-
-            Divider { }
-
-            PercentField { 
-                name: "trainingDataManual"     
-                text: qsTr("Data used for training:")     
-                defaultValue: 80      
-                min: 5
-                max: 95                                   
-            }
-
-            CheckBox { 
-                text: qsTr("Scale predictors") 
-                name: "scaleEqualSD"
-                checked: true
-            }
-
-            CheckBox { 
-                name: "seedBox"
-                text: qsTr("Set seed:")
-                childrenOnSameRow: true
-                checked: true
-
-                DoubleField { 
-                    name: "seed"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    fieldWidth: 60 
-                }
-            }
-        }
     }
-
-    // Section {
-    //     text: qsTr("Predictions")
-    //     debug: true
-
-    //     RadioButtonGroup
-    //     {
-    //         name: "applyModel"
-    //         RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-    //         RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-    //         RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-    //     }
-
-    //     VariablesForm {
-    //     visible: applyIndicator.checked
-    //         height: 150
-    //         AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-    //         AssignedVariablesList {
-    //                     name: "indicator"
-    //                     title: qsTr("Apply indicator")
-    //                     singleVariable: true
-    //                     allowedColumns: ["nominal"]
-    //         }
-    //     }
-    // }
 
     Item {
         height: 			saveModel.height

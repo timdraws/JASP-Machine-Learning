@@ -98,17 +98,6 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
-        RadioButtonGroup {
-            title: qsTr("Model Optimization")
-            name: "modelOpt"
-
-            RadioButton { 
-                id: validationManual 
-                text: qsTr("Manual")                          
-                name: "validationManual"
-            }
-        }
-
         GroupBox {
             title: qsTr("Algorithmic Settings")
 
@@ -164,6 +153,17 @@ Form {
                     max: 999999
                     fieldWidth: 60 
                 }
+            }
+        }
+
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
+
+            RadioButton { 
+                id: validationManual 
+                text: qsTr("Manual")                          
+                name: "validationManual"
             }
         }
     }

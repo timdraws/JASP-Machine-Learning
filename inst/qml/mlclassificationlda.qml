@@ -109,6 +109,12 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
+            text: qsTr("Data split") 
+            name: "dataSplitPlot"
+            checked: true
+        }
+
+        CheckBox { 
             name: "rocCurve"
             text: qsTr("ROC curves") 
         }
@@ -162,85 +168,97 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
-        ColumnLayout{
+        ColumnLayout {
 
-            RadioButtonGroup {
-                title: qsTr("Model Optimization")
-                name: "modelOpt"
+            GroupBox {
+                title: qsTr("Algorithmic Settings")
 
-                RadioButton { 
-                    text: qsTr("Manual") 
-                    name: "optimizationManual"
-                    checked: true 
+                DropDown {
+                    name: "estimationMethod"
+                    indexDefaultValue: 0
+                    label: qsTr("Estimation method:")
+                    values:
+                    [
+                        { label: "Moment", value: "moment"},
+                        { label: "MLE", value: "mle"},
+                        { label: "MVE", value: "covMve"},
+                        { label: "t", value: "t"},
+                    ]
                 }
-            }
-        }
-
-        GroupBox {
-            title: qsTr("Algorithmic Settings")
-
-            DropDown {
-                name: "estimationMethod"
-                indexDefaultValue: 0
-                label: qsTr("Estimation method:")
-                values:
-                [
-                    { label: "Moment", value: "moment"},
-                    { label: "MLE", value: "mle"},
-                    { label: "MVE", value: "covMve"},
-                    { label: "t", value: "t"},
-                ]
             }
 
             Divider { }
 
-            PercentField { 
-                name: "trainingDataManual"
-                text: qsTr("Data used for training:")       
-                defaultValue: 80   
-                min: 5
-                max: 95  
+            GroupBox {
+                title: qsTr("Data Split Preferences")
+
+                CheckBox {
+                    id: testSetIndicator
+                    name: "testSetIndicator"
+                    label: qsTr("Test set indicator:")
+                    childrenOnSameRow: true
+
+                    DropDown {
+                        name: "testSetIndicatorVariable"
+                        showVariableTypeIcon: true
+                        addEmptyValue: true
+                        placeholderText: qsTr("None")
+                    }
+                }
+
+                PercentField { 
+                    name: "trainingDataManual"
+                    text: qsTr("Data used for training:")
+                    defaultValue: 80
+                    min: 5
+                    max: 95 
+                    enabled: !testSetIndicator.checked
+                }
+
+                PercentField { 
+                    name: "validationDataManual"
+                    text: qsTr("Training data used for validation:")
+                    defaultValue: 20
+                    enabled: validationManual.checked 
+                    min: 5
+                    max: 95 
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale predictors") 
+                    name: "scaleEqualSD"
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "seedBox"
+                    text: qsTr("Set seed: ")
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField  { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    } 
+                }
             }
+        }
 
-            CheckBox { 
-                text: qsTr("Scale predictors") 
-                name: "scaleEqualSD"
-                checked: true
-            }
+        RadioButtonGroup {
+            title: qsTr("Model Optimization")
+            name: "modelOpt"
 
-            CheckBox { 
-                name: "seedBox"
-                text: qsTr("Set seed: ")
-                childrenOnSameRow: true
-                checked: true
-
-                DoubleField  { 
-                    name: "seed"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    fieldWidth: 60 
-                } 
+            RadioButton { 
+                text: qsTr("Manual") 
+                name: "optimizationManual"
+                checked: true 
             }
         }
     }
 
-    // Section {
-    //     title: qsTr("Predictions")
-    //     debug: true
-    //     Group {
-
-
-    //         RadioButtonGroup
-    //         {
-    //             name: "applyModel"
-    //             RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true; debug: true        }
-    //             RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target"); debug: true  }
-    //             RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); debug: true       }
-
-    //                }
-    //             }
-    // }
     Item {
         height: 			saveModel.height
         Layout.fillWidth: 	true

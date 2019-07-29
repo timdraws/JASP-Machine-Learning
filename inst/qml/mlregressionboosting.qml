@@ -59,6 +59,12 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
+            text: qsTr("Data split") 
+            name: "dataSplitPlot"
+            checked: true
+        }
+
+        CheckBox { 
             name: "plotOOBChangeDev"
             text: qsTr("Out-of-bag improvement")      
         }
@@ -82,6 +88,138 @@ Form {
     Section {
         title: qsTr("Training Parameters")
 
+        ColumnLayout {
+
+            GroupBox {
+                title: qsTr("Algorithmic Settings")
+
+                IntegerField { 
+                    name: "noOfTrees"
+                    text: qsTr("Trees:") 
+                    defaultValue: 100 
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: optimizationManual.checked 
+                }
+
+                IntegerField { 
+                    name: "maxTrees"
+                    text: qsTr("Max. trees:") 
+                    defaultValue: 100 
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60
+                    enabled: !optimizationManual.checked 
+                }
+
+                DoubleField  { 
+                    name: "shrinkage"
+                    text: qsTr("Shrinkage:")                    
+                    defaultValue: 0.1 
+                    min: 0
+                    max: 1     
+                    fieldWidth: 60 
+                }
+
+                IntegerField { 
+                    name: "intDepth" 
+                    text: qsTr("Interaction depth:")            
+                    defaultValue: 1   
+                    min: 1
+                    max: 99    
+                    fieldWidth: 60 
+                }
+
+                IntegerField { 
+                    name: "nNode"    
+                    text: qsTr("Min. observations in node:")
+                    defaultValue: 10  
+                    min: 1
+                    max: 999999
+                    fieldWidth: 60 
+                }
+
+                PercentField { 
+                    name: "bagFrac"  
+                    text: qsTr("Training data used per tree:")  
+                    defaultValue: 50                                        
+                }
+
+                DropDown {
+                    name: "distance"
+                    indexDefaultValue: 0
+                    label: qsTr("Loss function:")
+                    
+                    values:
+                    [
+                        { label: "Gaussian", value: "gaussian"},
+                        { label: "Laplace", value: "laplace"},
+                        { label: "t", value: "tdist"}
+                    ]
+                }
+            }
+
+            Divider { }
+
+            GroupBox {
+                title: qsTr("Data Split Preferences")
+
+                CheckBox {
+                    id: testSetIndicator
+                    name: "testSetIndicator"
+                    label: qsTr("Test set indicator:")
+                    childrenOnSameRow: true
+
+                    DropDown {
+                        name: "testSetIndicatorVariable"
+                        showVariableTypeIcon: true
+                        addEmptyValue: true
+                        placeholderText: qsTr("None")
+                    }
+                }
+
+                PercentField { 
+                    name: "trainingDataManual"
+                    text: qsTr("Data used for training:")
+                    defaultValue: 80
+                    min: 5
+                    max: 95 
+                    enabled: !testSetIndicator.checked
+                }
+
+                PercentField { 
+                    name: "validationDataManual"
+                    text: qsTr("Training data used for validation:")
+                    defaultValue: 20
+                    enabled: validationManual.checked 
+                    min: 5
+                    max: 95 
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale predictors") 
+                    name: "scaleEqualSD"
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "seedBox"     
+                    text: qsTr("Set seed:")                  
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    }
+                }
+            }
+        }
+
         ColumnLayout{
 
             RadioButtonGroup {
@@ -101,13 +239,12 @@ Form {
                 }
             }
 
-            Divider { }
-
             RadioButtonGroup {
                 title: qsTr("Cross-Validation")
                 name: "modelValid"
 
                 RadioButton { 
+                    id: validationManual
                     text: qsTr("None")                    
                     name: "validationManual" 
                     checked: true
@@ -136,133 +273,7 @@ Form {
                 }
             }
         }
-
-        GroupBox {
-            title: qsTr("Algorithmic Settings")
-
-            IntegerField { 
-                name: "noOfTrees"
-                text: qsTr("Trees:") 
-                defaultValue: 100 
-                min: 1
-                max: 999999
-                fieldWidth: 60
-                enabled: optimizationManual.checked 
-            }
-
-            IntegerField { 
-                name: "maxTrees"
-                text: qsTr("Max. trees:") 
-                defaultValue: 500 
-                min: 1
-                max: 999999
-                fieldWidth: 60
-                enabled: !optimizationManual.checked 
-            }
-
-            DoubleField  { 
-                name: "shrinkage"
-                text: qsTr("Shrinkage:")                    
-                defaultValue: 0.1 
-                min: 0
-                max: 1     
-                fieldWidth: 60 
-            }
-
-            IntegerField { 
-                name: "intDepth" 
-                text: qsTr("Interaction depth:")            
-                defaultValue: 1   
-                min: 1
-                max: 99    
-                fieldWidth: 60 
-            }
-
-            IntegerField { 
-                name: "nNode"    
-                text: qsTr("Min. observations in node:")
-                defaultValue: 10  
-                min: 1
-                max: 999999
-                fieldWidth: 60 
-            }
-
-            PercentField { 
-                name: "bagFrac"  
-                text: qsTr("Training data used per tree:")  
-                defaultValue: 50                                        
-            }
-
-            DropDown {
-                name: "distance"
-                indexDefaultValue: 0
-                label: qsTr("Loss function:")
-                
-                values:
-                [
-                    { label: "Gaussian", value: "gaussian"},
-                    { label: "Laplace", value: "laplace"},
-                    { label: "t", value: "tdist"}
-                ]
-            }
-
-            Divider { }
-
-            PercentField { 
-                name: "trainingDataManual"
-                text: qsTr("Data used for training:")       
-                defaultValue: 80   
-                min: 5
-                max: 95                                     
-            }
-
-            CheckBox { 
-                text: qsTr("Scale predictors") 
-                name: "scaleEqualSD"
-                checked: true
-            }
-
-            CheckBox { 
-                name: "seedBox"     
-                text: qsTr("Set seed:")                  
-                childrenOnSameRow: true
-                checked: true
-
-                DoubleField { 
-                    name: "seed"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    fieldWidth: 60 
-                }
-            }
-        }
     }
-
-    // Section {
-    //     text: qsTr("Predictions")
-    //     debug: true
-
-    //     RadioButtonGroup
-    //     {
-    //         name: "applyModel"
-    //         RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-    //         RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-    //         RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-    //     }
-
-    //     VariablesForm {
-    //         visible: applyIndicator.checked
-    //         height: 150
-    //         AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-    //         AssignedVariablesList {
-    //                     name: "indicator"
-    //                     title: qsTr("Apply indicator")
-    //                     singleVariable: true
-    //                     allowedColumns: ["nominal"]
-    //         }
-    //     }
-    // }
 
     Item {
         height: 			saveModel.height

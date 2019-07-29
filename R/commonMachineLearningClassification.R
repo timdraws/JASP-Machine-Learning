@@ -17,11 +17,14 @@
 
 .readDataClassificationAnalyses <- function(dataset, options){
   target                    <- NULL
+  testSetIndicator          <- NULL 
   if(options[["target"]] != "")
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
-  variables.to.read         <- c(target, predictors)
+  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]])
+    testSetIndicator                  <- options[["testSetIndicatorVariable"]]
+  variables.to.read         <- c(target, predictors, testSetIndicator)
   if (is.null(dataset)){
     dataset <- .readDataSetToEnd(columns.as.numeric = variables.to.read, exclude.na.listwise = variables.to.read)
   }
@@ -43,6 +46,11 @@
                        all.target = variables.to.read,
                        observations.amount = "< 2",
                        exitAnalysisIfErrors = TRUE)
+
+  dataset <- na.omit(dataset)
+  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]] && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
+    JASP:::.quitAnalysis("Your test set indicator should be binary, containing only 1 (included in test set) and 0 (excluded from test set).")
+  }
 }
 
 .classificationAnalysesReady <- function(options, type){
@@ -82,9 +90,10 @@
       classificationResult <- .boostingClassification(dataset, options, jaspResults)
     }
     jaspResults[["classificationResult"]] <- createJaspState(classificationResult)
-    jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
-                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
-                                                              "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+    jaspResults[["classificationResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
+                                                              "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
+                                                              "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
+                                                              "testSetIndicatorVariable", "testSetIndicator"))
   }
 }
 
@@ -100,9 +109,10 @@
 
   classificationTable <- createJaspTable(title)
   classificationTable$position <- position
-  classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+  classificationTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
-                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
+                                          "testSetIndicatorVariable", "testSetIndicator"))
 
   if(type == "knn"){
 
@@ -122,18 +132,18 @@
   } else if(type == "boosting"){
 
     classificationTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
-    classificationTable$addColumnInfo(name = 'depth', title = 'Interaction depth', type = 'integer')
     classificationTable$addColumnInfo(name = 'shrinkage', title = 'Shrinkage', type = 'number')
-    classificationTable$addColumnInfo(name = "minObs",  title = "Min. Obs. Node", type = "integer")
   
   }
   
   classificationTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
+  classificationTable$addColumnInfo(name = 'nvalid', title = 'n(Validation)', type = 'integer')
   classificationTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
-  classificationTable$addColumnInfo(name = 'mse', title = 'Test Set Error', type = 'number')
+  classificationTable$addColumnInfo(name = 'validAcc', title = 'Validation Accuracy', type = 'number')
+  classificationTable$addColumnInfo(name = 'testAcc', title = 'Test Accuracy', type = 'number')
   
   if(type == "randomForest"){
-    classificationTable$addColumnInfo(name = 'oob', title = 'OOB Error', type = 'number')
+    classificationTable$addColumnInfo(name = 'oob', title = 'OOB Accuracy', type = 'number')
   }
 
   requiredVars <- ifelse(type == "knn", yes = 1, no = 2)
@@ -156,22 +166,49 @@
     }
 
     distance  <- ifelse(classificationResult[["distance"]] == 1, yes = "Manhattan", no = "Euclidian")    
-    row <- data.frame(nn = classificationResult[["nn"]], weights = classificationResult[["weights"]], distance = distance, ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
+    row <- data.frame(nn = classificationResult[["nn"]], 
+                      weights = classificationResult[["weights"]], 
+                      distance = distance, 
+                      ntrain = classificationResult[["ntrain"]], 
+                      nvalid = classificationResult[["nvalid"]], 
+                      ntest = classificationResult[["ntest"]], 
+                      validAcc = classificationResult[["validAcc"]], 
+                      testAcc = classificationResult[["testAcc"]])
     classificationTable$addRows(row)
 
   } else if(type =="lda"){
 
     method <- base::switch(options[["estimationMethod"]], "moment" = "Moment", "mle" = "MLE", "covMve" = "MVE","t" = "t")
-    row <- data.frame(lda = ncol(classificationResult[["scaling"]]), method = method, ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
+    row <- data.frame(lda = ncol(classificationResult[["scaling"]]), 
+                      method = method, 
+                      ntrain = classificationResult[["ntrain"]], 
+                      nvalid = classificationResult[["nvalid"]],
+                      ntest = classificationResult[["ntest"]], 
+                      validAcc = classificationResult[["validAcc"]],
+                      testAcc = classificationResult[["testAcc"]])
     classificationTable$addRows(row)
 
   } else if(type == "randomForest"){
 
-    row <- data.frame(trees = classificationResult[["noOfTrees"]], preds = classificationResult[["predPerSplit"]], ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]], oob = classificationResult[["oobError"]])
+    row <- data.frame(trees = classificationResult[["noOfTrees"]], 
+                      preds = classificationResult[["predPerSplit"]], 
+                      ntrain = classificationResult[["ntrain"]], 
+                      nvalid = classificationResult[["nvalid"]],
+                      ntest = classificationResult[["ntest"]], 
+                      validAcc = classificationResult[["validAcc"]],
+                      testAcc = classificationResult[["testAcc"]], 
+                      oob = classificationResult[["oobAccuracy"]])
     classificationTable$addRows(row)
 
   } else if(type == "boosting"){
-    row <- data.frame(trees = classificationResult[["noOfTrees"]], depth = options[["intDepth"]], shrinkage = options[["shrinkage"]], minObs = options[["nNode"]], ntrain = classificationResult[["ntrain"]], ntest = classificationResult[["ntest"]], mse = classificationResult[["mse"]])
+
+    row <- data.frame(trees = classificationResult[["noOfTrees"]], 
+                      shrinkage = options[["shrinkage"]], 
+                      ntrain = classificationResult[["ntrain"]], 
+                      nvalid = classificationResult[["nvalid"]],
+                      ntest = classificationResult[["ntest"]], 
+                      validAcc = classificationResult[["validAcc"]],
+                      testAcc = classificationResult[["testAcc"]])
     classificationTable$addRows(row)
 
   }
@@ -183,9 +220,10 @@
   
   confusionTable <- createJaspTable(title = "Confusion Matrix")
   confusionTable$position <- position
-  confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+  confusionTable$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "validationDataManual",
                                           "target", "predictors", "seed", "seedBox", "confusionTable", "confusionProportions", "maxK", "noOfFolds", "modelValid", 
-                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+                                          "estimationMethod", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode",
+                                          "testSetIndicatorVariable", "testSetIndicator"))
   
   jaspResults[["confusionTable"]] <- confusionTable
   
@@ -251,7 +289,7 @@
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
                                           "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
                                           "plotLegend", "plotPoints", "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", 
-                                          "shrinkage", "intDepth", "nNode"))
+                                          "shrinkage", "intDepth", "nNode", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
   jaspResults[["decisionBoundary"]] <- decisionBoundary 
 
   if(!ready || length(options[["predictors"]]) < 2)  return()
@@ -416,7 +454,7 @@
 
     rocCurve <- createJaspPlot(plot = NULL, title = "ROC Curves Plot", width = 500, height = 300)
     rocCurve$position <- position
-    rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
+    rocCurve$dependOn(options = c("rocCurve", "trainingDataManual", "scaleEqualSD", "modelOpt", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
                                     "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
                                     "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
                                     "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
@@ -426,7 +464,10 @@
 
     classificationResult <- jaspResults[["classificationResult"]]$object 
 
-    lvls <- levels(factor(dataset[, .v(options[["target"]])]))
+    train <- classificationResult[["train"]]
+    test <- classificationResult[["test"]]
+
+    lvls <- levels(factor(train[, .v(options[["target"]])]))
 
     predictors <- .v(options[["predictors"]])
     formula <- formula(paste("levelVar", "~", paste(predictors, collapse=" + ")))
@@ -443,21 +484,21 @@
 
     for(i in 1:length(lvls)){
 
-      levelVar <- dataset[,.v(options[["target"]])] == lvls[i]
-      typeData <- cbind(dataset, levelVar = factor(levelVar))
+      levelVar <- train[,.v(options[["target"]])] == lvls[i]
+      typeData <- cbind(train, levelVar = factor(levelVar))
       column <- which(colnames(typeData) == .v(options[["target"]]))
       typeData <- typeData[, -column]
 
       if(type == "knn"){
 
-        kfit <- kknn::train.kknn(formula = formula, data = typeData, ks = classificationResult[["nn"]], 
+        kfit <- kknn::kknn(formula = formula, train = typeData, test = test, k = classificationResult[["nn"]], 
                     distance = classificationResult[['distance']], kernel = classificationResult[['weights']], scale = FALSE)
-        score <- predict(kfit, dataset, type = 'prob')[, 'TRUE']
+        score <- predict(kfit, test, type = 'prob')[, 'TRUE']
 
       } else if(type == "lda"){
 
-        ldafit <- MASS::lda(formula = formula, data = dataset, method = classificationResult[["method"]], CV = FALSE)
-        score <- predict(ldafit, dataset, type = "prob")$posterior[, 'TRUE']
+        ldafit <- MASS::lda(formula = formula, data = typeData, method = classificationResult[["method"]], CV = FALSE)
+        score <- predict(ldafit, test, type = "prob")$posterior[, 'TRUE']
 
       } else if(type == "boosting"){
 
@@ -469,11 +510,11 @@
         typeData <- typeData[, -column]
         typeData <- cbind(typeData, levelVar = levelVar)
 
-        bfit <- gbm::gbm(formula = formula, data = dataset, n.trees = classificationResult[["noOfTrees"]],
+        bfit <- gbm::gbm(formula = formula, data = typeData, n.trees = classificationResult[["noOfTrees"]],
                     shrinkage = options[["shrinkage"]], interaction.depth = options[["intDepth"]],
                     cv.folds = classificationResult[["noOfFolds"]], bag.fraction = options[["bagFrac"]], n.minobsinnode = options[["nNode"]],
                     distribution = "bernoulli", n.cores=1) #multiple cores breaks modules in JASP, see: INTERNAL-jasp#372
-        score <- predict(bfit, newdata = dataset, n.trees = classificationResult[["noOfTrees"]], type = "response")
+        score <- predict(bfit, newdata = test, n.trees = classificationResult[["noOfTrees"]], type = "response")
 
       } else if(type == "randomForest"){
         
@@ -482,11 +523,11 @@
         rfit <- randomForest::randomForest(x = typeData, y = factor(levelVar),
                    ntree = classificationResult[["noOfTrees"]], mtry = classificationResult[["predPerSplit"]],
                    sampsize = classificationResult[["bagFrac"]], importance = TRUE, keep.forest = TRUE)
-        score <- predict(rfit, dataset, type = "prob")[, 'TRUE']
+        score <- predict(rfit, test, type = "prob")[, 'TRUE']
 
       }
 
-      actual.class <- dataset[,.v(options[["target"]])] == lvls[i]
+      actual.class <- test[,.v(options[["target"]])] == lvls[i]
   
       pred <- ROCR::prediction(score, actual.class)
       nbperf <- ROCR::performance(pred, "tpr", "fpr")
@@ -499,7 +540,11 @@
     rocData <- data.frame(x = rocXstore, y = rocYstore, name = rocNamestore)
     p <- p + JASPgraphs::geom_line(data = rocData, mapping = ggplot2::aes(x = x, y = y, col = name)) +
               ggplot2::scale_color_manual(values = colorspace::qualitative_hcl(n = length(lvls))) +
-              ggplot2::labs(color = options[["target"]])
+              ggplot2::scale_y_continuous(limits = c(0, 1.1), breaks = seq(0,1,0.2)) +
+              ggplot2::scale_x_continuous(limits = c(0, 1), breaks = seq(0,1,0.2)) +
+              ggplot2::labs(color = options[["target"]]) +
+              JASPgraphs::geom_point(data = data.frame(x = 0, y = 1), mapping = ggplot2::aes(x = x, y = y)) +
+              ggrepel::geom_text_repel(data = data.frame(x = 0, y = 1), ggplot2::aes(label= "Perfect separation", x = x, y = y), hjust = -0.2, vjust = -0.8)
     p <- JASPgraphs::themeJasp(p, legend.position = "right")
 
     rocCurve$plotObject <- p
@@ -511,10 +556,7 @@
 
   andrewsCurve <- createJaspPlot(plot = NULL, title = "Andrews Curves Plot", width = 500, height = 300)
   andrewsCurve$position <- position
-  andrewsCurve$dependOn(options = c("andrewsCurve", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                  "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
-                                  "maxK", "noOfFolds", "modelValid", "noOfNearestNeighbors", "distanceParameterManual", "weights",
-                                  "noOfTrees", "bagFrac", "noOfPredictors", "numberOfPredictors", "shrinkage", "intDepth", "nNode"))
+  andrewsCurve$dependOn(options = c("andrewsCurve", "scaleEqualSD", "target", "predictors", "seed", "seedBox"))
   jaspResults[["andrewsCurve"]] <- andrewsCurve
 
   if(!ready) return()
@@ -528,6 +570,7 @@
   predictors <- dataset[sample, .v(options[["predictors"]])]
   target <- dataset[sample, .v(options[["target"]])]
 
+  # Taken from function `andrewsplot()` in R package "andrewsplot", thanks!
   n <- nrow(predictors)
   m <- ncol(predictors)
 
@@ -620,13 +663,14 @@
   validationMeasures$position <- position
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
-                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
+                                                            "estimationMethod", "shrinkage", "intDepth", "nNode", "validationDataManual", "testSetIndicatorVariable", "testSetIndicator"))
 
   validationMeasures$addColumnInfo(name = "group", title = "", type = "string")
   validationMeasures$addColumnInfo(name = "precision", title = "Precision", type = "number")
   validationMeasures$addColumnInfo(name = "recall", title = "Recall", type = "number")
-  validationMeasures$addColumnInfo(name = "f1", title = "F1 score", type = "number")
+  validationMeasures$addColumnInfo(name = "f1", title = "F1 Score", type = "number")
   validationMeasures$addColumnInfo(name = "support", title = "Support", type = "integer")
+  validationMeasures$addColumnInfo(name = "auc", title = "AUC", type = "number")
 
   if(options[["target"]] != "")
     validationMeasures[["group"]] <- c(levels(factor(dataset[, .v(options[["target"]])])), "Average / Total")
@@ -637,15 +681,16 @@
 
   classificationResult <- jaspResults[["classificationResult"]]$object
 
-  pred <- factor(classificationResult[["y"]])
-  real <- factor(classificationResult[["x"]])
+  pred <- factor(classificationResult[["testPred"]])
+  real <- factor(classificationResult[["testReal"]])
 
   lvls <- levels(as.factor(real))
 
-  precision <- numeric()
-  recall <- numeric()
-  f1 <- numeric()
-  support <- numeric()
+  precision       <- numeric()
+  recall          <- numeric()
+  f1              <- numeric()
+  support         <- numeric()
+  auc             <- classificationResult[["auc"]]
 
   for(i in 1:length(lvls)){
 
@@ -668,11 +713,13 @@
   recall[length(recall) + 1]          <- sum(recall * support, na.rm = TRUE) / sum(support, na.rm = TRUE)
   f1[length(f1) + 1]                  <- sum(f1 * support, na.rm = TRUE) / sum(support, na.rm = TRUE)
   support[length(support) + 1]        <- sum(support, na.rm = TRUE)
+  auc[length(auc) + 1]                <- mean(auc, na.rm = TRUE)
 
   validationMeasures[["precision"]]   <- precision
   validationMeasures[["recall"]]      <- recall
   validationMeasures[["f1"]]          <- f1
   validationMeasures[["support"]]     <- support
+  validationMeasures[["auc"]]         <- auc
 }
 
 .classificationClassProportions <- function(dataset, options, jaspResults, ready, position){
@@ -683,11 +730,12 @@
   classProportionsTable$position <- position
   classProportionsTable$dependOn(options = c("classProportionsTable", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid",
-                                                            "estimationMethod", "shrinkage", "intDepth", "nNode"))
+                                                            "estimationMethod", "shrinkage", "intDepth", "nNode", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
 
   classProportionsTable$addColumnInfo(name = "group", title = "", type = "string")
   classProportionsTable$addColumnInfo(name = "dataset", title = "Data Set", type = "number")
   classProportionsTable$addColumnInfo(name = "train", title = "Training Set", type = "number")
+  classProportionsTable$addColumnInfo(name = "valid", title = "Validation Set", type = "number")
   classProportionsTable$addColumnInfo(name = "test", title = "Test Set", type = "number")
 
   if(options[["target"]] != ""){
@@ -703,10 +751,12 @@
 
   dataValues      <- rep(0, length(classProportionsTable[["group"]]))
   trainingValues  <- rep(0, length(classProportionsTable[["group"]]))
+  validValues     <- rep(0, length(classProportionsTable[["group"]]))
   testValues      <- rep(0, length(classProportionsTable[["group"]]))
 
   dataTable       <- prop.table(table(dataset[,.v(options[["target"]])]))
   trainingTable   <- prop.table(table(classificationResult[["train"]][,.v(options[["target"]])]))
+  validTable      <- prop.table(table(classificationResult[["valid"]][,.v(options[["target"]])]))
   testTable       <- prop.table(table(classificationResult[["test"]][,.v(options[["target"]])]))
 
   for(i in 1:length(Dlevels)){
@@ -716,6 +766,9 @@
     # Training data
     trainingIndex                   <- which(names(trainingTable) == as.character(Dlevels)[i])
     trainingValues[trainingIndex]   <- as.numeric(trainingTable)[trainingIndex]
+    # Validation set
+    validIndex                      <- which(names(validTable) == as.character(Dlevels)[i])
+    validValues[validIndex]           <- as.numeric(validTable)[validIndex]
     # Test set
     testIndex                       <- which(names(testTable) == as.character(Dlevels)[i])
     testValues[testIndex]           <- as.numeric(testTable)[testIndex]
@@ -723,6 +776,7 @@
 
   classProportionsTable[["dataset"]] <- dataValues
   classProportionsTable[["train"]]   <- trainingValues
+  classProportionsTable[["valid"]]   <- validValues
   classProportionsTable[["test"]]    <- testValues
 
 }

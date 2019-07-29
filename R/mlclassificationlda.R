@@ -27,44 +27,47 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   # Compute results and create the model summary table
   .classificationTable(dataset, options, jaspResults, ready, position = 1, type = "lda")
 
+  # Create the data split plot
+	.dataSplitPlot(dataset, options, jaspResults, ready, position = 2, purpose = "classification", type = "lda")
+
   # Create the confusion table
-  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 2)
+  .classificationConfusionTable(dataset, options, jaspResults, ready, position = 3)
 
   # Create the class proportions table
-  .classificationClassProportions(dataset, options, jaspResults, ready, position = 3)
+  .classificationClassProportions(dataset, options, jaspResults, ready, position = 4)
 
   # Create the validation measures table
-  .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 4)
+  .classificationEvaluationMetrics(dataset, options, jaspResults, ready, position = 5)
 
   # Create the coefficients table
-  .ldaClassificationCoefficients(options, jaspResults, ready, position = 5)
+  .ldaClassificationCoefficients(options, jaspResults, ready, position = 6)
 
   # Create the prior and posterior table
-  .ldaClassificationPriorPosterior(options, jaspResults, ready, position = 6)
+  .ldaClassificationPriorPosterior(options, jaspResults, ready, position = 7)
 
   # Create the group means table
-  .ldaClassificationMeans(options, jaspResults, ready, position = 7)
+  .ldaClassificationMeans(options, jaspResults, ready, position = 8)
 
   # Create the test of equality of means table
-  .ldaEqualityOfClassMeans(dataset, options, jaspResults, ready, position = 8)
+  .ldaEqualityOfClassMeans(dataset, options, jaspResults, ready, position = 9)
 
   # Create the test of equality of covariance matrices table
-  .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready, position = 9)
+  .ldaEqualityOfCovarianceMatrices(dataset, options, jaspResults, ready, position = 10)
 
   # Create the multicollinearity table
-  .ldaMulticollinearity(dataset, options, jaspResults, ready, position = 10)
+  .ldaMulticollinearity(dataset, options, jaspResults, ready, position = 11)
 
   # Create the ROC curve
-  .rocCurve(dataset, options, jaspResults, ready, position = 11, type = "lda")
+  .rocCurve(dataset, options, jaspResults, ready, position = 12, type = "lda")
 
   # Create the Andrews curves
-  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 12)
+  .classificationAndrewsCurves(dataset, options, jaspResults, ready, position = 13)
 
   # Create the LDA matrix plot 
-  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 13)
+  .ldaMatricesPlot(dataset, options, jaspResults, ready, position = 14)
 
   # Decision boundaries
-  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 14, type = "lda")
+  .classificationDecisionBoundaries(dataset, options, jaspResults, ready, position = 15, type = "lda")
   
 }
 
@@ -88,37 +91,79 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   
   if(options[["modelOpt"]] == "optimizationManual"){
 
-    dataset                 <- na.omit(dataset)
-    train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
-    train                   <- dataset[train.index, ]
+    dataset                   <- na.omit(dataset)
+    if(options[["testSetIndicator"]] && options[["testSetIndicatorVariable"]] != ""){
+      train.index             <- which(dataset[,.v(options[["testSetIndicatorVariable"]])] == 0)
+    } else{
+      train.index             <- sample.int(nrow(dataset), size = ceiling(options[['trainingDataManual']] * nrow(dataset)))
+    }
+    trainAndValid           <- dataset[train.index, ]
+    valid.index             <- sample.int(nrow(trainAndValid), size = ceiling(options[['validationDataManual']] * nrow(trainAndValid)))
     test                    <- dataset[-train.index, ]
+    valid                   <- trainAndValid[valid.index, ]
+    train                   <- trainAndValid[-valid.index, ]
 
     method <- base::switch(options[["estimationMethod"]], 
                             "moment" = "moment",
                             "mle" = "mle",
                             "covMve" = "mve",
                             "t" = "t")
-    ldafit <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
-    pred.values <- stats::predict(ldafit, newdata = test)
+    ldafit      <- MASS::lda(formula = formula, data = train, method = method, CV = FALSE)
+    pred_valid  <- stats::predict(ldafit, newdata = valid)
+    pred_test   <- stats::predict(ldafit, newdata = test)
 
   }
 
+  # Calculate AUC
+  lvls <- levels(factor(test[, .v(options[["target"]])]))
+  auc <- numeric(length(lvls)) 
+
+  predictorNames <- .v(options[["predictors"]])
+  AUCformula <- formula(paste("levelVar", "~", paste(predictorNames, collapse=" + ")))
+
+  for(i in 1:length(lvls)){
+
+    levelVar <- train[,.v(options[["target"]])] == lvls[i]
+    typeData <- cbind(train, levelVar = factor(levelVar))
+    column <- which(colnames(typeData) == .v(options[["target"]]))
+    typeData <- typeData[, -column]
+
+    ldafit_auc <- MASS::lda(formula = AUCformula, data = typeData, method = method, CV = FALSE)
+    
+    score <- predict(ldafit_auc, test, type = "prob")$posterior[, 'TRUE']
+    actual.class <- test[,.v(options[["target"]])] == lvls[i]
+
+    pred <- ROCR::prediction(score, actual.class)
+    auc[i] <- ROCR::performance(pred, "auc")@y.values[[1]]
+  }
+
+  # Create results object
   classificationResult <- list()
-  classificationResult[["model"]]       <- ldafit
-  classificationResult[["relInf"]]      <- summary(ldafit, plot = FALSE)
-  classificationResult[["meanTable"]]   <- ldafit[["means"]]
-  classificationResult[["y"]]           <- pred.values[["class"]]
-  classificationResult[["x"]]           <- test[,.v(options[["target"]])]
-  classificationResult[['confTable']]   <- table('Pred' = pred.values[["class"]], 'Real' = test[,.v(options[["target"]])])
-  classificationResult[["prior"]]       <- ldafit[["prior"]]
-  classificationResult[["postprob"]]    <- colMeans(pred.values[["posterior"]])
-  classificationResult[["ntrain"]]      <- nrow(train)
-  classificationResult[["ntest"]]       <- nrow(test)
-  classificationResult[["mse"]]         <- 1 - sum(diag(prop.table(classificationResult[['confTable']])))
-  classificationResult[["scaling"]]     <- ldafit[["scaling"]]
-  classificationResult[["train"]]       <- train
-  classificationResult[["test"]]        <- test
-  classificationResult[["method"]]      <- method
+  classificationResult[["model"]]               <- ldafit
+  classificationResult[["method"]]              <- method
+  classificationResult[["scaling"]]             <- ldafit[["scaling"]]
+
+  classificationResult[["validationConfTable"]] <- table('Pred' = pred_valid[["class"]], 'Real' = valid[,.v(options[["target"]])])
+  classificationResult[['validAcc']]            <- sum(diag(prop.table(classificationResult[['validationConfTable']])))
+  classificationResult[['confTable']]           <- table('Pred' = pred_test[["class"]], 'Real' = test[,.v(options[["target"]])])
+  classificationResult[['testAcc']]             <- sum(diag(prop.table(classificationResult[['confTable']])))
+  classificationResult[["auc"]]                 <- auc
+
+  classificationResult[["testPred"]]            <- pred_test[["class"]]
+  classificationResult[["testReal"]]            <- test[,.v(options[["target"]])]
+
+  classificationResult[["meanTable"]]           <- ldafit[["means"]]
+  classificationResult[["relInf"]]              <- summary(ldafit, plot = FALSE)
+  classificationResult[["prior"]]               <- ldafit[["prior"]]
+  classificationResult[["postprob"]]            <- colMeans(pred_test[["posterior"]])
+
+  classificationResult[["ntrain"]]              <- nrow(train)
+  classificationResult[["nvalid"]]              <- nrow(valid)
+  classificationResult[["ntest"]]               <- nrow(test)
+
+  classificationResult[["train"]]               <- train
+  classificationResult[["valid"]]               <- valid
+  classificationResult[["test"]]                <- test
   
   return(classificationResult)
 }
@@ -130,7 +175,8 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   coefficientsTable <- createJaspTable(title = "Linear Discriminant Coefficients")
   coefficientsTable$position <- position
   coefficientsTable$dependOn(options = c("coefficientsTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", 
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
   coefficientsTable$addColumnInfo(name = "pred_level", title = "", type = "string")
   
   jaspResults[["coefficientsTable"]] <- coefficientsTable
@@ -156,7 +202,8 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   priorTable <- createJaspTable(title = "Prior and Posterior Class Probabilities")
   priorTable$position <- position
   priorTable$dependOn(options = c("priorTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod",
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
 
   priorTable$addColumnInfo(name = "typeprob", title = "", type = "string")
   priorTable$addColumnInfo(name = "prior", title = "Prior", type = "number")
@@ -181,7 +228,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   
   meanTable <- createJaspTable(title = "Class Means in Training Data")
   meanTable$position <- position
-  meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt",
+  meanTable$dependOn(options = c("meanTable", "trainingDataManual", "scaleEqualSD", "modelOpt", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual",
                                           "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
 
   meanTable$addColumnInfo(name = "target_level", title = "", type = "string")
@@ -208,7 +255,7 @@ MLClassificationLDA <- function(jaspResults, dataset, options, ...) {
   matrixplot <- createJaspPlot(title = "Linear Discriminant Matrix", height = 400, width = 300)
   matrixplot$position <- position
   matrixplot$dependOn(options = c("matrixplot", "plotDensities", "plotStatistics", "trainingDataManual", "scaleEqualSD", "modelOpt",
-                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod"))
+                                          "target", "predictors", "seed", "seedBox", "modelValid", "estimationMethod", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
   jaspResults[["matrixplot"]] <- matrixplot 
 
   if(!ready)  return()

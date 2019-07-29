@@ -65,6 +65,12 @@ Form {
         title: qsTr("Plots")
 
         CheckBox { 
+            text: qsTr("Data split") 
+            name: "dataSplitPlot"
+            checked: true
+        }
+
+        CheckBox { 
             name: "predictedPerformancePlot"
             text: qsTr("Predictive performance") 
         }
@@ -94,6 +100,109 @@ Form {
 
     Section {
         text: qsTr("Training Parameters")
+
+        ColumnLayout {
+
+            GroupBox {
+                title: qsTr("Algorithmic Settings")
+
+                DoubleField { 
+                    name: "thresh"     
+                    text: qsTr("Convergence threshold:")    
+                    defaultValue: 1e-7
+                    min: 1e-999
+                    max: 1
+                    fieldWidth: 60
+                    visible: false              
+                }
+
+                DropDown {
+                    id: penalty
+                    name: "penalty"
+                    indexDefaultValue: 0
+                    label: qsTr("Penalty:")
+                    values:
+                    [
+                        { label: "Lasso", value: "lasso"},
+                        { label: "Ridge", value: "ridge"},
+                        { label: "Elastic net", value: "elasticNet"}
+                    ]
+                }
+
+                DoubleField { 
+                    name: "alpha"      
+                    text: qsTr("Elastic net parameter (α):")
+                    defaultValue: 0.5 
+                    min: 0     
+                    max: 1
+                    visible: penalty.currentIndex == 2 
+                }
+
+                CheckBox { 
+                    name: "intercept"  
+                    text: qsTr("Fit intercept")             
+                    checked: true                                                                        
+                }
+            }
+
+            Divider { }
+
+            GroupBox {
+                title: qsTr("Data Split Preferences")
+
+                CheckBox {
+                    id: testSetIndicator
+                    name: "testSetIndicator"
+                    label: qsTr("Test set indicator:")
+                    childrenOnSameRow: true
+
+                    DropDown {
+                        name: "testSetIndicatorVariable"
+                        showVariableTypeIcon: true
+                        addEmptyValue: true
+                        placeholderText: qsTr("None")
+                    }
+                }
+
+                PercentField { 
+                    name: "trainingDataManual"
+                    text: qsTr("Data used for training:")
+                    defaultValue: 80
+                    min: 5
+                    max: 95 
+                    enabled: !testSetIndicator.checked
+                }
+
+                PercentField { 
+                    name: "validationDataManual"
+                    text: qsTr("Training data used for validation:")
+                    defaultValue: 20
+                    min: 5
+                    max: 95 
+                }
+
+                CheckBox { 
+                    text: qsTr("Scale variables") 
+                    name: "scaleEqualSD"
+                    checked: true
+                }
+
+                CheckBox { 
+                    name: "seedBox"
+                    text: qsTr("Set seed:")
+                    childrenOnSameRow: true
+                    checked: true
+
+                    DoubleField { 
+                        name: "seed"
+                        defaultValue: 1
+                        min: -999999
+                        max: 999999
+                        fieldWidth: 60 
+                    }
+                }
+            }
+        }
 
         RadioButtonGroup {
             title: qsTr("Model Optimization")
@@ -127,105 +236,7 @@ Form {
                 name: "opt1SE"                            
             }
         }
-
-        GroupBox {
-            title: qsTr("Algorithmic Settings")
-
-            DoubleField { 
-                name: "thresh"     
-                text: qsTr("Convergence threshold:")    
-                defaultValue: 1e-7
-                min: 1e-999
-                max: 1
-                fieldWidth: 60
-                visible: false              
-            }
-
-            DropDown {
-                id: penalty
-                name: "penalty"
-                indexDefaultValue: 0
-                label: qsTr("Penalty:")
-                values:
-                [
-                    { label: "Lasso", value: "lasso"},
-                    { label: "Ridge", value: "ridge"},
-                    { label: "Elastic net", value: "elasticNet"}
-                ]
-            }
-
-            DoubleField { 
-                name: "alpha"      
-                text: qsTr("Elastic net parameter (α):")
-                defaultValue: 0.5 
-                min: 0     
-                max: 1
-                visible: penalty.currentIndex == 2 
-            }
-
-            CheckBox { 
-                name: "intercept"  
-                text: qsTr("Fit intercept")             
-                checked: true                                                                        
-            }
-
-            Divider { }
-
-            PercentField { 
-                name: "trainingDataManual"  
-                text: qsTr("Data used for training:")   
-                defaultValue: 80   
-                min: 5
-                max: 95                                                                   
-            }
-
-            CheckBox { 
-                text: qsTr("Scale variables") 
-                name: "scaleEqualSD"
-                checked: true
-            }
-
-            CheckBox { 
-                name: "seedBox"
-                text: qsTr("Set seed:")
-                childrenOnSameRow: true
-                checked: true
-
-                DoubleField { 
-                    name: "seed"
-                    defaultValue: 1
-                    min: -999999
-                    max: 999999
-                    fieldWidth: 60 
-                }
-            }
-        }
     }
-
-    // Section {
-    //     text: qsTr("Predictions")
-    //     debug: true
-
-    //     RadioButtonGroup
-    //     {
-    //         name: "applyModel"
-    //         RadioButton { value: "noApp"         ; text: qsTr("Do not predict data"); checked: true        }
-    //         RadioButton { value: "applyImpute"   ; text: qsTr("Predict missing values in target")  }
-    //         RadioButton { value: "applyIndicator"; text: qsTr("Predict data according to apply indicator"); id: applyIndicator       }
-    //     }
-
-    //     VariablesForm {
-    //         visible: applyIndicator.checked
-    //         height: 150
-    //         AvailableVariablesList { name: "predictionVariables"; allowedColumns: ["nominal"] }
-    //         AssignedVariablesList {
-    //             name: "indicator"
-    //             title: qsTr("Apply indicator")
-    //             singleVariable: true
-    //             allowedColumns: ["nominal"]
-    //         }
-    //     }
-    // }
 
     Item 
     {

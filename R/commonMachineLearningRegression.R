@@ -17,16 +17,19 @@
 
 .readDataRegressionAnalyses <- function(dataset, options){
   target                    <- NULL
+  testSetIndicator          <- NULL 
   if(options[["target"]] != "")
     target                  <- options[["target"]]
   predictors                <- unlist(options['predictors'])
   predictors                <- predictors[predictors != ""]
-  variables.to.read         <- c(target, predictors)
+  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]])
+    testSetIndicator                  <- options[["testSetIndicatorVariable"]]
+  variables.to.read         <- c(target, predictors, testSetIndicator)
   if (is.null(dataset)){
     dataset <- .readDataSetToEnd(columns.as.numeric = variables.to.read, exclude.na.listwise = variables.to.read)
   }
-  if(options[["scaleEqualSD"]])
-    dataset <- as.data.frame(scale(dataset))
+  if(length(unlist(options[["predictors"]])) > 0 && options[["target"]] != "" && options[["scaleEqualSD"]])
+    dataset[,.v(c(options[["predictors"]], options[["target"]]))] <- scale(dataset[,.v(c(options[["predictors"]], options[["target"]]))])
   return(dataset)
 }
 
@@ -41,6 +44,11 @@
                        all.target = variables.to.read,
                        observations.amount = "< 2",
                        exitAnalysisIfErrors = TRUE)
+
+  dataset <- na.omit(dataset)
+  if(options[["testSetIndicatorVariable"]] != "" && options[["testSetIndicator"]] && nlevels(factor(dataset[,.v(options[["testSetIndicatorVariable"]])])) != 2){
+    JASP:::.quitAnalysis("Your test set indicator should be binary, containing only 1 (included in test set) and 0 (excluded from test set).")
+  }
 }
 
 .regressionAnalysesReady <- function(options, type){
@@ -80,10 +88,10 @@
       regressionResult <- .boostingRegression(dataset, options, jaspResults)
     }
     jaspResults[["regressionResult"]] <- createJaspState(regressionResult)
-    jaspResults[["regressionResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
+    jaspResults[["regressionResult"]]$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt", "maxTrees",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
                                                               "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                              "intDepth", "nNode", "distance"))
+                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
   }
 }
 
@@ -101,8 +109,9 @@
   regressionTable$position <- position
   regressionTable$dependOn(options =c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                           "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "maxK", "noOfFolds", "modelValid",
-                                          "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", 
-                                          "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac", "intDepth", "nNode", "distance"))
+                                          "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "maxTrees",
+                                          "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac", "intDepth", "nNode", "distance",
+                                          "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
 
   if(type == "knn"){
 
@@ -125,16 +134,16 @@
   } else if(type == "boosting"){
 
     regressionTable$addColumnInfo(name = 'trees', title = 'No. of Trees', type = 'integer')
-    regressionTable$addColumnInfo(name = 'depth', title = 'Interaction depth', type = 'integer')
     regressionTable$addColumnInfo(name = 'shrinkage', title = 'Shrinkage', type = 'number')
-    regressionTable$addColumnInfo(name = "minObs",  title = "Min. Obs. Node", type = "integer")
     regressionTable$addColumnInfo(name = 'distribution', title = 'Loss function', type = 'integer')
 
   }
 
   regressionTable$addColumnInfo(name = 'ntrain', title = 'n(Train)', type = 'integer')
+  regressionTable$addColumnInfo(name = 'nvalid', title = 'n(Validation)', type = 'integer')
   regressionTable$addColumnInfo(name = 'ntest', title = 'n(Test)', type = 'integer')
-  regressionTable$addColumnInfo(name = 'mse', title = 'Test set MSE', type = 'number', format = 'dp:3')
+  regressionTable$addColumnInfo(name = 'validMSE', title = 'Validation MSE', type = 'number', format = 'dp:3')
+  regressionTable$addColumnInfo(name = 'testMSE', title = 'Test MSE', type = 'number', format = 'dp:3')
 
   if(type == "randomForest"){
     regressionTable$addColumnInfo(name = 'oob', title = 'OOB Error', type = 'number')
@@ -159,7 +168,14 @@
     }
 
     distance  <- ifelse(regressionResult[["distance"]] == 1, yes = "Manhattan", no = "Euclidian")    
-    row <- data.frame(nn = regressionResult[["nn"]], weights = regressionResult[["weights"]], distance = distance, ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
+    row <- data.frame(nn = regressionResult[["nn"]], 
+                      weights = regressionResult[["weights"]], 
+                      distance = distance, 
+                      ntrain = regressionResult[["ntrain"]], 
+                      nvalid = regressionResult[["nvalid"]],
+                      ntest = regressionResult[["ntest"]], 
+                      validMSE = regressionResult[["validMSE"]],
+                      testMSE = regressionResult[["testMSE"]])
     regressionTable$addRows(row)
 
   } else if(type == "regularized"){
@@ -167,20 +183,40 @@
     if (regressionResult[["lambda"]] == 0)
       regressionTable$addFootnote("When \u03BB is set to 0 linear regression is performed.", symbol="<i>Note.</i>") 
 
-    row <- data.frame(penalty = regressionResult[["penalty"]], lambda = regressionResult[["lambda"]], ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
+    row <- data.frame(penalty = regressionResult[["penalty"]], 
+                      lambda = regressionResult[["lambda"]], 
+                      ntrain = regressionResult[["ntrain"]], 
+                      nvalid = regressionResult[["nvalid"]],
+                      ntest = regressionResult[["ntest"]], 
+                      validMSE = regressionResult[["validMSE"]],
+                      testMSE = regressionResult[["testMSE"]])
     if(options[["penalty"]] == "elasticNet")
       row <- cbind(row, alpha = regressionResult[["alpha"]])
     regressionTable$addRows(row)
 
   } else if(type == "randomForest"){
 
-    row <- data.frame(trees = regressionResult[["noOfTrees"]], preds = regressionResult[["predPerSplit"]], ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]], oob = regressionResult[["oobError"]])
+    row <- data.frame(trees = regressionResult[["noOfTrees"]], 
+                      preds = regressionResult[["predPerSplit"]], 
+                      ntrain = regressionResult[["ntrain"]], 
+                      nvalid = regressionResult[["nvalid"]],
+                      ntest = regressionResult[["ntest"]], 
+                      validMSE = regressionResult[["validMSE"]], 
+                      testMSE = regressionResult[["testMSE"]], 
+                      oob = regressionResult[["oobError"]])
     regressionTable$addRows(row)
 
   } else if(type == "boosting"){
 
     distribution <- base::switch(options[["distance"]], "tdist" = "t", "gaussian" = "Gaussian", "laplace" = "Laplace")
-    row <- data.frame(trees = regressionResult[["noOfTrees"]], depth = options[["intDepth"]], shrinkage = options[["shrinkage"]], minObs = options[["nNode"]], distribution = distribution, ntrain = regressionResult[["ntrain"]], ntest = regressionResult[["ntest"]], mse = regressionResult[["mse"]])
+    row <- data.frame(trees = regressionResult[["noOfTrees"]], 
+                      shrinkage = options[["shrinkage"]], 
+                      distribution = distribution, 
+                      ntrain = regressionResult[["ntrain"]], 
+                      nvalid = regressionResult[["nvalid"]],
+                      ntest = regressionResult[["ntest"]], 
+                      validMSE = regressionResult[["validMSE"]],
+                      testMSE = regressionResult[["testMSE"]])
     regressionTable$addRows(row)
 
   }
@@ -195,7 +231,7 @@
   validationMeasures$dependOn(options = c("validationMeasures", "noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                               "target", "predictors", "seed", "seedBox", "validationLeaveOneOut", "confusionProportions", "maxK", "noOfFolds", "modelValid",
                                                               "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                              "intDepth", "nNode", "distance"))
+                                                              "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees"))
 
   validationMeasures$addColumnInfo(name = "measures", title = "Metric", type = "string")
   validationMeasures$addColumnInfo(name = "values", title = "", type = "string")
@@ -209,10 +245,10 @@
 
   regressionResult <- jaspResults[["regressionResult"]]$object
 
-  obs <- regressionResult[["x"]]
-  pred <- regressionResult[["y"]]
+  obs <- regressionResult[["testReal"]]
+  pred <- regressionResult[["testPred"]]
 
-  mse <- round(regressionResult[["mse"]], 3)
+  mse <- round(regressionResult[["testMSE"]], 3)
   rmse <- round(sqrt(mse), 3)
   mae <- round(mean(abs(obs - pred)), 3)
   mape <- paste0(round(mean( abs((obs - pred) / obs) ) * 100, 2), "%")
@@ -233,25 +269,87 @@
   predictedPerformancePlot$dependOn(options = c("noOfNearestNeighbours", "trainingDataManual", "distanceParameterManual", "weights", "scaleEqualSD", "modelOpt",
                                                             "target", "predictors", "seed", "seedBox", "modelValid", "maxK", "noOfFolds", "modelValid", "predictedPerformancePlot",
                                                             "penalty", "alpha", "thresh", "intercept", "shrinkage", "lambda", "noOfTrees", "noOfPredictors", "numberOfPredictors", "bagFrac",
-                                                            "intDepth", "nNode", "distance"))
+                                                            "intDepth", "nNode", "distance", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual", "maxTrees"))
   jaspResults[["predictedPerformancePlot"]] <- predictedPerformancePlot
 
   if(!ready) return()
 
   regressionResult <- jaspResults[["regressionResult"]]$object
   
-  predPerformance <- data.frame(true = regressionResult[["x"]], predicted = regressionResult[["y"]])
-  limits <- c(round(min(c(floor(predPerformance$true), floor(predPerformance$predicted)))),
-              round(max(c(ceiling(predPerformance$true), ceiling(predPerformance$predicted)))))
+  predPerformance <- data.frame(true = regressionResult[["testReal"]], predicted = regressionResult[["testPred"]])
+
+  allBreaks <- JASPgraphs::getPrettyAxisBreaks(predPerformance[, 1], min.n = 4)
 
   p <- ggplot2::ggplot(data = predPerformance, mapping = ggplot2::aes(x = true, y = predicted)) +
-      ggplot2::geom_line(data = data.frame(x = limits, y = limits), mapping = ggplot2::aes(x = x, y = y), col = "darkred", size = 1) +
-      JASPgraphs::geom_point() +
-      ggplot2::scale_x_continuous("Observed values", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6)) +
-      ggplot2::scale_y_continuous("Predicted values", limits = limits, labels = scales::comma,
-                                  breaks = seq(min(limits), max(limits), length.out = 6))
+        JASPgraphs::geom_line(data = data.frame(x = c(allBreaks[1], allBreaks[length(allBreaks)]), y = c(allBreaks[1], allBreaks[length(allBreaks)])), mapping = ggplot2::aes(x = x, y = y), col = "darkred", size = 1) +
+        JASPgraphs::geom_point() +
+        ggplot2::scale_x_continuous("Observed test values", breaks = allBreaks, labels = allBreaks) +
+        ggplot2::scale_y_continuous("Predicted test values", breaks = allBreaks, labels = allBreaks)
   p <- JASPgraphs::themeJasp(p)
 
   predictedPerformancePlot$plotObject <- p
+}
+
+.dataSplitPlot <- function(dataset, options, jaspResults, ready, position, purpose, type){
+
+  if(!is.null(jaspResults[["dataSplitPlot"]]) || !options[["dataSplitPlot"]]) return()
+
+  dataSplitPlot <- createJaspPlot(plot = NULL, title = "Data Split", width = 800, height = 70)
+  dataSplitPlot$position <- position
+  dataSplitPlot$dependOn(options = c("dataSplitPlot", "target", "predictors", "trainingDataManual", "modelValid", "testSetIndicatorVariable", "testSetIndicator", "validationDataManual"))
+  jaspResults[["dataSplitPlot"]] <- dataSplitPlot
+
+  if(!ready) return()
+
+    result <- base::switch(purpose,
+  						"classification" = jaspResults[["classificationResult"]]$object,
+						  "regression" = jaspResults[["regressionResult"]]$object)
+
+  if(options[["modelValid"]] == "validationManual" || type == "randomForest" || type == "regularized" || type == "lda"){
+
+    nTrain    <- result[["ntrain"]]
+    nValid    <- result[["nvalid"]]
+    nTest     <- result[["ntest"]]
+
+    d <- data.frame(y = c(nTrain, nValid, nTest), x = c("Train", "Validation", "Test"), group = c(1,1,1))
+
+    p <- ggplot2::ggplot(data = d, ggplot2::aes(x = group, y = y, fill = factor(x, levels = c("Test", "Validation", "Train")))) +
+          ggplot2::geom_bar(stat = "identity", col = "black", size = 0.5) +
+          ggplot2::scale_y_continuous(limits = c(0, nTrain + nValid + nTest + ((nTrain + nValid + nTest)/5))) + # adjust limits to include "Total" text
+          ggplot2::coord_flip() +
+          ggplot2::labs(fill = "") +
+          ggplot2::xlab("") +
+          ggplot2::ylab("") +
+          ggplot2::scale_fill_manual(values = c("tomato2", "darkgoldenrod2", "steelblue2")) +
+          ggplot2::annotate("text", y = c(0, nTrain, nTrain + nValid, nTrain + nValid + nTest), x = 1, label = c(paste0("Train: ", nTrain), paste0("Validation: ", nValid), paste0("Test: ", nTest), paste0("Total: ", nTrain + nValid + nTest)), size = 4, vjust = 0.5, hjust = -0.1) 
+    p <- JASPgraphs::themeJasp(p, xAxis = FALSE, yAxis = FALSE)
+
+    p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), 
+                            axis.text.y = ggplot2::element_blank(), 
+                            axis.text.x = ggplot2::element_blank())
+
+  } else {
+
+    nTrainAndValid    <- result[["nvalid"]]
+    nTest             <- result[["ntest"]]
+
+    d <- data.frame(y = c(nTrainAndValid, nTest), x = c("Train and validation", "Test"), group = c(1,1))
+
+    p <- ggplot2::ggplot(data = d, ggplot2::aes(x = group, y = y, fill = factor(x, levels = c("Test", "Train and validation")))) +
+          ggplot2::geom_bar(stat = "identity", col = "black", size = 0.5) +
+          ggplot2::scale_y_continuous(limits = c(0, nTrainAndValid + nTest + ((nTrainAndValid + nTest)/5))) + # adjust limits to include "Total" text
+          ggplot2::coord_flip() +
+          ggplot2::labs(fill = "") +
+          ggplot2::xlab("") +
+          ggplot2::ylab("") +
+          ggplot2::scale_fill_manual(values = c("tomato2", "seagreen2")) +
+          ggplot2::annotate("text", y = c(0, nTrainAndValid, nTrainAndValid + nTest), x = 1, label = c(paste0("Train and validation: ", nTrainAndValid), paste0("Test: ", nTest), paste0("Total: ", nTrainAndValid + nTest)), size = 4, vjust = 0.5, hjust = -0.1) 
+    p <- JASPgraphs::themeJasp(p, xAxis = FALSE, yAxis = FALSE)
+
+    p <- p + ggplot2::theme(axis.ticks = ggplot2::element_blank(), axis.text.y = ggplot2::element_blank(), axis.text.x = ggplot2::element_blank())
+
+  }
+
+  dataSplitPlot$plotObject <- p
+
 }
